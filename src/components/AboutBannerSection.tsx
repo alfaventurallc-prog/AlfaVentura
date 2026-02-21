@@ -16,7 +16,7 @@ const AboutBannerSection = () => {
           setIsVisible(true);
         }
       },
-      { threshold: 0.2 }
+      { threshold: 0.2 },
     );
 
     const element = document.getElementById("about-section");
@@ -53,9 +53,11 @@ const AboutBannerSection = () => {
             <div>
               <h1 className="text-4xl md:text-6xl font-bold max-w-[700px] text-white animate-slideright">About Alfa Ventura</h1>
               <p className="mt-6 text-base md:text-lg max-w-[520px] text-gray-200 animate-slideleft text-justify">
-                Alfa Ventura is a globally focused export company based in India, delivering top-tier construction and industrial
-                materials to clients across the USA, UK, and beyond. With specialization in engineered quartz slabs, fly ash,
-                silica fume, flooring, and more, we merge Indian manufacturing strengths with global quality standards.
+                We are a USA-based company headquartered in Albuquerque, specializing in the supply of premium engineered quartz
+                slabs for residential and commercial projects. Serving clients across the United States, the UK, and global
+                markets, we focus on delivering consistent quality, reliable supply, and design-forward surfaces that meet
+                international standards. Built around performance, aesthetics, and long-term value, our quartz solutions support
+                modern architecture and interior spaces with confidence-from specification to installation.
               </p>
             </div>
           </div>
@@ -120,13 +122,17 @@ const AboutBannerSection = () => {
             {/* Description */}
             <div className="text-gray-600 text-sm leading-relaxed space-y-4 text-justify">
               <p>
-                Alfa Ventura was founded by two partners united by a shared vision: to bridge gaps in global construction supply
-                chains with innovation, reliability, and deep industry insight. One partner brings hands-on experience from the
-                U.S. construction market; the other offers in-depth knowledge of India’s engineering landscape. Together, we
-                collaborate with a trusted network of manufacturers and fabricators to source, customize, and deliver high-quality
-                materials that exceed client expectations across borders. Our mission is simple—make international procurement
-                seamless, responsive, and future-ready. We don’t just trade materials; we build partnerships, deliver turnkey
-                solutions, and drive innovation throughout the global construction ecosystem.
+                Founded by a single entrepreneur with deep, hands-on knowledge of global construction markets, the company was
+                built on a clear vision-to simplify and strengthen international supply chains through expertise, reliability, and
+                innovation. With experience spanning the U.S., India, and international sourcing networks, the founder brings a
+                comprehensive understanding of materials, manufacturing, and market expectations across regions.
+                <br />
+                <br />
+                Working closely
+                with a trusted network of manufacturers and fabricators worldwide, we source, customize, and deliver high-quality
+                construction materials that meet global standards and exceed client expectations. Our mission is straightforward:
+                make international procurement seamless, responsive, and future-ready. We don't just supply materials-we build
+                long-term partnerships, deliver turnkey solutions, and drive value across the global construction ecosystem.
               </p>
             </div>
           </div>

@@ -1,11 +1,9 @@
 "use client";
 
 import { VALUES } from "@/constants";
-import { fadeIn } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 import { AnimatePresence, motion } from "motion/react";
 import { useState } from "react";
-import { IconType } from "react-icons";
 
 export const HoverEffect = ({ className }: { className?: string }) => {
   let [hoveredIndex, setHoveredIndex] = useState<number | null>(null);

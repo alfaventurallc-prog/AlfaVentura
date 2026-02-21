@@ -1,24 +1,23 @@
-import Image from "next/image";
-import HeroSlider, { Slide } from "./ui/HeroSlider";
 import { FaBuilding, FaGlobe, FaShip } from "react-icons/fa";
+import HeroSlider, { Slide } from "./ui/HeroSlider";
 
 const slides: Slide[] = [
   {
     id: 1,
     src: "/ban3.webp",
-    title: "INDIA'S EXPORT POWERHOUSE",
+    title: "USA'S EXPORT POWERHOUSE",
     description:
       "Partner With Alfa Ventura For Globally Compliant Industrial Materials — Built On Quality, Trust, And Innovation.",
     buttonText: "Request A Quote",
   },
-  {
-    id: 2,
-    src: "/ban2.webp",
-    title: "Fly Ash for Infrastructure",
-    description:
-      "High-quality Class F fly ash in bulk quantities, suitable for durable construction and eco-friendly cement blends.",
-    buttonText: "Explore",
-  },
+  // {
+  //   id: 2,
+  //   src: "/ban2.webp",
+  //   title: "Fly Ash for Infrastructure",
+  //   description:
+  //     "High-quality Class F fly ash in bulk quantities, suitable for durable construction and eco-friendly cement blends.",
+  //   buttonText: "Explore",
+  // },
   {
     id: 3,
     src: "/ban1.webp",
@@ -42,7 +41,7 @@ const companyValues = [
     icon: FaGlobe,
     title: "Vision",
     description:
-      "Be the preferred global exporter of engineered quartz and fly ash by combining innovation, Indian craftsmanship, and world-class delivery standards.",
+      "To build a leading U.S. quartz brand defined by uncompromising quality, design excellence, consistent performance, and enduring trust. ",
   },
   {
     id: 3,

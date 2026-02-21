@@ -16,7 +16,7 @@ const HomeWhoWeAreSection = () => {
           setIsVisible(true);
         }
       },
-      { threshold: 0.2 }
+      { threshold: 0.2 },
     );
 
     const element = document.getElementById("about-section");
@@ -90,10 +90,10 @@ const HomeWhoWeAreSection = () => {
           {/* Description */}
           <div className="text-gray-600 text-sm leading-relaxed space-y-4 text-justify">
             <p>
-              We are Alfa Ventura, a globally recognized export firm born from a vision to bridge Indian manufacturing excellence
-              with world-class construction and infrastructure needs. Established in 2025, we specialize in exporting high-quality
-              industrial and building materials, particularly artificial quartz slabs and fly ash, to demanding markets like the
-              USA and UK.
+              We are Alfa Ventura, a premium supplier of engineered quartz slabs, delivering high surfaces to clients across the
+              United States and international markets. Established in 2025, we are focused on consistency, material excellence,
+              and dependable supply. Our approach is centered on quality control, refined design, and long-term
+              performance—providing quartz solutions that meet the highest industry standards.
             </p>
 
             <p>
@@ -105,7 +105,7 @@ const HomeWhoWeAreSection = () => {
             <p>
               Our team comprises procurement specialists, logistics coordinators, and quality control professionals who work
               seamlessly to meet international benchmarks. Whether you are a developer sourcing bulk quartz slabs or a contractor
-              looking for fly ash that meets Class F specifications, Alfa Ventura is your strategic sourcing partner.
+              looking for commercial-grade engineered stone for slabs and countertop applications, Alfa Ventura is your strategic sourcing partner.
             </p>
           </div>
 

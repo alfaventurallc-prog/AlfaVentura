@@ -29,15 +29,15 @@ const MeetTeamSection = () => {
             className="flex flex-col items-center gap-2 group w-full lg:w-[400px] overflow-hidden relative"
           >
             <Image
-              src="/harshilsheth.jpeg"
+              src="/harshilsheth.png"
               alt="Harshil Sheth"
-              width={400}
-              height={200}
+              width={200}
+              height={100}
               className="rounded-md w-full lg:w-[400px] object-cover group-hover:scale-110 transition-transform duration-300 ease-in-out overflow-hidden"
             />
             <div className="h-20 lg:h-0 overflow-hidden w-full text-center group-hover:h-20 absolute bottom-0 bg-alfa-blue p-0 transition-all duration-300 ease-in-out">
               <h1 className="text-white text-xl mt-3">Harshil Sheth</h1>
-              <p className="uppercase text-base text-gray-400">Co-Founder</p>
+              <p className="uppercase text-base text-gray-400">Founder</p>
             </div>
           </Link>
         </motion.div>

@@ -94,7 +94,7 @@ export const VALUES = [
   {
     title: "Client-First Thinking",
     description:
-      "We don’t just export materials—we solve problems. Our approach is proactive, flexible, and built around making our clients' projects easier and more efficient.",
+      "We don’t just supply materials—we solve problems. Our approach is proactive, flexible, and built around making our clients' projects easier and more efficient.",
     icon: HiOutlineUserGroup,
   },
   {
@@ -106,7 +106,7 @@ export const VALUES = [
   {
     title: "Sustainability & Responsibility",
     description:
-      "We are committed to sustainable sourcing and responsible exporting. Our aim is to deliver materials that not only build structures—but also contribute to a better-built world.",
+      "We are committed to sustainable sourcing and responsible distribution. Our aim is to deliver materials that not only build structures—but also contribute to a better-built world.",
     icon: LuLeaf,
   },
   {

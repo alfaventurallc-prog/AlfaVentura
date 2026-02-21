@@ -71,25 +71,25 @@ const Footer = () => (
       <div className="flex flex-col gap-5 text-lg md:w-1/2">
         <div className="flex items-center gap-3 hover:text-white transition-all">
           <FaPhone className="transform scale-x-[-1] w-5" />
-          <a href="tel:+917303940226">
-            +91 7303940226 / <br className="hidden md:block" /> +91 8384054004
+          <a href="tel:+14807915581">
+            +1 (480)791-5581
           </a>
         </div>
 
         <div className="flex items-center gap-3 hover:text-white transition-all">
           <FaLocationDot className="w-5" />
           <a
-            href="https://www.google.com/maps/place/Billeshwar+Tower,+Mulund+West,+Mumbai,+Maharashtra-400080"
+            href="https://www.google.com/maps/place/1209+Mountain+Rd+Pl+NE+n,+Albuquerque,+NM+87110,+USA/@35.0914191,-106.5605992,17z/data=!3m1!4b1!4m5!3m4!1s0x87220a95517c54df:0x6e3d67eaab0b4f51!8m2!3d35.0914147!4d-106.5580243?authuser=0&entry=ttu&g_ep=EgoyMDI2MDIxOC4wIKXMDSoASAFQAw%3D%3D"
             target="_blank"
             rel="noopener noreferrer"
           >
-            Billeshwar Tower, Mulund West, Mumbai, Maharashtra-400080
+            1209 Mountain Road Place Northeast STE N, Albuquerque, NM 87110, USA
           </a>
         </div>
 
         <div className="flex items-center gap-3 underline hover:text-white transition-all">
           <MdOutlineMail className="w-5" />
-          <a href="mailto:info@goyamainternational.com">info@goyamainternational.com</a>
+          <a href="mailto:info@alfa-ventura.com">info@alfa-ventura.com</a>
         </div>
       </div>
     </div>
