@@ -27,7 +27,7 @@ const Footer = () => (
             />
           </Link>
           <p className="text-sm leading-[1.75] max-w-sm">
-            USA-based premium exporter of engineered quartz slabs and stone surfaces — delivering precision, quality, and
+            USA-based premium exporter and importer of engineered quartz slabs and stone surfaces — delivering precision, quality, and
             reliability to clients across the United States and global markets.
           </p>
           <div className="flex items-center gap-3">

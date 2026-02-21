@@ -12,7 +12,7 @@ export default function ContactPage() {
       <div className="relative h-56 md:h-72 bg-[#1C1917] flex items-end">
         <div
           className="absolute inset-0 bg-cover bg-center opacity-30"
-          style={{ backgroundImage: "url('/ban1.webp')" }}
+          style={{ backgroundImage: "url('/contact-us.png')" }}
         />
         <div className="relative z-10 px-5 md:px-12 lg:px-20 xl:px-32 pb-10 w-full">
           <span className="block text-[#C9A96E] text-xs font-semibold tracking-widest uppercase mb-2">

@@ -6,10 +6,10 @@ const slides: Slide[] = [
     id: 1,
     // NOTE: Replace /ban2.webp with your preferred "export powerhouse" hero image
     // (e.g., a professional warehouse, cargo ship, or global trade visual)
-    src: "/new_ban1.png",
-    title: "USA's Export Powerhouse",
+    src: "/ban4.png",
+    title: "USA's Building Materials Powerhouse",
     description:
-      "Partner with Alfa Ventura for globally compliant engineered quartz surfaces — built on quality, precision, and long-term trust.",
+      "Partner with Alfa Ventura for world-class engineered quartz surfaces, high-performance SPC flooring, and expertly crafted kitchen countertops — delivering global standards, superior quality, and enduring trust.",
     buttonText: "Request a Quote",
     buttonHref: "/contact",
   },

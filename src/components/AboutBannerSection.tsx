@@ -10,7 +10,7 @@ const AboutBannerSection = () => {
       {/* Hero Banner */}
       <div className="relative h-[36rem] w-full overflow-hidden">
         <Image
-          src="/aboutusimg.webp"
+          src="/about-us-3.webp"
           alt="About Alfa Ventura"
           fill
           className="object-cover"
