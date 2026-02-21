@@ -17,6 +17,8 @@ const formSchema = z.object({
   phone_number: z.string().min(10, "Phone must be at least 10 digits").max(15),
 });
 
+const BROCHURE_URL = "https://drive.google.com/drive/folders/1_j3kvliArMJDghfyilfPf_zWvZ_J8yZG?usp=sharing";
+
 const DownloadBrochureSection = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
 
@@ -26,7 +28,7 @@ const DownloadBrochureSection = () => {
   });
 
   function onSubmit(_values: z.infer<typeof formSchema>) {
-    window.open("https://drive.google.com/drive/folders/16OYn4ih_SoqvZ0eGDmRz45jkmzkThHeG", "_blank");
+    window.open(BROCHURE_URL, "_blank");
     setIsSubmitted(true);
   }
 
@@ -125,7 +127,7 @@ const DownloadBrochureSection = () => {
                     <p className="text-sm text-green-700 mt-0.5">
                       If it didn&apos;t open automatically,{" "}
                       <a
-                        href="https://drive.google.com/drive/folders/16OYn4ih_SoqvZ0eGDmRz45jkmzkThHeG"
+                        href={BROCHURE_URL}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="underline font-medium hover:text-green-900"
