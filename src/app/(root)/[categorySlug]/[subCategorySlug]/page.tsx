@@ -1,9 +1,7 @@
 import { getCategoryBySlug } from "@/actions/categories";
-import { Badge } from "@/components/ui/badge";
 import { ChevronRight, Home, Package } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import { FaStar } from "react-icons/fa";
 
 interface CategoryWithSubcategories {
   id: string;
@@ -63,16 +61,14 @@ const ProductsPage = async ({ params }: { params: Promise<{ categorySlug: string
 
   if (!categoryResponse?.success) {
     return (
-      <div className="container mx-auto py-8 text-center">
-        <h1 className="text-2xl font-bold text-gray-900">Category Not Found</h1>
-        <p className="text-gray-600 mt-2">No category found for: {subCategorySlug}</p>
-        <Link
-          href="/"
-          className="inline-flex items-center mt-4 text-blue-600 hover:text-blue-800"
-        >
-          <Home className="w-4 h-4 mr-2" />
-          Back to Home
-        </Link>
+      <div className="min-h-[50vh] flex items-center justify-center px-5">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-[#1C1917]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Category Not Found</h1>
+          <p className="text-[#6B5E52] mt-2">No category found for: {subCategorySlug}</p>
+          <Link href="/" className="inline-flex items-center mt-4 text-[#9B7040] hover:text-[#7A5520] gap-1">
+            <Home className="w-4 h-4" /> Back to Home
+          </Link>
+        </div>
       </div>
     );
   }
@@ -81,16 +77,14 @@ const ProductsPage = async ({ params }: { params: Promise<{ categorySlug: string
 
   if (!category) {
     return (
-      <div className="container mx-auto py-8 text-center">
-        <h1 className="text-2xl font-bold text-gray-900">Category Not Found</h1>
-        <p className="text-gray-600 mt-2">No category found for: {subCategorySlug}</p>
-        <Link
-          href="/"
-          className="inline-flex items-center mt-4 text-blue-600 hover:text-blue-800"
-        >
-          <Home className="w-4 h-4 mr-2" />
-          Back to Home
-        </Link>
+      <div className="min-h-[50vh] flex items-center justify-center px-5">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-[#1C1917]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Category Not Found</h1>
+          <p className="text-[#6B5E52] mt-2">No category found for: {subCategorySlug}</p>
+          <Link href="/" className="inline-flex items-center mt-4 text-[#9B7040] hover:text-[#7A5520] gap-1">
+            <Home className="w-4 h-4" /> Back to Home
+          </Link>
+        </div>
       </div>
     );
   }
@@ -98,104 +92,96 @@ const ProductsPage = async ({ params }: { params: Promise<{ categorySlug: string
   const allProducts = category.allProducts || [];
 
   return (
-    <div className="bg-gray-100">
-      {/* Header Image */}
-      {/* {category.imageUrl && (
-        <Image
-          src="/product-hero-bg.jpg"
-          alt="Hero Product Bg"
-          width={500}
-          height={500}
-          className="object-cover w-full h-12 md:h-40"
-        />
-      )} */}
-
-      <div className="container mx-auto px-4 py-8">
+    <div className="bg-[#FDFAF7]">
+      <div className="max-w-[1400px] mx-auto px-5 md:px-12 lg:px-20 xl:px-32 py-10">
         {/* Breadcrumb */}
-        <nav className="flex items-center space-x-2 text-sm text-gray-600 mb-6">
-          <Link
-            href="/"
-            className="hover:text-blue-600 flex items-center"
-          >
+        <nav className="flex items-center space-x-2 text-sm text-[#6B5E52] mb-6">
+          <Link href="/" className="hover:text-[#9B7040] flex items-center transition-colors">
             <Home className="w-4 h-4 mr-1" />
             Home
           </Link>
           <ChevronRight className="w-4 h-4" />
-
           {category.parent && (
             <>
-              <Link
-                href={`/${category.parent.slug}`}
-                className="hover:text-blue-600"
-              >
+              <Link href={`/${category.parent.slug}`} className="hover:text-[#9B7040] transition-colors">
                 {category.parent.name}
               </Link>
               <ChevronRight className="w-4 h-4" />
             </>
           )}
-
-          <span className="text-gray-900 font-medium">{category.name}</span>
+          <span className="text-[#1C1917] font-medium">{category.name}</span>
         </nav>
 
         {/* Category Header */}
-        <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-8 animate-slidedown">
-          {/* <div className="flex items-start justify-between"> */}
+        <div className="bg-white rounded-2xl border border-[#E8DDD0] shadow-sm p-6 mb-8">
           <div>
             <div className="flex items-center gap-3 mb-3">
-              <h1 className="text-3xl font-bold text-gray-900">{category.name}</h1>
-              {category.parentId && <Badge variant="secondary">{category.parent?.name}</Badge>}
+              <h1
+                className="text-3xl font-bold text-[#1C1917]"
+                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              >
+                {category.name}
+              </h1>
+              {category.parentId && (
+                <span className="text-xs bg-[#F5EFE6] text-[#9B7040] px-3 py-1 rounded-full font-medium border border-[#E8DDD0]">
+                  {category.parent?.name}
+                </span>
+              )}
             </div>
-
             {category.description && (
-              <p className="text-gray-600 text-justify mb-4 whitespace-pre-line">{category.description}</p>
+              <p className="text-[#6B5E52] mb-4 whitespace-pre-line">{category.description}</p>
             )}
-            {/* </div> */}
           </div>
         </div>
 
         {/* Products Grid */}
         {allProducts.length > 0 ? (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6 animate-slideup">
+          <div className="bg-white rounded-2xl border border-[#E8DDD0] shadow-sm p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900">
-                All Products in <br className="block md:hidden" />
-                <span className="bg-alfa-primary text-white px-1">
+              <h2
+                className="text-xl font-semibold text-[#1C1917]"
+                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              >
+                Products in{" "}
+                <span className="text-[#9B7040]">
                   {category.parent?.name} {category.name}
                 </span>
               </h2>
             </div>
-            {/* <FocusCards cards={allProducts} /> */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {allProducts.map((product) => (
-                <div
-                  key={product.id}
-                  className="group transition-all hover:-translate-y-2"
-                >
+                <div key={product.id} className="group transition-all hover:-translate-y-1">
                   <Link href={`/products/${product.id}`}>
                     <div
-                      className={`bg-white relative rounded-lg shadow-sm border overflow-hidden border-gray-200 hover:shadow-lg transition-shadow ${
-                        product.isPremium ? "ring-4 ring-[#FFD700]" : ""
+                      className={`bg-white relative rounded-xl border overflow-hidden border-[#E8DDD0] hover:shadow-[0_8px_28px_rgba(155,112,64,0.15)] transition-shadow ${
+                        product.isPremium ? "ring-2 ring-[#C9A96E]" : ""
                       }`}
                     >
                       {product.isPremium && (
-                        <div className="absolute top-2 right-2 bg-[#FFD700] text-black text-xs font-semibold px-2 py-1 rounded z-10 flex items-center justify-center gap-1">
+                        <div className="absolute top-2 right-2 bg-[#C9A96E] text-white text-xs font-semibold px-2 py-1 rounded-full z-10">
                           Premium
-                          <FaStar />
                         </div>
                       )}
                       {product.images && product.images.length > 0 && (
-                        <Image
-                          src={product.images[0]}
-                          alt={product.title}
-                          width={300}
-                          height={300}
-                          className="w-full h-72 object-cover"
-                        />
+                        <div className="relative w-full h-64 overflow-hidden">
+                          <Image
+                            src={product.images[0]}
+                            alt={product.title}
+                            fill
+                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
+                            className="object-cover group-hover:scale-[1.04] transition-transform duration-500"
+                          />
+                        </div>
                       )}
                       <div className="p-4">
-                        <h3 className="text-lg font-medium text-gray-900 mb-2">{product.title}</h3>
+                        <h3
+                          className="text-base font-semibold text-[#1C1917] mb-1"
+                          style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                        >
+                          {product.title}
+                        </h3>
                         {product.description && (
-                          <p className="text-sm text-justify text-gray-600 line-clamp-2 whitespace-pre-line">
+                          <p className="text-sm text-[#6B5E52] line-clamp-2 whitespace-pre-line">
                             {product.description}
                           </p>
                         )}
@@ -207,10 +193,15 @@ const ProductsPage = async ({ params }: { params: Promise<{ categorySlug: string
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-12 text-center animate-slideup">
-            <Package className="w-16 h-16 mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">No Products Yet</h3>
-            <p className="text-gray-600">There are no products in this category at the moment.</p>
+          <div className="bg-white rounded-2xl border border-[#E8DDD0] shadow-sm p-12 text-center">
+            <Package className="w-16 h-16 mx-auto text-[#C9A96E] mb-4" />
+            <h3
+              className="text-lg font-medium text-[#1C1917] mb-2"
+              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            >
+              No Products Yet
+            </h3>
+            <p className="text-[#6B5E52]">There are no products in this category at the moment.</p>
           </div>
         )}
       </div>

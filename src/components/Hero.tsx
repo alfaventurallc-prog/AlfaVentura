@@ -4,27 +4,32 @@ import HeroSlider, { Slide } from "./ui/HeroSlider";
 const slides: Slide[] = [
   {
     id: 1,
-    src: "/ban3.webp",
-    title: "USA'S EXPORT POWERHOUSE",
+    // NOTE: Replace /ban2.webp with your preferred "export powerhouse" hero image
+    // (e.g., a professional warehouse, cargo ship, or global trade visual)
+    src: "/new_ban1.png",
+    title: "USA's Export Powerhouse",
     description:
-      "Partner With Alfa Ventura For Globally Compliant Industrial Materials — Built On Quality, Trust, And Innovation.",
-    buttonText: "Request A Quote",
+      "Partner with Alfa Ventura for globally compliant engineered quartz surfaces — built on quality, precision, and long-term trust.",
+    buttonText: "Request a Quote",
+    buttonHref: "/contact",
   },
-  // {
-  //   id: 2,
-  //   src: "/ban2.webp",
-  //   title: "Fly Ash for Infrastructure",
-  //   description:
-  //     "High-quality Class F fly ash in bulk quantities, suitable for durable construction and eco-friendly cement blends.",
-  //   buttonText: "Explore",
-  // },
+  {
+    id: 2,
+    src: "/quartz-multi-exotic.webp",
+    title: "Custom Countertop Solutions",
+    description:
+      "From kitchen islands to commercial vanities — precision-cut engineered stone countertops, fabricated to exact specifications and polished for seamless, ready-to-install delivery worldwide.",
+    buttonText: "Explore Products",
+    buttonHref: "/all-products",
+  },
   {
     id: 3,
     src: "/ban1.webp",
     title: "Engineered Quartz Slabs",
     description:
-      "Precision-crafted slabs tailored for kitchens, vanities, and commercial interiors — ready-to-install with polished finishes.",
+      "Precision-crafted slabs tailored for kitchens, vanities, and commercial interiors — ready-to-install with polished finishes and consistent quality you can count on.",
     buttonText: "Contact Us",
+    buttonHref: "/contact",
   },
 ];
 
@@ -34,49 +39,54 @@ const companyValues = [
     icon: FaBuilding,
     title: "Mission",
     description:
-      "Deliver top-quality construction materials globally through precision, compliance, and reliability, empowering projects with engineered excellence and customer-focused service.",
+      "Deliver top-quality engineered quartz globally through precision, compliance, and reliability — empowering projects with engineered excellence and customer-focused service.",
   },
   {
     id: 2,
     icon: FaGlobe,
     title: "Vision",
     description:
-      "To build a leading U.S. quartz brand defined by uncompromising quality, design excellence, consistent performance, and enduring trust. ",
+      "To build a leading U.S. quartz brand defined by uncompromising quality, design excellence, consistent performance, and enduring trust across international markets.",
   },
   {
     id: 3,
     icon: FaShip,
     title: "Values",
     description:
-      "Integrity, precision, trust, innovation, and commitment to quality drive every product we export and every client relationship we build worldwide.",
+      "Integrity, precision, trust, innovation, and an unwavering commitment to quality drive every slab we ship and every client relationship we build worldwide.",
   },
 ];
 
 const Hero = () => {
   return (
     <div className="relative">
-      {/* Hero Slider Section */}
-      <section className="relative w-full h-[80vh] overflow-hidden">
+      {/* Hero Slider */}
+      <section className="relative w-full overflow-hidden">
         <HeroSlider slides={slides} />
       </section>
 
-      {/* Mission, Vision, Values Section - Overlapping */}
-      <section className="relative -mt-16 z-10 px-5 md:px-40 animate-slideup">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+      {/* Mission / Vision / Values — overlapping strip */}
+      <section className="relative -mt-14 z-10 px-5 md:px-12 lg:px-20 xl:px-32 mb-0">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
           {companyValues.map((item) => {
-            const IconComponent = item.icon;
+            const Icon = item.icon;
             return (
               <div
                 key={item.id}
-                className="bg-white rounded-lg p-8 hover:shadow-2xl transition-all duration-300 border border-gray-100 backdrop-blur-sm group hover:border hover:border-alfa-blue"
+                className="group bg-white rounded-2xl p-7 border border-[#E8DDD0] shadow-[0_4px_16px_rgba(0,0,0,0.07)] hover:shadow-[0_12px_32px_rgba(155,112,64,0.15)] hover:-translate-y-1 transition-all duration-300"
               >
-                <div className="flex items-center mb-6">
-                  <div className="w-12 h-12 bg-alfa-blue rounded-lg flex items-center justify-center mr-4 shadow-md group-hover:scale-x-[-1] transform transition-all duration-300">
-                    <IconComponent className="text-white text-xl" />
+                <div className="flex items-center gap-4 mb-4">
+                  <div className="w-11 h-11 rounded-xl bg-[#9B7040] flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform duration-300 shrink-0">
+                    <Icon className="text-white text-lg" />
                   </div>
-                  <h3 className="text-2xl font-bold text-gray-800">{item.title}</h3>
+                  <h3
+                    className="text-lg font-bold text-[#1C1917]"
+                    style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                  >
+                    {item.title}
+                  </h3>
                 </div>
-                <p className="text-gray-600 leading-relaxed">{item.description}</p>
+                <p className="text-sm text-[#57534E] leading-[1.7]">{item.description}</p>
               </div>
             );
           })}

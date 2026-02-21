@@ -22,7 +22,7 @@ const sections = [
 
 export default function BrochureSections() {
   return (
-    <div className="bg-white">
+    <div className="bg-[#FDFAF7]">
       {sections.map(({ title, description, imgSrc, imgAlt, reverse }, idx) => (
         <section
           key={idx}
@@ -37,14 +37,14 @@ export default function BrochureSections() {
               alt={imgAlt}
               width={600}
               height={400}
-              className="w-full h-auto rounded-lg shadow-md"
+              className="w-full h-auto rounded-2xl shadow-sm border border-[#E8DDD0]"
             />
           </div>
 
           {/* Text */}
           <div className="w-full md:w-1/2">
-            <h2 className="text-3xl font-bold mb-4">{title}</h2>
-            <p className="text-gray-700 leading-relaxed">{description}</p>
+            <h2 className="text-2xl md:text-3xl font-bold text-[#1C1917] mb-4" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{title}</h2>
+            <p className="text-[#6B5E52] leading-relaxed">{description}</p>
           </div>
         </section>
       ))}

@@ -41,7 +41,7 @@ const CategoryCard = ({ category }: CategoryCardProps) => {
   const hasSubcategories = category.subcategories.length > 0;
 
   return (
-    <Card className="group hover:shadow-lg transition-all duration-300 overflow-hidden">
+    <Card className="group hover:shadow-[0_8px_28px_rgba(155,112,64,0.15)] transition-all duration-300 overflow-hidden border border-[#E8DDD0] rounded-2xl">
       <div className="relative">
         {/* Category Image */}
         <div className="relative h-48 w-full overflow-hidden">
@@ -79,26 +79,26 @@ const CategoryCard = ({ category }: CategoryCardProps) => {
             href={`/${category.slug}`}
             className="group"
           >
-            <h3 className="font-semibold text-lg text-gray-900 group-hover:text-blue-600 transition-colors mb-2 flex items-center">
+            <h3 className="font-semibold text-lg text-[#1C1917] group-hover:text-[#9B7040] transition-colors mb-2 flex items-center" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
               {category.name}
               <ChevronRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
             </h3>
           </Link>
 
           {category.description && (
-            <p className="text-gray-600 text-sm mb-3 line-clamp-2 whitespace-pre-line">{category.description}</p>
+            <p className="text-[#6B5E52] text-sm mb-3 line-clamp-2 whitespace-pre-line">{category.description}</p>
           )}
 
           {/* Subcategories Preview */}
           {isMainCategory && hasSubcategories && (
             <div className="space-y-2">
-              <div className="text-xs font-medium text-gray-500 uppercase tracking-wide">Subcategories</div>
+              <div className="text-xs font-medium text-[#9B7040] uppercase tracking-wide mb-1">Subcategories</div>
               <div className="flex flex-wrap gap-1">
                 {category.subcategories.slice(0, 3).map((sub) => (
                   <Link
                     key={sub.id}
                     href={`/${sub.slug}`}
-                    className="text-xs bg-gray-100 hover:bg-blue-100 text-gray-700 hover:text-blue-700 px-2 py-1 rounded transition-colors"
+                    className="text-xs bg-[#F5EFE6] hover:bg-[#9B7040]/15 text-[#6B5E52] hover:text-[#9B7040] px-2 py-1 rounded-lg transition-colors"
                   >
                     {sub.name}
                   </Link>

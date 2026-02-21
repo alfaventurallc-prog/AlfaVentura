@@ -4,7 +4,7 @@ import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "nextjs-toploader/app";
-import { FaLongArrowAltRight, FaPause, FaPlay } from "react-icons/fa";
+import { FaLongArrowAltRight } from "react-icons/fa";
 import SectionWrapper from "./SectionWrapper";
 import { motion } from "framer-motion";
 import { Category } from "../../types";
@@ -239,83 +239,51 @@ const FeaturesSection = () => {
   }, [isDragging, startX, startTranslate]);
 
   return (
-    <section className="bg-gradient-to-b from-gray-900 to-black py-20 px-4 md:px-8 lg:px-16 xl:px-20 overflow-hidden">
+    <section className="bg-[#1C1917] py-20 px-4 md:px-8 lg:px-16 xl:px-20 overflow-hidden">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Poppins:ital,wght@0,100;0,200;0,300;0,400;0,500;0,600;0,700;0,800;0,900;1,100;1,200;1,300;1,400;1,500;1,600;1,700;1,800;1,900&display=swap');
-        
-        * {
-          font-family: 'Poppins', sans-serif;
-        }
-        
-        .slider-container {
-          cursor: grab;
-          user-select: none;
-          -webkit-user-select: none;
-          touch-action: pan-y;
-        }
-        
-        .slider-container:active {
-          cursor: grabbing;
-        }
-        
-        .slider-container.dragging {
-          cursor: grabbing;
-        }
-        
-        .slider-content {
-          will-change: transform;
-        }
-        
-        .card-item {
-          pointer-events: auto;
-        }
-        
-        .card-item.no-click {
-          pointer-events: none;
-        }
+        .slider-container { cursor: grab; user-select: none; -webkit-user-select: none; touch-action: pan-y; }
+        .slider-container:active { cursor: grabbing; }
+        .slider-container.dragging { cursor: grabbing; }
+        .slider-content { will-change: transform; }
+        .card-item { pointer-events: auto; }
+        .card-item.no-click { pointer-events: none; }
       `}</style>
 
-      <div className="mx-auto">
+      <div className="max-w-[1400px] mx-auto">
         {/* Header */}
         <motion.div
-          initial={{ opacity: 0, y: 30 }}
+          initial={{ opacity: 0, y: 28 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+          transition={{ duration: 0.65 }}
           viewport={{ once: true }}
-          className="text-center mb-16"
+          className="text-center mb-14"
         >
-          <p className="text-blue-400 font-semibold text-lg mb-4 tracking-wider uppercase">Our Products</p>
-          <h2 className="text-3xl md:text-5xl font-bold text-white leading-tight mb-6">
+          <span className="inline-block text-xs font-bold tracking-[0.2em] uppercase text-[#C9A96E] border-l-[3px] border-[#C9A96E] pl-3 mb-4">
+            Our Products
+          </span>
+          <h2
+            className="text-3xl md:text-5xl font-bold text-white leading-tight mb-5 tracking-tight"
+            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+          >
             Your trusted source for
             <br />
-            <span className="text-blue-400">premium materials</span> worldwide
+            <span className="text-[#C9A96E]">premium surfaces</span> worldwide
           </h2>
-          <p className="text-gray-300 text-lg max-w-2xl mx-auto">
-            Discover our comprehensive range of high-quality quartz slabs and industrial materials
+          <p className="text-[#A8A29E] text-base md:text-lg max-w-xl mx-auto leading-relaxed">
+            Discover our comprehensive range of high-quality engineered quartz slabs and stone surfaces.
           </p>
+          <p className="text-[#6B7280] text-sm mt-3">💡 Drag to navigate · Click to explore</p>
         </motion.div>
 
-        {/* Drag Instructions */}
-        <div className="text-center">
-          <p className="text-gray-400 text-sm">💡 Drag to navigate • Click to explore</p>
-        </div>
-
-        {/* Infinite Slider Container */}
+        {/* Infinite Slider */}
         <div className="relative">
-          {/* Play/Pause Button */}
-          {/* <button
-            onClick={togglePlayPause}
-            className="absolute top-4 right-4 z-10 bg-white/10 hover:bg-white/20 backdrop-blur-sm border border-white/20 rounded-full p-3 transition-all duration-300"
-          >
-            {isPlaying ? <FaPause className="text-white text-lg" /> : <FaPlay className="text-white text-lg" />}
-          </button> */}
+          {!duplicatedCategories.length ? (
+            <div className="flex justify-center py-12"><LoadingSpinner /></div>
+          ) : null}
 
-          {!duplicatedCategories.length ? <LoadingSpinner /> : null}
-
-          {/* Draggable Slider */}
           <div
             ref={containerRef}
-            className={`overflow-hidden pt-2.5 mt-8 slider-container ${isDragging ? "dragging" : ""}`}
+            className={`overflow-hidden pt-2.5 mt-6 slider-container ${isDragging ? "dragging" : ""}`}
             onMouseDown={handleMouseDown}
             onTouchStart={handleTouchStart}
             onTouchMove={handleTouchMove}
@@ -336,42 +304,55 @@ const FeaturesSection = () => {
                 duplicatedCategories.map((category, index) => (
                   <div
                     key={`${category.name}-${index}`}
-                    className="flex-shrink-0 px-4"
+                    className="flex-shrink-0 px-3"
                     style={{ width: `${itemWidth || 300}px` }}
                   >
                     <motion.div
-                      whileHover={{ y: -10 }}
-                      transition={{ type: "spring", damping: 20, stiffness: 200 }}
+                      whileHover={{ y: -8 }}
+                      transition={{ type: "spring", damping: 22, stiffness: 220 }}
                       className="group"
                     >
                       <div
                         className={`card-item ${draggedDistance > 10 ? "no-click" : ""}`}
                         onClick={(e) =>
-                          handleCardClick(e, category.parentId ? `/${category.parentId}/${category.slug}` : `/${category.slug}`)
+                          handleCardClick(
+                            e,
+                            category.parentId ? `/${category.parentId}/${category.slug}` : `/${category.slug}`
+                          )
                         }
                       >
-                        <div className="bg-white/5 backdrop-blur-sm border border-white/10 rounded-xl overflow-hidden hover:bg-white/10 transition-all duration-300 hover:border-blue-400/50 cursor-pointer">
+                        <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden hover:bg-white/10 hover:border-[#C9A96E]/40 cursor-pointer transition-all duration-300">
                           {/* Image */}
-                          <div className="relative h-64 overflow-hidden">
+                          <div className="relative h-60 overflow-hidden">
                             <Image
                               src={category.imageUrl || "/placeholder.jpg"}
                               alt={category.name}
                               fill
-                              className="object-cover group-hover:scale-110 transition-transform duration-500"
+                              className="object-cover group-hover:scale-105 transition-transform duration-500"
                               draggable={false}
+                              sizes="400px"
                             />
                             <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                           </div>
-
                           {/* Content */}
                           <div className="p-6">
-                            <h3 className="text-xl font-bold text-white mb-2 group-hover:text-blue-400 transition-colors duration-300">
+                            <h3
+                              className="text-lg font-bold text-white mb-2 group-hover:text-[#C9A96E] transition-colors duration-300"
+                              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                            >
                               {category.name}
                             </h3>
-                            <p className="text-gray-300 text-sm mb-4 line-clamp-2 whitespace-pre-line">{category.description}</p>
-                            <div className="flex items-center text-blue-400 font-semibold group-hover:text-blue-300 transition-colors duration-300">
-                              Explore More
-                              <FaLongArrowAltRight className="ml-2 group-hover:translate-x-1 transition-transform duration-300" />
+                            <p className="text-[#A8A29E] text-sm mb-4 line-clamp-2 leading-relaxed">
+                              {category.description}
+                            </p>
+                            <div className="flex items-center text-[#C9A96E] font-semibold text-sm group-hover:text-white transition-colors duration-300">
+                              Explore
+                              <svg
+                                className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform duration-300"
+                                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+                              >
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                              </svg>
                             </div>
                           </div>
                         </div>

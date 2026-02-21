@@ -14,10 +14,15 @@ const AllProductsPage = async () => {
 
   if (!categoriesResponse.success) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-[#FDFAF7] flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Unable to Load Products</h1>
-          <p className="text-gray-600">Please try again later.</p>
+          <h1
+            className="text-2xl font-bold text-[#1C1917] mb-2"
+            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+          >
+            Unable to Load Products
+          </h1>
+          <p className="text-[#6B5E52]">Please try again later.</p>
         </div>
       </div>
     );
@@ -26,28 +31,38 @@ const AllProductsPage = async () => {
   const categories = categoriesResponse.data?.categories || [];
 
   return (
-    <div className="min-h-screen bg-gray-100">
+    <div className="min-h-screen bg-[#FDFAF7]">
       {/* Hero Section */}
-      <section className="bg-gradient-to-r from-gray-900 to-gray-800 text-white py-16">
-        <div className="container mx-auto px-4">
-          <div className="max-w-3xl mx-auto text-center">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">Our Premium Products</h1>
-            <p className="text-xl text-gray-300 mb-6">
-              Discover our comprehensive range of high-quality materials for your projects
-            </p>
-            <div className="flex items-center justify-center space-x-6 text-sm">
-              <div className="flex items-center">
-                <div className="w-2 h-2 bg-blue-400 rounded-full mr-2"></div>
-                <span>{categories.length} Categories</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-2 h-2 bg-green-400 rounded-full mr-2"></div>
-                <span>Premium Quality</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-2 h-2 bg-yellow-400 rounded-full mr-2"></div>
-                <span>Global Shipping</span>
-              </div>
+      <section className="relative bg-[#1C1917] text-white py-20">
+        <div
+          className="absolute inset-0 bg-cover bg-center opacity-20"
+          style={{ backgroundImage: "url('/ban2.webp')" }}
+        />
+        <div className="relative z-10 max-w-[1400px] mx-auto px-5 md:px-12 lg:px-20 xl:px-32">
+          <span className="block text-[#C9A96E] text-xs font-semibold tracking-widest uppercase mb-3">
+            Product Catalog
+          </span>
+          <h1
+            className="text-4xl md:text-5xl font-bold mb-4 leading-tight"
+            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+          >
+            Our Premium Products
+          </h1>
+          <p className="text-lg text-white/70 mb-8 max-w-xl">
+            Discover our comprehensive range of high-quality engineered quartz for your projects.
+          </p>
+          <div className="flex flex-wrap items-center gap-6 text-sm text-white/80">
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-[#C9A96E] rounded-full" />
+              <span>{categories.length} Categories</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-[#C9A96E] rounded-full" />
+              <span>Premium Quality</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 bg-[#C9A96E] rounded-full" />
+              <span>Global Shipping</span>
             </div>
           </div>
         </div>

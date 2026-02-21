@@ -1,9 +1,7 @@
 import { getProductById } from "@/actions/products";
 import EnquireProductForm from "@/components/EnquireProductForm";
 import ProductMediaSlider from "@/components/ProductMediaSlider";
-import Image from "next/image";
 import Link from "next/link";
-import { FaStar } from "react-icons/fa";
 
 type ProductDetail = {
   category: {
@@ -45,42 +43,42 @@ const ProductDetailPage = async ({ params }: { params: Promise<{ id: string }> }
   ];
 
   return (
-    <div>
-      <Image
-        src="/product-hero-bg.jpg"
-        alt="Hero Product Bg"
-        width={500}
-        height={500}
-        className="object-cover w-full h-12 md:h-40"
-      />
-      <div className="p-5 pt-10 md:p-20 md:pt-10">
-        <h1 className="text-4xl font-bold text-center">{product?.title}</h1>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-12 mt-8">
+    <div className="bg-[#FDFAF7] min-h-screen">
+      <div className="max-w-[1400px] mx-auto px-5 md:px-12 lg:px-20 xl:px-32 py-12">
+        <h1
+          className="text-3xl md:text-4xl font-bold text-[#1C1917] mb-8 text-center"
+          style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+        >
+          {product?.title}
+        </h1>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
           <div>
             <ProductMediaSlider media={media} />
           </div>
 
           <div className="my-auto">
-            <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+            <h2
+              className="text-2xl font-bold mb-4 flex items-center gap-2 text-[#1C1917]"
+              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            >
               Product Details
               {product.isPremium && (
-                <div className="bg-[#FFD700] text-white text-xs font-semibold px-2 py-1 rounded z-10 flex items-center justify-center gap-1">
+                <span className="bg-[#C9A96E] text-white text-xs font-semibold px-3 py-1 rounded-full">
                   Premium
-                  <FaStar />
-                </div>
+                </span>
               )}
             </h2>
-            <p className="text-gray-700 text-justify whitespace-pre-line">{product?.description}</p>
+            <p className="text-[#6B5E52] whitespace-pre-line leading-relaxed">{product?.description}</p>
             <br />
             {product?.isPremium && (
-              <p className="text-fuchsia-800 text-justify p-2 rounded border border-fuchsia-300 bg-fuchsia-200">
+              <p className="text-[#7A5520] p-4 rounded-xl border border-[#C9A96E]/40 bg-[#9B7040]/8 text-sm leading-relaxed">
                 {product?.title} from our Premium Series is crafted with superior materials and refined design. It offers a
                 luxurious appearance with unmatched durability, making it the perfect choice for high-end interiors. Our Premium
                 Series combines exclusive design, exceptional craftsmanship, and enduring performance, ensuring {product?.title}{" "}
                 stands out as a statement of both style and substance.
               </p>
             )}
-            <p className="text-gray-500 text-sm mt-4">
+            <p className="text-[#6B5E52] text-sm mt-5">
               Want to know more about this product? Click the button below to get in touch with us!
             </p>
             <EnquireProductForm product={product} />

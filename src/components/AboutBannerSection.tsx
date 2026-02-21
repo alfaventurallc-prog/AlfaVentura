@@ -1,141 +1,124 @@
 "use client";
 
-import { fadeIn } from "@/lib/motion";
-import { motion } from "motion/react";
 import Image from "next/image";
-import { useEffect, useState } from "react";
+import { motion } from "motion/react";
 import SectionWrapper from "./SectionWrapper";
 
 const AboutBannerSection = () => {
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry.isIntersecting) {
-          setIsVisible(true);
-        }
-      },
-      { threshold: 0.2 },
-    );
-
-    const element = document.getElementById("about-section");
-    if (element) {
-      observer.observe(element);
-    }
-
-    return () => {
-      if (element) {
-        observer.unobserve(element);
-      }
-    };
-  }, []);
-
   return (
     <section>
-      <div className="relative h-[30rem] w-full top-0">
+      {/* Hero Banner */}
+      <div className="relative h-[36rem] w-full overflow-hidden">
         <Image
           src="/aboutusimg.webp"
-          alt="About Banner"
-          layout="fill"
-          objectFit="cover"
-          quality={100}
-          className="z-0"
+          alt="About Alfa Ventura"
+          fill
+          className="object-cover"
+          priority
+          sizes="100vw"
         />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/70 via-black/50 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
 
-        <div className="absolute inset-0 bg-black/50 z-10" />
-
-        <motion.div
-          variants={fadeIn("right", "tween", 0.3, 1)}
-          className="relative z-20 mx-auto px-5 md:px-40 h-full flex p-10"
-        >
-          <div className="flex h-full items-center justify-center text-center lg:items-center lg:justify-start lg:text-left">
-            <div>
-              <h1 className="text-4xl md:text-6xl font-bold max-w-[700px] text-white animate-slideright">About Alfa Ventura</h1>
-              <p className="mt-6 text-base md:text-lg max-w-[520px] text-gray-200 animate-slideleft text-justify">
-                We are a USA-based company headquartered in Albuquerque, specializing in the supply of premium engineered quartz
-                slabs for residential and commercial projects. Serving clients across the United States, the UK, and global
-                markets, we focus on delivering consistent quality, reliable supply, and design-forward surfaces that meet
-                international standards. Built around performance, aesthetics, and long-term value, our quartz solutions support
-                modern architecture and interior spaces with confidence-from specification to installation.
-              </p>
+        <div className="relative z-10 max-w-[1400px] mx-auto px-5 md:px-12 lg:px-20 xl:px-32 h-full flex items-center">
+          <motion.div
+            initial={{ opacity: 0, x: -32 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.75, ease: "easeOut" }}
+            className="max-w-2xl"
+          >
+            <div className="flex items-center gap-2 mb-5">
+              <span className="block w-8 h-[2px] bg-[#C9A96E]" />
+              <span className="text-[#C9A96E] text-xs font-bold tracking-[0.2em] uppercase">Our Story</span>
             </div>
-          </div>
-        </motion.div>
+            <h1
+              className="text-4xl md:text-6xl font-bold text-white leading-[1.05] tracking-tight mb-5"
+              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            >
+              About Alfa Ventura
+            </h1>
+            <p className="text-base md:text-lg text-white/80 max-w-lg leading-[1.7]">
+              A USA-based company headquartered in Albuquerque, specializing in premium engineered quartz slabs for
+              residential and commercial projects worldwide.
+            </p>
+          </motion.div>
+        </div>
       </div>
 
+      {/* Who We Are section */}
       <section
         id="about-section"
-        className="py-20 overflow-hidden px-5 md:px-40"
+        className="py-20 md:py-28 px-5 md:px-12 lg:px-20 xl:px-32 bg-[#FDFAF7] overflow-hidden"
       >
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 md:gap-36 items-center">
-          {/* Left Side - Images */}
-          <div className="relative h-[400px] lg:h-[600px]">
-            {/* Main Kitchen Image - Flies in from right */}
-            <div
-              className={`absolute inset-0 transition-all duration-1000 ease-out ${
-                isVisible ? "translate-x-0 opacity-100" : "-translate-x-full opacity-0"
-              }`}
-            >
-              <div className="relative w-full h-full rounded-2xl overflow-hidden shadow-2xl">
-                <Image
-                  src="/about-us-1.jpg"
-                  alt="Modern kitchen with quartz countertops"
-                  fill
-                  className="object-cover"
-                  priority
-                />
-              </div>
-            </div>
-
-            {/* Shipping Container Image - Flies in from left with delay */}
-            <div
-              className={`absolute top-4 right-4 md:-right-20 w-48 h-32 md:w-64 md:h-40 transition-all duration-1000 ease-out delay-500 ${
-                isVisible ? "translate-x-0 opacity-100" : "translate-x-full opacity-0"
-              }`}
-            >
-              <div className="relative w-full h-full rounded-lg overflow-hidden shadow-xl border-4 border-white">
-                <Image
-                  src="/about-us-2.jpg"
-                  alt="Shipping containers"
-                  fill
-                  className="object-cover"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Right Side - Content */}
-          <div
-            className={`space-y-6 transition-all duration-1000 ease-out delay-700 ${
-              isVisible ? "translate-y-0 opacity-100" : "translate-y-10 opacity-0"
-            }`}
+        <div className="max-w-[1400px] mx-auto grid grid-cols-1 lg:grid-cols-2 gap-14 xl:gap-24 items-center">
+          {/* Images */}
+          <motion.div
+            initial={{ opacity: 0, x: -32 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
+            className="relative h-[420px] lg:h-[540px]"
           >
-            {/* Company Name */}
-            <div className="text-sm font-medium text-gray-600 tracking-wider uppercase">About Us</div>
+            <div className="absolute inset-0 rounded-3xl overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.12)]">
+              <Image
+                src="/about-us-1.jpg"
+                alt="Alfa Ventura operations"
+                fill
+                className="object-cover"
+                sizes="(max-width: 1024px) 100vw, 50vw"
+              />
+            </div>
+            <motion.div
+              initial={{ opacity: 0, x: 24 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              transition={{ duration: 0.6, delay: 0.3, ease: "easeOut" }}
+              className="absolute top-4 -right-4 md:-right-10 w-44 h-32 md:w-56 md:h-40 rounded-2xl overflow-hidden shadow-[0_12px_32px_rgba(0,0,0,0.18)] border-[3px] border-white"
+            >
+              <Image
+                src="/about-us-2.jpg"
+                alt="Quartz slab detail"
+                fill
+                className="object-cover"
+                sizes="240px"
+              />
+            </motion.div>
+          </motion.div>
 
-            {/* Main Heading */}
-            <h1 className="text-4xl md:text-3xl lg:text-4xl font-bold text-gray-900 leading-tight">
-              "Building Trust, Quality, <span className="block">And Innovation"</span>
-            </h1>
-
-            {/* Description */}
-            <div className="text-gray-600 text-sm leading-relaxed space-y-4 text-justify">
+          {/* Content */}
+          <motion.div
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-60px" }}
+            transition={{ duration: 0.7, delay: 0.15, ease: "easeOut" }}
+            className="space-y-6"
+          >
+            <span className="section-label">About Us</span>
+            <h2
+              className="text-3xl sm:text-4xl font-bold text-[#1C1917] leading-[1.1] tracking-tight"
+              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            >
+              "Building Trust, Quality,<span className="block text-[#9B7040]">And Innovation"</span>
+            </h2>
+            <div className="text-sm text-[#57534E] leading-[1.8] space-y-4">
               <p>
-                Founded by a single entrepreneur with deep, hands-on knowledge of global construction markets, the company was
-                built on a clear vision-to simplify and strengthen international supply chains through expertise, reliability, and
-                innovation. With experience spanning the U.S., India, and international sourcing networks, the founder brings a
-                comprehensive understanding of materials, manufacturing, and market expectations across regions.
-                <br />
-                <br />
-                Working closely
-                with a trusted network of manufacturers and fabricators worldwide, we source, customize, and deliver high-quality
-                construction materials that meet global standards and exceed client expectations. Our mission is straightforward:
-                make international procurement seamless, responsive, and future-ready. We don't just supply materials-we build
-                long-term partnerships, deliver turnkey solutions, and drive value across the global construction ecosystem.
+                Founded by a single entrepreneur with deep, hands-on knowledge of global construction markets, Alfa Ventura was
+                built on a clear vision — to simplify and strengthen international supply chains through expertise, reliability, and
+                innovation.
+              </p>
+              <p>
+                With experience spanning the U.S., India, and international sourcing networks, the founder brings a comprehensive
+                understanding of materials, manufacturing, and market expectations across regions. Working closely with a trusted
+                network of manufacturers and fabricators worldwide, we source, customize, and deliver high-quality quartz surfaces
+                that meet global standards.
+              </p>
+              <p>
+                Our mission is straightforward: make international procurement seamless, responsive, and future-ready. We
+                don't just supply materials — we build long-term partnerships and drive value across the global construction
+                ecosystem.
               </p>
             </div>
-          </div>
+          </motion.div>
         </div>
       </section>
     </section>

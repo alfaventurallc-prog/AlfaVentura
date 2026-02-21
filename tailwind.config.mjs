@@ -11,15 +11,20 @@ module.exports = {
 	],
 	theme: {
 		extend: {
+			fontFamily: {
+				heading: ['var(--font-jakarta)', 'Plus Jakarta Sans', 'sans-serif'],
+				body: ['var(--font-inter)', 'Inter', 'sans-serif'],
+			},
 			animation: {
 				scroll: 'scroll 80s forwards linear infinite',
-				slideup: 'slideup 1s ease-in-out',
-				slidedown: 'slidedown 1s ease-in-out',
-				slideleft: 'slideleft 1s ease-in-out',
-				slideright: 'slideright 1s ease-in-out',
-				heroslidedown: 'heroslidedown 1s ease-in-out',
+				slideup: 'slideup 0.7s ease-out',
+				slidedown: 'slidedown 0.7s ease-out',
+				slideleft: 'slideleft 0.7s ease-out',
+				slideright: 'slideright 0.7s ease-out',
+				heroslidedown: 'heroslidedown 0.8s ease-out',
 				'accordion-down': 'accordion-down 0.2s ease-out',
-				'accordion-up': 'accordion-up 0.2s ease-out'
+				'accordion-up': 'accordion-up 0.2s ease-out',
+				'fade-in': 'fadeIn 0.5s ease-out',
 			},
 			keyframes: {
 				scroll: {
@@ -29,6 +34,10 @@ module.exports = {
 					to: {
 						transform: 'translate(calc(-50% - 0.5rem))'
 					}
+				},
+				fadeIn: {
+					from: { opacity: '0' },
+					to: { opacity: '1' }
 				},
 				slideup: {
 					from: {
@@ -102,11 +111,20 @@ module.exports = {
 					'50': '#30AF5B',
 					'90': '#292C27'
 				},
+				// Brand color system — derived from Alfa Ventura logo (warm bronze/gold)
 				alfa: {
+					bronze: '#9B7040',       // primary brand — logo color
+					'bronze-light': '#C9A96E', // lighter accent gold
+					'bronze-dark': '#7A5520',  // deep bronze
+					navy: '#1F2A44',           // dark navy (headings, footer)
+					teal: '#13434E',           // secondary dark teal
+					cream: '#FDF8F3',          // warm off-white background
+					'cream-dark': '#F2EAE0',   // slightly deeper warm bg
+					// Legacy aliases kept for backward compat
 					yellow: '#D4AF37',
 					blue: '#1F2A44',
-					gray: '#5B6670',
-					primary: '#13434E'
+					gray: '#6B7280',
+					primary: '#9B7040',
 				},
 				gray: {
 					'10': '#EEEEEE',

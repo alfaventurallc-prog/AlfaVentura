@@ -132,10 +132,10 @@ export default function PrivacyPolicy() {
                 You have the right to access, correct, or delete your personal data, and to withdraw consent at any time. To
                 exercise these rights, email us at{" "}
                 <Link
-                  href="mailto:privacy@alfaventura.com"
+                  href="mailto:info@alfa-ventura.com"
                   className="text-indigo-600 hover:underline"
                 >
-                  privacy@alfaventura.com
+                  info@alfa-ventura.com
                 </Link>
                 .
               </p>
@@ -151,14 +151,14 @@ export default function PrivacyPolicy() {
                 <li>
                   <strong>Email:</strong>{" "}
                   <Link
-                    href="mailto:support@alfaventura.com"
+                    href="mailto:info@alfa-ventura.com"
                     className="text-indigo-600 hover:underline"
                   >
-                    support@alfaventura.com
+                    info@alfa-ventura.com
                   </Link>
                 </li>
                 <li>
-                  <strong>Address:</strong> Billeshwar Tower, Mulund West, Mumbai, Maharashtra 400080, India
+                  <strong>Address:</strong> 1209 Mountain Road Place NE, STE N, Albuquerque, NM 87110, USA
                 </li>
               </ul>
             </section>

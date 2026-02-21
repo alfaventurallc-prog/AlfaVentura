@@ -76,31 +76,31 @@ const AllProductsContent = ({ categories }: AllProductsContentProps) => {
   const totalProducts = categories.reduce((sum, cat) => sum + cat._count.products, 0);
 
   return (
-    <div className="container mx-auto px-4 py-8">
+    <div className="max-w-[1400px] mx-auto px-5 md:px-12 lg:px-20 xl:px-32 py-10">
       {/* Stats Section */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-        <div className="bg-white rounded-lg shadow-sm border p-6 text-center">
-          <div className="text-2xl font-bold text-blue-600">{categories.length}</div>
-          <div className="text-sm text-gray-600">Total Categories</div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="bg-white rounded-xl border border-[#E8DDD0] shadow-sm p-5 text-center">
+          <div className="text-2xl font-bold text-[#9B7040]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{categories.length}</div>
+          <div className="text-xs text-[#6B5E52] mt-1 font-medium uppercase tracking-wide">Total Categories</div>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border p-6 text-center">
-          <div className="text-2xl font-bold text-green-600">{mainCategories.length}</div>
-          <div className="text-sm text-gray-600">Main Categories</div>
+        <div className="bg-white rounded-xl border border-[#E8DDD0] shadow-sm p-5 text-center">
+          <div className="text-2xl font-bold text-[#9B7040]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{mainCategories.length}</div>
+          <div className="text-xs text-[#6B5E52] mt-1 font-medium uppercase tracking-wide">Main Categories</div>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border p-6 text-center">
-          <div className="text-2xl font-bold text-purple-600">
+        <div className="bg-white rounded-xl border border-[#E8DDD0] shadow-sm p-5 text-center">
+          <div className="text-2xl font-bold text-[#9B7040]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
             {categories.reduce((sum, cat) => sum + cat._count.subcategories, 0)}
           </div>
-          <div className="text-sm text-gray-600">Subcategories</div>
+          <div className="text-xs text-[#6B5E52] mt-1 font-medium uppercase tracking-wide">Subcategories</div>
         </div>
-        <div className="bg-white rounded-lg shadow-sm border p-6 text-center">
-          <div className="text-2xl font-bold text-orange-600">{totalProducts}</div>
-          <div className="text-sm text-gray-600">Total Products</div>
+        <div className="bg-white rounded-xl border border-[#E8DDD0] shadow-sm p-5 text-center">
+          <div className="text-2xl font-bold text-[#9B7040]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{totalProducts}</div>
+          <div className="text-xs text-[#6B5E52] mt-1 font-medium uppercase tracking-wide">Total Products</div>
         </div>
       </div>
 
       {/* Filters and Controls */}
-      <div className="bg-white rounded-lg shadow-sm border p-6 mb-8">
+      <div className="bg-white rounded-xl border border-[#E8DDD0] shadow-sm p-5 mb-8">
         <div className="flex flex-col lg:flex-row gap-4 items-start lg:items-center justify-between">
           {/* Search */}
           <div className="relative flex-1 max-w-md">
@@ -109,7 +109,7 @@ const AllProductsContent = ({ categories }: AllProductsContentProps) => {
               placeholder="Search categories..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
+              className="pl-10 input"
             />
           </div>
 
@@ -145,12 +145,12 @@ const AllProductsContent = ({ categories }: AllProductsContentProps) => {
             </Select>
 
             {/* View Mode Toggle */}
-            <div className="flex rounded-lg border">
+            <div className="flex rounded-xl border border-[#E8DDD0] overflow-hidden">
               <Button
                 variant={viewMode === "grid" ? "default" : "ghost"}
                 size="sm"
                 onClick={() => setViewMode("grid")}
-                className="rounded-r-none"
+                className={`rounded-none ${viewMode === "grid" ? "bg-[#9B7040] text-white hover:bg-[#7A5520]" : ""}`}
               >
                 <Grid3X3 className="h-4 w-4" />
               </Button>
@@ -158,7 +158,7 @@ const AllProductsContent = ({ categories }: AllProductsContentProps) => {
                 variant={viewMode === "list" ? "default" : "ghost"}
                 size="sm"
                 onClick={() => setViewMode("list")}
-                className="rounded-l-none"
+                className={`rounded-none ${viewMode === "list" ? "bg-[#9B7040] text-white hover:bg-[#7A5520]" : ""}`}
               >
                 <List className="h-4 w-4" />
               </Button>
@@ -201,8 +201,8 @@ const AllProductsContent = ({ categories }: AllProductsContentProps) => {
 
       {/* Results Summary */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-xl font-semibold text-gray-900">{filteredCategories.length} Categories Found</h2>
-        <div className="text-sm text-gray-600">
+        <h2 className="text-lg font-semibold text-[#1C1917]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{filteredCategories.length} Categories Found</h2>
+        <div className="text-sm text-[#6B5E52]">
           Showing {filteredCategories.length} of {categories.length} categories
         </div>
       </div>

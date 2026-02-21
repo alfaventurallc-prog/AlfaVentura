@@ -195,7 +195,7 @@ export const CategoriesSection = ({ categories, pagination, currentSearch }: Cat
                           {category.name}
                         </div>
                         {category.description && (
-                          <div className="text-sm text-gray-500 truncate w-32 whitespace-pre-line">{category.description}</div>
+                          <div className="text-sm text-gray-500 w-32 line-clamp-1">{category.description}</div>
                         )}
                       </div>
                     </div>

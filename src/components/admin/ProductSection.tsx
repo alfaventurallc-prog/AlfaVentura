@@ -128,7 +128,7 @@ const ProductSection = ({ products, categories }: { products: Product[]; categor
                     )}
                     <div>
                       <div className="text-sm font-medium text-gray-900">{product.title}</div>
-                      <div className="text-sm text-gray-500 truncate w-20 whitespace-pre-line">{product.description}</div>
+                      <div className="text-sm text-gray-500 w-20 line-clamp-1">{product.description}</div>
                     </div>
                   </div>
                 </TableCell>
