@@ -6,30 +6,30 @@ const slides: Slide[] = [
     id: 1,
     // NOTE: Replace /ban2.webp with your preferred "export powerhouse" hero image
     // (e.g., a professional warehouse, cargo ship, or global trade visual)
-    src: "/ban4.png",
-    title: "USA's Building Materials Powerhouse",
-    description:
-      "Partner with Alfa Ventura for world-class engineered quartz surfaces, high-performance SPC flooring, and expertly crafted kitchen countertops — delivering global standards, superior quality, and enduring trust.",
-    buttonText: "Request a Quote",
-    buttonHref: "/contact",
+   src: "/01.png",
+title: "Premium Quartz Surfaces for Exceptional Spaces",
+description:
+  "From luxury residential interiors to large-scale commercial projects, Alfa Ventura delivers engineered quartz slabs, custom countertops, and innovative surface solutions crafted to meet the highest standards of design, durability, and performance.",
+buttonText: "Request a Quote",
+buttonHref: "/contact",
   },
   {
     id: 2,
-    src: "/quartz-multi-exotic.webp",
-    title: "Custom Countertop Solutions",
+    src: "/02.png",
+    title: "Bespoke Countertops. Unmatched Craftsmanship.",
     description:
-      "From kitchen islands to commercial vanities — precision-cut engineered stone countertops, fabricated to exact specifications and polished for seamless, ready-to-install delivery worldwide.",
+      "Expertly fabricated quartz countertops tailored to your exact requirements, combining sophisticated design, precision engineering, and superior performance for modern living spaces.",
     buttonText: "Explore Products",
     buttonHref: "/all-products",
   },
   {
     id: 3,
-    src: "/ban1.webp",
-    title: "Engineered Quartz Slabs",
-    description:
-      "Precision-crafted slabs tailored for kitchens, vanities, and commercial interiors — ready-to-install with polished finishes and consistent quality you can count on.",
-    buttonText: "Contact Us",
-    buttonHref: "/contact",
+src: "/03.png",
+title: "Elevating Interiors with Premium Quartz",
+description:
+  "Expertly engineered quartz slabs featuring exceptional durability, refined aesthetics, and timeless appeal for architects, designers, builders, and homeowners.",
+buttonText: "Contact Us",
+buttonHref: "/contact",
   },
 ];
 
