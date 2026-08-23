@@ -216,7 +216,7 @@ const FeaturesSection = ({ categories }: FeaturesSectionProps) => {
         .slider-container { cursor: grab; user-select: none; -webkit-user-select: none; touch-action: pan-y; }
         .slider-container:active { cursor: grabbing; }
         .slider-container.dragging { cursor: grabbing; }
-        .slider-content { will-change: transform; }
+        .slider-content { will-change: transform; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
         .card-item { pointer-events: auto; }
         .card-item.no-click { pointer-events: none; }
       `}</style>
@@ -265,9 +265,9 @@ const FeaturesSection = ({ categories }: FeaturesSectionProps) => {
           >
             <div
               ref={sliderRef}
-              className="flex w-max slider-content"
+              className="flex slider-content"
               style={{
-                transform: `translateX(${currentTranslate}px)`,
+                transform: `translate3d(${Math.round(currentTranslate)}px, 0, 0)`,
                 transition: isDragging ? "none" : "transform 0.1s ease-out",
               }}
             >
@@ -276,7 +276,7 @@ const FeaturesSection = ({ categories }: FeaturesSectionProps) => {
                   <div
                     key={`${category.name}-${index}`}
                     ref={index === 0 ? firstCardRef : undefined}
-                    className="flex-shrink-0 px-3 w-[92vw] sm:w-[62vw] md:w-[46vw] lg:w-[31vw]"
+                    className="flex-shrink-0 px-3 w-full md:w-1/2 lg:w-1/3"
                   >
                     <motion.div
                       whileHover={{ y: -8 }}
