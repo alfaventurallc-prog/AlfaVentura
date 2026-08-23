@@ -5,6 +5,7 @@ import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "nextjs-toploader/app";
 import { FaLongArrowAltRight } from "react-icons/fa";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import SectionWrapper from "./SectionWrapper";
 import { motion } from "framer-motion";
 import { Category } from "../../types";
@@ -169,6 +170,26 @@ const FeaturesSection = ({ categories }: FeaturesSectionProps) => {
     setIsPlaying(!isPlaying);
   };
 
+  const goNext = () => {
+    if (!itemWidth) return;
+    setIsPlaying(false);
+    setCurrentTranslate((prev) => {
+      const resetPoint = -(categories.length * itemWidth);
+      const newTranslate = prev - itemWidth;
+      return newTranslate <= resetPoint ? 0 : newTranslate;
+    });
+  };
+
+  const goPrev = () => {
+    if (!itemWidth) return;
+    setIsPlaying(false);
+    setCurrentTranslate((prev) => {
+      const resetPoint = -(categories.length * itemWidth);
+      const newTranslate = prev + itemWidth;
+      return newTranslate > 0 ? resetPoint + itemWidth : newTranslate;
+    });
+  };
+
   useEffect(() => {
     const handleGlobalMouseMove = (e: MouseEvent) => {
       if (isDragging) {
@@ -245,6 +266,25 @@ const FeaturesSection = ({ categories }: FeaturesSectionProps) => {
             Discover our comprehensive range of high-quality engineered quartz slabs and stone surfaces.
           </p>
           <p className="text-[#6B7280] text-sm mt-3">💡 Drag to navigate · Click to explore</p>
+
+          <div className="flex md:hidden items-center justify-center gap-4 mt-5">
+            <button
+              type="button"
+              onClick={goPrev}
+              aria-label="Previous"
+              className="w-11 h-11 rounded-full border border-white/15 bg-white/5 text-white flex items-center justify-center active:scale-95 transition-transform"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <button
+              type="button"
+              onClick={goNext}
+              aria-label="Next"
+              className="w-11 h-11 rounded-full border border-white/15 bg-white/5 text-white flex items-center justify-center active:scale-95 transition-transform"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
+          </div>
         </motion.div>
 
         {/* Infinite Slider */}
