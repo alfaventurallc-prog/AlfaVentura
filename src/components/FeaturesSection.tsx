@@ -17,6 +17,7 @@ interface FeaturesSectionProps {
 const FeaturesSection = ({ categories }: FeaturesSectionProps) => {
   const router = useRouter();
   const [isPlaying, setIsPlaying] = useState(true);
+  const [isMobile, setIsMobile] = useState(false);
   const [currentTranslate, setCurrentTranslate] = useState(0);
   const [itemWidth, setItemWidth] = useState(0);
   const [isDragging, setIsDragging] = useState(false);
@@ -46,7 +47,15 @@ const FeaturesSection = ({ categories }: FeaturesSectionProps) => {
   }, [duplicatedCategories.length]);
 
   useEffect(() => {
-    if (!isPlaying || isDragging || !itemWidth) return;
+    const mql = window.matchMedia("(max-width: 767px)");
+    const updateIsMobile = () => setIsMobile(mql.matches);
+    updateIsMobile();
+    mql.addEventListener("change", updateIsMobile);
+    return () => mql.removeEventListener("change", updateIsMobile);
+  }, []);
+
+  useEffect(() => {
+    if (!isPlaying || isDragging || !itemWidth || isMobile) return;
 
     const animate = (currentTime: number) => {
       if (!lastTimeRef.current) lastTimeRef.current = currentTime;
@@ -81,7 +90,7 @@ const FeaturesSection = ({ categories }: FeaturesSectionProps) => {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [isPlaying, isDragging, itemWidth, categories.length]);
+  }, [isPlaying, isDragging, itemWidth, categories.length, isMobile]);
 
   const handleDragStart = (clientX: number) => {
     setIsDragging(true);
