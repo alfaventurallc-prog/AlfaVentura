@@ -47,11 +47,9 @@ const FeaturesSection = ({ categories }: FeaturesSectionProps) => {
   }, [duplicatedCategories.length]);
 
   useEffect(() => {
-    const mql = window.matchMedia("(max-width: 767px)");
-    const updateIsMobile = () => setIsMobile(mql.matches);
-    updateIsMobile();
-    mql.addEventListener("change", updateIsMobile);
-    return () => mql.removeEventListener("change", updateIsMobile);
+    const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
+    setIsMobile(isTouchDevice);
+    if (isTouchDevice) setIsPlaying(false);
   }, []);
 
   useEffect(() => {
@@ -176,6 +174,7 @@ const FeaturesSection = ({ categories }: FeaturesSectionProps) => {
   };
 
   const togglePlayPause = () => {
+    if (isMobile) return;
     setIsPlaying(!isPlaying);
   };
 

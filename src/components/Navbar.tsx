@@ -187,12 +187,14 @@ const Navbar: React.FC = () => {
 
           {/* CTA + Mobile hamburger */}
           <div className="flex items-center gap-3">
-            <Link
-              href="/contact"
-              className="hidden lg:inline-flex btn-primary text-sm px-5 py-2.5"
-            >
-              Get a Quote
-            </Link>
+            <div className="hidden lg:block">
+              <Link
+                href="/contact"
+                className="btn-primary text-sm px-5 py-2.5"
+              >
+                Get a Quote
+              </Link>
+            </div>
 
             <button
               className="lg:hidden p-2 rounded-lg text-[#44403C] hover:bg-[#F5EFE6] transition-colors"
