@@ -24,31 +24,25 @@ const FeaturesSection = ({ categories }: FeaturesSectionProps) => {
   const [draggedDistance, setDraggedDistance] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const sliderRef = useRef<HTMLDivElement>(null);
+  const firstCardRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number>(0);
   const lastTimeRef = useRef<number>(0);
 
   const duplicatedCategories = categories.length ? [...categories, ...categories, ...categories] : [];
 
   useLayoutEffect(() => {
+    if (!duplicatedCategories.length) return;
+
     const updateItemWidth = () => {
-      if (containerRef.current) {
-        const containerWidth = containerRef.current.offsetWidth;
-        let itemsPerView = 3;
-
-        if (containerWidth < 768) {
-          itemsPerView = 1;
-        } else if (containerWidth < 1024) {
-          itemsPerView = 2;
-        }
-
-        setItemWidth(containerWidth / itemsPerView);
+      if (firstCardRef.current) {
+        setItemWidth(firstCardRef.current.getBoundingClientRect().width);
       }
     };
 
     updateItemWidth();
     window.addEventListener("resize", updateItemWidth);
     return () => window.removeEventListener("resize", updateItemWidth);
-  }, []);
+  }, [duplicatedCategories.length]);
 
   useEffect(() => {
     if (!isPlaying || isDragging || !itemWidth) return;
@@ -271,10 +265,9 @@ const FeaturesSection = ({ categories }: FeaturesSectionProps) => {
           >
             <div
               ref={sliderRef}
-              className="flex slider-content"
+              className="flex w-max slider-content"
               style={{
                 transform: `translateX(${currentTranslate}px)`,
-                width: `${duplicatedCategories.length * (itemWidth || 300)}px`,
                 transition: isDragging ? "none" : "transform 0.1s ease-out",
               }}
             >
@@ -282,8 +275,8 @@ const FeaturesSection = ({ categories }: FeaturesSectionProps) => {
                 duplicatedCategories.map((category, index) => (
                   <div
                     key={`${category.name}-${index}`}
-                    className="flex-shrink-0 px-3"
-                    style={{ width: `${itemWidth || 300}px` }}
+                    ref={index === 0 ? firstCardRef : undefined}
+                    className="flex-shrink-0 px-3 w-[92vw] sm:w-[62vw] md:w-[46vw] lg:w-[31vw]"
                   >
                     <motion.div
                       whileHover={{ y: -8 }}
