@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { useRouter } from "nextjs-toploader/app";
@@ -8,10 +8,12 @@ import { FaLongArrowAltRight } from "react-icons/fa";
 import SectionWrapper from "./SectionWrapper";
 import { motion } from "framer-motion";
 import { Category } from "../../types";
-import { getCategories } from "@/actions/categories";
-import LoadingSpinner from "./LoadingSpinner";
 
-const FeaturesSection = () => {
+interface FeaturesSectionProps {
+  categories: Category[];
+}
+
+const FeaturesSection = ({ categories }: FeaturesSectionProps) => {
   const router = useRouter();
   const [isPlaying, setIsPlaying] = useState(true);
   const [currentTranslate, setCurrentTranslate] = useState(0);
@@ -24,39 +26,18 @@ const FeaturesSection = () => {
   const sliderRef = useRef<HTMLDivElement>(null);
   const animationRef = useRef<number>(0);
   const lastTimeRef = useRef<number>(0);
-  const [categories, setCategories] = useState<Category[]>([]);
 
-  const duplicatedCategories = [...categories, ...categories, ...categories];
+  const duplicatedCategories = categories.length ? [...categories, ...categories, ...categories] : [];
 
-  useEffect(() => {
-    const fetchData = async () => {
-      const res = await getCategories({ includeSubcategories: true });
-      if (res.success && res.data) {
-        const filteredCategories = res.data.categories.flatMap((cat) =>
-          cat.subcategories && cat.subcategories.length > 0
-            ? cat.subcategories.map((sub) => ({
-                ...sub,
-                name: `${cat.name} > ${sub.name}`,
-              }))
-            : [cat]
-        );
-
-        // @ts-ignore
-        setCategories(filteredCategories);
-      }
-    };
-    fetchData();
-  }, []);
-
-  useEffect(() => {
+  useLayoutEffect(() => {
     const updateItemWidth = () => {
       if (containerRef.current) {
         const containerWidth = containerRef.current.offsetWidth;
         let itemsPerView = 3;
 
-        if (window.innerWidth < 768) {
+        if (containerWidth < 768) {
           itemsPerView = 1;
-        } else if (window.innerWidth < 1024) {
+        } else if (containerWidth < 1024) {
           itemsPerView = 2;
         }
 
@@ -174,12 +155,10 @@ const FeaturesSection = () => {
   };
 
   const handleTouchStart = (e: React.TouchEvent) => {
-    e.preventDefault();
     handleDragStart(e.touches[0].clientX);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    e.preventDefault();
     handleDragMove(e.touches[0].clientX);
   };
 
@@ -212,7 +191,6 @@ const FeaturesSection = () => {
 
     const handleGlobalTouchMove = (e: TouchEvent) => {
       if (isDragging) {
-        e.preventDefault();
         handleDragMove(e.touches[0].clientX);
       }
     };
@@ -278,7 +256,7 @@ const FeaturesSection = () => {
         {/* Infinite Slider */}
         <div className="relative">
           {!duplicatedCategories.length ? (
-            <div className="flex justify-center py-12"><LoadingSpinner /></div>
+            <p className="text-center text-[#A8A29E] py-12">No categories to show yet.</p>
           ) : null}
 
           <div
@@ -300,7 +278,7 @@ const FeaturesSection = () => {
                 transition: isDragging ? "none" : "transform 0.1s ease-out",
               }}
             >
-              {duplicatedCategories.length &&
+              {duplicatedCategories.length > 0 &&
                 duplicatedCategories.map((category, index) => (
                   <div
                     key={`${category.name}-${index}`}
