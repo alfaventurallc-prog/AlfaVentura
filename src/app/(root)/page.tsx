@@ -3,6 +3,7 @@ import HomeWhoWeAreSection from "@/components/HomeWhoWeAreSection";
 import InstallationFlowSection from "@/components/InstallationFlowSection";
 import FeaturesSection from "../../components/FeaturesSection";
 import Hero from "../../components/Hero";
+import Try3DPromoSection from "@/components/Try3DPromoSection";
 import { getCategories } from "@/actions/categories";
 
 export default async function Home() {
@@ -26,6 +27,7 @@ export default async function Home() {
       <InstallationFlowSection />
       {/* @ts-ignore */}
       <FeaturesSection categories={categories} />
+      <Try3DPromoSection />
       <DownloadBrochureSection />
     </>
   );
