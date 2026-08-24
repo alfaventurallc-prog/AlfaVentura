@@ -12,20 +12,20 @@ const FINISHES = [
   { name: "Multi Exotic", image: "/quartz-multi-exotic.webp" },
 ];
 
-type SceneId = "cabinets" | "quartz-slab-designs" | "vanities" | "fabricated-countertops-vanities";
+type RoomId = "kitchen" | "bathroom";
 
-const SCENES: { id: SceneId; label: string }[] = [
-  { id: "cabinets", label: "Cabinets" },
-  { id: "quartz-slab-designs", label: "Quartz Slab Designs" },
-  { id: "vanities", label: "Vanities" },
-  { id: "fabricated-countertops-vanities", label: "Fabricated Countertops & Vanities" },
+const ROOMS: { id: RoomId; label: string }[] = [
+  { id: "kitchen", label: "Kitchen" },
+  { id: "bathroom", label: "Bathroom" },
 ];
 
 const CABINET_COLOR = "#9B7040";
 const CABINET_DOOR_COLOR = "#7A5520";
-const WALL_COLOR = "#F3EEE5";
+const KITCHEN_WALL_COLOR = "#F3EEE5";
+const BATHROOM_WALL_COLOR = "#E7EEEF";
 const FLOOR_COLOR = "#DDD3C4";
 const METAL_COLOR = "#B8B8B8";
+const PORCELAIN_COLOR = "#FAF8F5";
 
 type Vec3 = [number, number, number];
 
@@ -42,7 +42,14 @@ const CountertopSlab = ({
   texture.colorSpace = THREE.SRGBColorSpace;
 
   return (
-    <RoundedBox args={args} radius={Math.min(0.02, args[1] / 3)} smoothness={4} position={position} castShadow receiveShadow>
+    <RoundedBox
+      args={args}
+      radius={Math.min(0.02, args[1] / 3)}
+      smoothness={4}
+      position={position}
+      castShadow
+      receiveShadow
+    >
       <meshStandardMaterial map={texture} roughness={0.35} metalness={0.15} />
     </RoundedBox>
   );
@@ -57,99 +64,67 @@ const SolidBox = ({ args, position, color = CABINET_COLOR }: { args: Vec3; posit
 
 const Floor = () => (
   <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.06, 0]} receiveShadow>
-    <planeGeometry args={[10, 10]} />
+    <planeGeometry args={[12, 12]} />
     <meshStandardMaterial color={FLOOR_COLOR} roughness={0.95} />
   </mesh>
 );
 
-const BackWall = () => (
-  <mesh position={[0, 0.7, -1.1]}>
-    <planeGeometry args={[6, 3.4]} />
-    <meshStandardMaterial color={WALL_COLOR} roughness={1} />
+const BackWall = ({ color }: { color: string }) => (
+  <mesh position={[0, 0.9, -1.75]}>
+    <planeGeometry args={[7, 4]} />
+    <meshStandardMaterial color={color} roughness={1} />
   </mesh>
 );
 
-const KitchenCabinetsScene = ({ textureUrl }: { textureUrl: string }) => (
-  <group>
-    <Floor />
-    <BackWall />
-    <SolidBox args={[3.2, 0.85, 0.62]} position={[0, -0.425, 0]} />
-    {[-1.05, 0, 1.05].map((x, i) => (
-      <SolidBox key={i} args={[0.95, 0.72, 0.02]} position={[x, -0.425, 0.32]} color={CABINET_DOOR_COLOR} />
-    ))}
-    <CountertopSlab textureUrl={textureUrl} args={[3.36, 0.09, 0.7]} position={[0, 0.045, 0]} />
-    <CountertopSlab textureUrl={textureUrl} args={[3.36, 0.55, 0.05]} position={[0, 0.365, -0.325]} />
-  </group>
+const SideWall = ({ color, x }: { color: string; x: number }) => (
+  <mesh position={[x, 0.9, 0.4]} rotation={[0, Math.PI / 2, 0]}>
+    <planeGeometry args={[4.3, 4]} />
+    <meshStandardMaterial color={color} roughness={1} />
+  </mesh>
 );
 
-const KitchenCounterScene = ({ textureUrl }: { textureUrl: string }) => (
+const KitchenScene = ({ textureUrl }: { textureUrl: string }) => (
   <group>
     <Floor />
-    <BackWall />
-    <SolidBox args={[3.2, 0.85, 0.62]} position={[0, -0.425, 0]} color={CABINET_COLOR} />
-    {[-1.05, 0, 1.05].map((x, i) => (
-      <SolidBox key={i} args={[0.95, 0.72, 0.02]} position={[x, -0.425, 0.32]} color={CABINET_DOOR_COLOR} />
+    <BackWall color={KITCHEN_WALL_COLOR} />
+    <SideWall color={KITCHEN_WALL_COLOR} x={-2.2} />
+
+    {/* base cabinet run */}
+    <SolidBox args={[3.8, 0.85, 0.62]} position={[0.1, -0.425, -1.05]} />
+    {[-1.55, -0.6, 0.35, 1.3].map((x, i) => (
+      <SolidBox key={i} args={[0.85, 0.72, 0.02]} position={[x, -0.425, -0.75]} color={CABINET_DOOR_COLOR} />
     ))}
-    {/* upper cabinets */}
-    <SolidBox args={[3.2, 0.55, 0.3]} position={[0, 1.15, -0.95]} color={CABINET_COLOR} />
-    <CountertopSlab textureUrl={textureUrl} args={[3.36, 0.09, 0.7]} position={[0, 0.045, 0]} />
-    {/* sink cutout hint */}
-    <mesh position={[0, 0.095, 0.05]}>
+    <CountertopSlab textureUrl={textureUrl} args={[3.96, 0.09, 0.7]} position={[0.1, 0.045, -1.05]} />
+
+    {/* upper cabinets + backsplash */}
+    <SolidBox args={[3.8, 0.55, 0.3]} position={[0.1, 1.15, -1.6]} />
+    <CountertopSlab textureUrl={textureUrl} args={[3.96, 0.55, 0.05]} position={[0.1, 0.365, -1.375]} />
+
+    {/* sink cutout */}
+    <mesh position={[0.1, 0.095, -1.0]}>
       <boxGeometry args={[0.55, 0.02, 0.35]} />
       <meshStandardMaterial color="#2B2724" roughness={0.4} />
     </mesh>
-    <CountertopSlab textureUrl={textureUrl} args={[3.36, 0.55, 0.05]} position={[0, 0.365, -0.325]} />
-  </group>
-);
 
-const VanityScene = ({ textureUrl }: { textureUrl: string }) => (
-  <group>
-    <Floor />
-    <BackWall />
-    <SolidBox args={[2.1, 0.78, 0.5]} position={[0, -0.47, 0]} />
-    <SolidBox args={[0.9, 0.66, 0.02]} position={[-0.5, -0.47, 0.26]} color={CABINET_DOOR_COLOR} />
-    <SolidBox args={[0.9, 0.66, 0.02]} position={[0.5, -0.47, 0.26]} color={CABINET_DOOR_COLOR} />
-    <CountertopSlab textureUrl={textureUrl} args={[2.26, 0.09, 0.56]} position={[0, -0.005, 0]} />
-    {/* vessel basin */}
-    <mesh position={[0, 0.13, 0.02]} castShadow receiveShadow>
-      <sphereGeometry args={[0.22, 28, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
-      <meshStandardMaterial color="#FAF8F5" roughness={0.25} side={THREE.DoubleSide} />
-    </mesh>
-    {/* faucet */}
-    <mesh position={[0, 0.42, -0.16]} castShadow>
-      <cylinderGeometry args={[0.02, 0.02, 0.42, 12]} />
-      <meshStandardMaterial color={METAL_COLOR} roughness={0.2} metalness={0.8} />
-    </mesh>
-    <mesh position={[0, 0.61, -0.06]} rotation={[Math.PI / 2.6, 0, 0]} castShadow>
-      <cylinderGeometry args={[0.018, 0.018, 0.22, 12]} />
-      <meshStandardMaterial color={METAL_COLOR} roughness={0.2} metalness={0.8} />
-    </mesh>
-    {/* mirror */}
-    <mesh position={[0, 0.95, -1.08]}>
-      <planeGeometry args={[1.6, 1]} />
-      <meshStandardMaterial color="#DCE7EA" roughness={0.05} metalness={0.3} />
-    </mesh>
-  </group>
-);
+    {/* island */}
+    <SolidBox args={[1.7, 0.85, 0.85]} position={[-0.1, -0.425, 0.55]} />
+    <SolidBox args={[0.75, 0.72, 0.02]} position={[-0.1, -0.425, 0.98]} color={CABINET_DOOR_COLOR} />
+    <CountertopSlab textureUrl={textureUrl} args={[1.86, 0.1, 1.0]} position={[-0.1, 0.05, 0.55]} />
 
-const IslandScene = ({ textureUrl }: { textureUrl: string }) => (
-  <group>
-    <Floor />
-    <BackWall />
-    <SolidBox args={[2.4, 0.85, 1.1]} position={[0, -0.425, 0.4]} />
-    {[-0.75, 0, 0.75].map((x, i) => (
-      <SolidBox key={i} args={[0.7, 0.72, 0.02]} position={[x, -0.425, 0.96]} color={CABINET_DOOR_COLOR} />
-    ))}
-    <CountertopSlab textureUrl={textureUrl} args={[2.6, 0.1, 1.3]} position={[0, 0.05, 0.4]} />
-    {/* simple bar stool */}
-    <group position={[0, -0.65, 1.15]}>
+    {/* bar stool at the island */}
+    <group position={[-0.1, -0.65, 1.25]}>
       <mesh position={[0, 0.35, 0]} castShadow>
-        <cylinderGeometry args={[0.22, 0.22, 0.06, 24]} />
+        <cylinderGeometry args={[0.2, 0.2, 0.06, 24]} />
         <meshStandardMaterial color={CABINET_DOOR_COLOR} roughness={0.5} />
       </mesh>
-      {[[-0.15, -0.15], [0.15, -0.15], [-0.15, 0.15], [0.15, 0.15]].map(([x, z], i) => (
+      {[
+        [-0.14, -0.14],
+        [0.14, -0.14],
+        [-0.14, 0.14],
+        [0.14, 0.14],
+      ].map(([x, z], i) => (
         <mesh key={i} position={[x, 0, z]} castShadow>
-          <cylinderGeometry args={[0.015, 0.015, 0.68, 8]} />
+          <cylinderGeometry args={[0.014, 0.014, 0.68, 8]} />
           <meshStandardMaterial color={METAL_COLOR} roughness={0.3} metalness={0.6} />
         </mesh>
       ))}
@@ -157,53 +132,94 @@ const IslandScene = ({ textureUrl }: { textureUrl: string }) => (
   </group>
 );
 
-const SCENE_COMPONENTS: Record<SceneId, (props: { textureUrl: string }) => React.JSX.Element> = {
-  cabinets: KitchenCabinetsScene,
-  "quartz-slab-designs": KitchenCounterScene,
-  vanities: VanityScene,
-  "fabricated-countertops-vanities": IslandScene,
+const BathroomScene = ({ textureUrl }: { textureUrl: string }) => (
+  <group>
+    <Floor />
+    <BackWall color={BATHROOM_WALL_COLOR} />
+    <SideWall color={BATHROOM_WALL_COLOR} x={-1.7} />
+
+    {/* vanity */}
+    <SolidBox args={[2.1, 0.78, 0.5]} position={[-0.5, -0.47, -1.15]} />
+    <SolidBox args={[0.9, 0.66, 0.02]} position={[-1.0, -0.47, -0.89]} color={CABINET_DOOR_COLOR} />
+    <SolidBox args={[0.9, 0.66, 0.02]} position={[0, -0.47, -0.89]} color={CABINET_DOOR_COLOR} />
+    <CountertopSlab textureUrl={textureUrl} args={[2.26, 0.09, 0.56]} position={[-0.5, -0.005, -1.15]} />
+
+    {/* vessel basin */}
+    <mesh position={[-0.5, 0.13, -1.13]} castShadow receiveShadow>
+      <sphereGeometry args={[0.2, 28, 16, 0, Math.PI * 2, 0, Math.PI / 2]} />
+      <meshStandardMaterial color={PORCELAIN_COLOR} roughness={0.25} side={THREE.DoubleSide} />
+    </mesh>
+
+    {/* faucet */}
+    <mesh position={[-0.5, 0.4, -1.3]} castShadow>
+      <cylinderGeometry args={[0.018, 0.018, 0.4, 12]} />
+      <meshStandardMaterial color={METAL_COLOR} roughness={0.2} metalness={0.8} />
+    </mesh>
+    <mesh position={[-0.5, 0.58, -1.2]} rotation={[Math.PI / 2.6, 0, 0]} castShadow>
+      <cylinderGeometry args={[0.016, 0.016, 0.2, 12]} />
+      <meshStandardMaterial color={METAL_COLOR} roughness={0.2} metalness={0.8} />
+    </mesh>
+
+    {/* mirror */}
+    <mesh position={[-0.5, 0.95, -1.72]}>
+      <planeGeometry args={[1.5, 0.95]} />
+      <meshStandardMaterial color="#DCE7EA" roughness={0.05} metalness={0.3} />
+    </mesh>
+
+    {/* bathtub along the right wall */}
+    <RoundedBox args={[0.8, 0.55, 1.9]} radius={0.08} smoothness={4} position={[1.55, -0.72, 0.1]} castShadow receiveShadow>
+      <meshStandardMaterial color={PORCELAIN_COLOR} roughness={0.3} />
+    </RoundedBox>
+    <RoundedBox args={[0.68, 0.14, 1.76]} radius={0.06} smoothness={4} position={[1.55, -0.48, 0.1]} receiveShadow>
+      <meshStandardMaterial color="#CFE0E4" roughness={0.2} />
+    </RoundedBox>
+  </group>
+);
+
+const ROOM_COMPONENTS: Record<RoomId, (props: { textureUrl: string }) => React.JSX.Element> = {
+  kitchen: KitchenScene,
+  bathroom: BathroomScene,
 };
 
 const Slab3DViewer = () => {
-  const [scene, setScene] = useState<SceneId>("quartz-slab-designs");
+  const [room, setRoom] = useState<RoomId>("kitchen");
   const [finish, setFinish] = useState(FINISHES[0]);
 
-  const SceneComponent = SCENE_COMPONENTS[scene];
+  const RoomComponent = ROOM_COMPONENTS[room];
 
   return (
     <div className="w-full">
       <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
-        {SCENES.map((s) => (
+        {ROOMS.map((r) => (
           <button
-            key={s.id}
+            key={r.id}
             type="button"
-            onClick={() => setScene(s.id)}
-            className={`px-4 py-2 rounded-full text-sm font-semibold border transition-colors ${
-              scene === s.id
+            onClick={() => setRoom(r.id)}
+            className={`px-5 py-2 rounded-full text-sm font-semibold border transition-colors ${
+              room === r.id
                 ? "bg-[#9B7040] text-white border-[#9B7040]"
                 : "bg-white text-[#57534E] border-[#E8DDD0] hover:border-[#9B7040]"
             }`}
           >
-            {s.label}
+            {r.label}
           </button>
         ))}
       </div>
 
-      <div className="relative w-full h-[60vh] min-h-[380px] max-h-[560px] rounded-2xl overflow-hidden bg-[#EDE6DA] border border-[#E8DDD0]">
-        <Canvas shadows camera={{ position: [3.6, 2.1, 3.6], fov: 42 }}>
+      <div className="relative w-full h-[65vh] min-h-[420px] max-h-[600px] rounded-2xl overflow-hidden bg-[#EDE6DA] border border-[#E8DDD0]">
+        <Canvas shadows camera={{ position: [5.2, 2.6, 5.6], fov: 45 }}>
           <ambientLight intensity={0.7} />
           <directionalLight position={[5, 6, 4]} intensity={1.2} castShadow />
           <Suspense fallback={null}>
-            <SceneComponent textureUrl={finish.image} />
+            <RoomComponent textureUrl={finish.image} />
             <Environment preset="apartment" />
           </Suspense>
           <OrbitControls
             enablePan={false}
-            minDistance={2.2}
-            maxDistance={7}
+            minDistance={3}
+            maxDistance={10}
             maxPolarAngle={Math.PI / 2.05}
-            autoRotate
-            autoRotateSpeed={1}
+            autoRotate={false}
           />
         </Canvas>
 
@@ -212,7 +228,10 @@ const Slab3DViewer = () => {
         </p>
       </div>
 
-      <div className="flex flex-wrap items-center justify-center gap-4 mt-6">
+      <p className="text-center text-sm font-semibold text-[#44403C] mt-8 mb-3">
+        Choose a finish to see it installed
+      </p>
+      <div className="flex flex-wrap items-center justify-center gap-4">
         {FINISHES.map((f) => (
           <button
             key={f.name}
