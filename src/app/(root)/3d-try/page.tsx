@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import Slab3DViewer from "@/components/Slab3DViewer";
+import ThreeDTryTabs from "@/components/ThreeDTryTabs";
 
 export const metadata: Metadata = {
   title: "Try Our Quartz in 3D — Alfa Ventura",
@@ -27,7 +27,7 @@ export default function ThreeDTryPage() {
           </p>
         </div>
 
-        <Slab3DViewer />
+        <ThreeDTryTabs />
       </div>
     </section>
   );
