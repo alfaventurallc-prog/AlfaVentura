@@ -16,7 +16,7 @@ const Try3DPromoSection = () => {
             See It Before You Choose It
           </h2>
           <p className="text-[#A8A29E] text-base mb-6 max-w-md mx-auto md:mx-0">
-            Choose a space, an application, and an Alfa Ventura surface to see it applied live.
+            Explore our quartz designs in a real kitchen setting, live.
           </p>
           <Link href="/visualizer" className="btn-primary inline-flex">
             Open Visualizer

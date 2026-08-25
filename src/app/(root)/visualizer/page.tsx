@@ -1,11 +1,10 @@
 import type { Metadata } from "next";
-import VisualizerModeTabs from "@/components/visualizer/VisualizerModeTabs";
+import VisualizerShell from "@/components/visualizer/VisualizerShell";
 import { getProducts } from "@/actions/products";
 
 export const metadata: Metadata = {
-  title: "Alfa Ventura Visualizer",
-  description:
-    "Choose a space, an application, and an Alfa Ventura surface to see it applied live in an interactive 3D preview.",
+  title: "Quartz Visualizer — Alfa Ventura",
+  description: "Explore our quartz designs in a real kitchen setting.",
 };
 
 export default async function VisualizerPage() {
@@ -14,10 +13,9 @@ export default async function VisualizerPage() {
     productsRes.success && productsRes.data
       ? productsRes.data.products
           .filter((p) => p.images && p.images.length > 0)
-          // Only real slab/material designs go in the surface picker --
-          // items from categories like Vanities or Cabinets tend to be
-          // photos of an installed application, not a raw material swatch,
-          // and mixing the two makes the selector read as inconsistent.
+          // Only real slab/material designs belong in the quartz collection --
+          // items from categories like Vanities or Cabinets tend to be photos
+          // of an installed application, not a raw material swatch.
           .filter((p) => /slab|design/i.test(p.category?.name ?? ""))
           .map((p) => ({
             id: p.id,
@@ -33,21 +31,21 @@ export default async function VisualizerPage() {
       <div className="max-w-[1400px] mx-auto">
         <div className="mb-10">
           <span className="inline-block text-xs font-bold tracking-[0.2em] uppercase text-[#9B7040] border-l-[3px] border-[#9B7040] pl-3 mb-4">
-            Alfa Ventura Visualizer
+            Quartz Visualizer
           </span>
           <h1
             className="text-3xl md:text-5xl font-bold text-[#1C1917] leading-tight mb-4"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
-            Visualize Your Surface
+            See It In a Real Kitchen
           </h1>
           <p className="text-[#57534E] text-base md:text-lg max-w-2xl leading-relaxed">
-            See how Alfa Ventura surfaces transform real architectural spaces. Choose a space, an application, and
-            a product to preview it live.
+            Explore our quartz designs in a real kitchen setting — pick a slab below and watch the countertop,
+            island and backsplash change instantly.
           </p>
         </div>
 
-        <VisualizerModeTabs products={products} />
+        <VisualizerShell products={products} />
       </div>
     </section>
   );

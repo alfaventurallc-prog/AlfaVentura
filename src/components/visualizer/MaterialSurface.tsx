@@ -7,7 +7,7 @@ import { generateNormalMapFromImage } from "@/three/generateNormalMap";
 import type { VisualizerProduct } from "../../../types";
 
 export type Vec3 = [number, number, number];
-export type HeroFace = "top" | "front";
+export type HeroFace = "top" | "front" | "side";
 
 const DEFAULT_COLOR = "#EDE8DD";
 const EDGE_COLOR = "#E9E4D8";
@@ -34,7 +34,7 @@ const NeutralFace = ({ args, position, highlighted }: FaceProps) => (
 );
 
 /** Box material-array index for each face: [+X, -X, +Y, -Y, +Z, -Z]. */
-const HERO_INDEX: Record<HeroFace, number> = { top: 2, front: 4 };
+const HERO_INDEX: Record<HeroFace, number> = { top: 2, front: 4, side: 1 };
 
 const TexturedFace = ({
   product,
@@ -54,7 +54,7 @@ const TexturedFace = ({
   // stretching it to fill, so the slab pattern keeps its real proportions.
   const img = texture.image as HTMLImageElement | undefined;
   if (img?.width && img?.height) {
-    const faceWidth = args[0];
+    const faceWidth = heroFace === "side" ? args[2] : args[0];
     const faceHeight = heroFace === "top" ? args[2] : args[1];
     const faceAspect = faceWidth / faceHeight;
     const imageAspect = img.width / img.height;

@@ -5,16 +5,12 @@ import { Canvas } from "@react-three/fiber";
 import { CameraControls, Environment, type CameraControls as CameraControlsImpl } from "@react-three/drei";
 import * as THREE from "three";
 import KitchenScene from "./scenes/KitchenScene";
-import BathroomScene from "./scenes/BathroomScene";
-import PlaceholderScene from "./scenes/PlaceholderScene";
 import VisualizerErrorBoundary from "./VisualizerErrorBoundary";
+import { KITCHEN_CAMERA } from "@/data/scenes";
 import type { VisualizerProduct } from "../../../types";
-import type { SpaceDef } from "@/data/scenes";
 
 interface VisualizerCanvasProps {
-  space: SpaceDef;
-  materials: Record<string, VisualizerProduct | null>;
-  activeApplication: string;
+  product: VisualizerProduct | null;
   lightingMode: "day" | "evening";
   cameraControlsRef: RefObject<CameraControlsImpl | null>;
 }
@@ -28,23 +24,7 @@ const hasWebGL = () => {
   }
 };
 
-const SceneSwitch = ({ space, materials, activeApplication }: Omit<VisualizerCanvasProps, "lightingMode" | "cameraControlsRef">) => {
-  if (space.id === "kitchen") {
-    return <KitchenScene materials={materials} activeApplication={activeApplication} />;
-  }
-  if (space.id === "bathroom") {
-    return <BathroomScene materials={materials} activeApplication={activeApplication} />;
-  }
-  return (
-    <PlaceholderScene
-      applicationId={space.applications[0].id}
-      materials={materials}
-      activeApplication={activeApplication}
-    />
-  );
-};
-
-const VisualizerCanvas = ({ space, materials, activeApplication, lightingMode, cameraControlsRef }: VisualizerCanvasProps) => {
+const VisualizerCanvas = ({ product, lightingMode, cameraControlsRef }: VisualizerCanvasProps) => {
   const [webglOk, setWebglOk] = useState(true);
 
   useEffect(() => {
@@ -68,7 +48,7 @@ const VisualizerCanvas = ({ space, materials, activeApplication, lightingMode, c
       <Canvas
         shadows
         gl={{ toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: isDay ? 0.95 : 0.7 }}
-        camera={{ position: space.cameraPresets.hero.slice(0, 3) as [number, number, number], fov: 40 }}
+        camera={{ position: KITCHEN_CAMERA.hero.slice(0, 3) as [number, number, number], fov: 40 }}
       >
         <ambientLight intensity={isDay ? 0.4 : 0.22} />
         <directionalLight
@@ -87,12 +67,12 @@ const VisualizerCanvas = ({ space, materials, activeApplication, lightingMode, c
         {/* soft fill from the opposite side so shadows don't go pure black */}
         <directionalLight position={[-3, 2, -2]} intensity={isDay ? 0.25 : 0.1} />
         <Suspense fallback={null}>
-          <SceneSwitch space={space} materials={materials} activeApplication={activeApplication} />
+          <KitchenScene product={product} />
           <Environment preset={isDay ? "apartment" : "sunset"} environmentIntensity={isDay ? 0.35 : 0.25} />
         </Suspense>
         <CameraControls
           ref={cameraControlsRef}
-          minDistance={0.5}
+          minDistance={0.9}
           maxDistance={9}
           minPolarAngle={0.15}
           maxPolarAngle={Math.PI / 2.05}

@@ -2,11 +2,8 @@
 
 import type { RefObject } from "react";
 import type { CameraControls as CameraControlsImpl } from "@react-three/drei";
-import type { SpaceDef } from "@/data/scenes";
 
 interface SceneControlsProps {
-  space: SpaceDef;
-  activeApplication: string;
   cameraControlsRef: RefObject<CameraControlsImpl | null>;
   lightingMode: "day" | "evening";
   onLightingChange: (mode: "day" | "evening") => void;
@@ -15,42 +12,16 @@ interface SceneControlsProps {
 const btnClass =
   "px-3 py-1.5 rounded-full text-xs font-semibold border border-white/20 bg-white/80 backdrop-blur-sm text-[#44403C] hover:bg-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9B7040]";
 
-const SceneControls = ({ space, activeApplication, cameraControlsRef, lightingMode, onLightingChange }: SceneControlsProps) => {
-  const goTo = (preset: keyof SpaceDef["cameraPresets"]) => {
-    const [px, py, pz, tx, ty, tz] = space.cameraPresets[preset];
-    cameraControlsRef.current?.setLookAt(px, py, pz, tx, ty, tz, true);
-  };
-
-  const viewDetail = () => {
-    const [tx, ty, tz] = space.surfaceFocus[activeApplication] ?? [0, 0, 0];
-    // close enough that the slab fills most of the frame, angled slightly
-    // above so the surface pattern and edge are both readable
-    cameraControlsRef.current?.setLookAt(tx + 0.4, ty + 0.35, tz + 0.65, tx, ty, tz, true);
-  };
-
+const SceneControls = ({ cameraControlsRef, lightingMode, onLightingChange }: SceneControlsProps) => {
   const reset = () => {
     cameraControlsRef.current?.reset(true);
   };
 
   return (
     <div className="absolute top-3 left-3 right-3 flex flex-wrap items-center justify-between gap-2">
-      <div className="flex flex-wrap gap-1.5">
-        <button type="button" className={btnClass} onClick={() => goTo("front")}>
-          Front
-        </button>
-        <button type="button" className={btnClass} onClick={() => goTo("hero")}>
-          Hero View
-        </button>
-        <button type="button" className={btnClass} onClick={() => goTo("top")}>
-          Top
-        </button>
-        <button type="button" className={btnClass} onClick={viewDetail}>
-          View Detail
-        </button>
-        <button type="button" className={btnClass} onClick={reset}>
-          Reset View
-        </button>
-      </div>
+      <button type="button" className={btnClass} onClick={reset}>
+        Reset View
+      </button>
 
       <div className="flex gap-1.5">
         <button

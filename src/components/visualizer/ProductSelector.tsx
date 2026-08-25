@@ -10,7 +10,6 @@ interface ProductSelectorProps {
 
 const ProductSelector = ({ products, activeProductId, onSelect }: ProductSelectorProps) => (
   <div>
-    <p className="text-xs font-bold tracking-[0.15em] uppercase text-[#78716C] mb-3">03. Select Your Surface</p>
     <div className="flex gap-3 overflow-x-auto pb-2 -mx-1 px-1">
       {products.map((product) => (
         <button
