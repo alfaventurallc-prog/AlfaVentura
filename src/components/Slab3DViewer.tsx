@@ -4,13 +4,7 @@ import { Suspense, useState } from "react";
 import { Canvas } from "@react-three/fiber";
 import { Environment, OrbitControls, RoundedBox, useTexture } from "@react-three/drei";
 import * as THREE from "three";
-
-const FINISHES = [
-  { name: "Calacatta", image: "/quartz-calacatta-series.webp" },
-  { name: "Carrara", image: "/quartz-carrara-series.webp" },
-  { name: "Basic", image: "/quartz-basic-series.webp" },
-  { name: "Multi Exotic", image: "/quartz-multi-exotic.webp" },
-];
+import type { Finish } from "../../types";
 
 type RoomId = "kitchen" | "bathroom";
 
@@ -181,9 +175,9 @@ const ROOM_COMPONENTS: Record<RoomId, (props: { textureUrl: string }) => React.J
   bathroom: BathroomScene,
 };
 
-const Slab3DViewer = () => {
+const Slab3DViewer = ({ finishes }: { finishes: Finish[] }) => {
   const [room, setRoom] = useState<RoomId>("kitchen");
-  const [finish, setFinish] = useState(FINISHES[0]);
+  const [finish, setFinish] = useState(finishes[0]);
 
   const RoomComponent = ROOM_COMPONENTS[room];
 
@@ -229,15 +223,15 @@ const Slab3DViewer = () => {
       </div>
 
       <p className="text-center text-sm font-semibold text-[#44403C] mt-8 mb-3">
-        Choose a finish to see it installed
+        Choose one of your products to see it installed
       </p>
-      <div className="flex flex-wrap items-center justify-center gap-4">
-        {FINISHES.map((f) => (
+      <div className="flex items-center gap-4 overflow-x-auto px-2 pb-2">
+        {finishes.map((f) => (
           <button
             key={f.name}
             type="button"
             onClick={() => setFinish(f)}
-            className="flex flex-col items-center gap-2"
+            className="flex flex-col items-center gap-2 shrink-0"
           >
             <span
               className={`block w-16 h-16 rounded-xl bg-cover bg-center border-2 transition-colors ${
@@ -246,7 +240,7 @@ const Slab3DViewer = () => {
               style={{ backgroundImage: `url(${f.image})` }}
             />
             <span
-              className={`text-xs font-semibold ${
+              className={`text-xs font-semibold text-center max-w-[80px] leading-tight ${
                 finish.name === f.name ? "text-[#9B7040]" : "text-[#57534E]"
               }`}
             >

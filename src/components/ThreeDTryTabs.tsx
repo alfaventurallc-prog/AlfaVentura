@@ -3,10 +3,11 @@
 import { useState } from "react";
 import Slab3DViewer from "./Slab3DViewer";
 import PhotoVisualizer from "./PhotoVisualizer";
+import type { Finish } from "../../types";
 
 type Mode = "3d" | "photo";
 
-const ThreeDTryTabs = () => {
+const ThreeDTryTabs = ({ finishes }: { finishes: Finish[] }) => {
   const [mode, setMode] = useState<Mode>("3d");
 
   return (
@@ -36,7 +37,13 @@ const ThreeDTryTabs = () => {
         </button>
       </div>
 
-      {mode === "3d" ? <Slab3DViewer /> : <PhotoVisualizer />}
+      {finishes.length === 0 ? (
+        <p className="text-center text-[#78716C] py-12">No products available to preview yet.</p>
+      ) : mode === "3d" ? (
+        <Slab3DViewer finishes={finishes} />
+      ) : (
+        <PhotoVisualizer finishes={finishes} />
+      )}
     </div>
   );
 };

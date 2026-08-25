@@ -1,3 +1,8 @@
+export interface Finish {
+  name: string;
+  image: string;
+}
+
 export interface Category {
   _count: {
     products: number;

@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import ThreeDTryTabs from "@/components/ThreeDTryTabs";
+import { getProducts } from "@/actions/products";
 
 export const metadata: Metadata = {
   title: "Try Our Quartz in 3D — Alfa Ventura",
@@ -7,7 +8,15 @@ export const metadata: Metadata = {
     "Explore Alfa Ventura's engineered quartz designs in an interactive 3D viewer — rotate, zoom, and switch between finishes.",
 };
 
-export default function ThreeDTryPage() {
+export default async function ThreeDTryPage() {
+  const productsRes = await getProducts({ limit: 24 });
+  const finishes =
+    productsRes.success && productsRes.data
+      ? productsRes.data.products
+          .filter((p) => p.images && p.images.length > 0)
+          .map((p) => ({ name: p.title, image: p.images[0] }))
+      : [];
+
   return (
     <section className="bg-[#FDFAF7] py-16 md:py-24 px-5 md:px-10 xl:px-16">
       <div className="max-w-[1200px] mx-auto">
@@ -27,7 +36,7 @@ export default function ThreeDTryPage() {
           </p>
         </div>
 
-        <ThreeDTryTabs />
+        <ThreeDTryTabs finishes={finishes} />
       </div>
     </section>
   );
