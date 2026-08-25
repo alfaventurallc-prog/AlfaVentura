@@ -1,8 +1,9 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect, useMemo } from "react";
 import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
+import { generateNormalMapFromImage } from "@/three/generateNormalMap";
 import type { VisualizerProduct } from "../../../types";
 
 export type Vec3 = [number, number, number];
@@ -51,6 +52,21 @@ const TexturedFace = ({
   texture.repeat.set(1, 1);
   texture.needsUpdate = true;
 
+  // Derive a normal map from the product photo itself (no authored normal
+  // map exists for any product) so the polished stone catches light with
+  // real micro-surface variation instead of looking like a flat sticker.
+  const normalMap = useMemo(() => {
+    const img = texture.image as HTMLImageElement | undefined;
+    if (!img || !img.width) return null;
+    try {
+      return generateNormalMapFromImage(img, 0.6);
+    } catch {
+      return null;
+    }
+  }, [texture]);
+
+  useEffect(() => () => normalMap?.dispose(), [normalMap]);
+
   const heroIndex = HERO_INDEX[heroFace];
   const edgeEmissive = highlighted ? HIGHLIGHT_COLOR : "#000000";
   const edgeEmissiveIntensity = highlighted ? 0.08 : 0;
@@ -64,6 +80,8 @@ const TexturedFace = ({
             key={i}
             attach={`material-${i}`}
             map={texture}
+            normalMap={normalMap ?? undefined}
+            normalScale={normalMap ? new THREE.Vector2(0.45, 0.45) : undefined}
             roughness={0.22}
             metalness={0}
             emissive={highlighted ? HIGHLIGHT_COLOR : "#000000"}
