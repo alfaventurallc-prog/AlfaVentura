@@ -1,3 +1,5 @@
+import type { Quad } from "@/three/renderSlabOnImage";
+
 export interface NormalizedPoint {
   x: number;
   y: number;
@@ -5,8 +7,8 @@ export interface NormalizedPoint {
 
 export interface SurfaceArea {
   label: string;
-  /** Exactly 4 quadrilateral corners (normalized 0-1), used for the perspective warp. */
-  corners: [NormalizedPoint, NormalizedPoint, NormalizedPoint, NormalizedPoint];
+  /** One or more quadrilaterals (e.g. island top + front + waterfall side) that all receive the same product. */
+  polygons: Quad[];
 }
 
 export interface ImageScene {
@@ -14,7 +16,7 @@ export interface ImageScene {
   name: string;
   image: string;
   spaceId: string;
-  /** applicationId -> designated area on this photo. */
+  /** applicationId -> designated area(s) on this photo. */
   surfaces: Record<string, SurfaceArea>;
 }
 
@@ -29,11 +31,13 @@ export const IMAGE_SCENES: ImageScene[] = [
     surfaces: {
       island: {
         label: "Kitchen Island",
-        corners: [
-          { x: 0.27, y: 0.66 },
-          { x: 0.61, y: 0.37 },
-          { x: 0.89, y: 0.47 },
-          { x: 0.73, y: 0.79 },
+        polygons: [
+          [
+            { x: 0.27, y: 0.66 },
+            { x: 0.61, y: 0.37 },
+            { x: 0.89, y: 0.47 },
+            { x: 0.73, y: 0.79 },
+          ],
         ],
       },
     },

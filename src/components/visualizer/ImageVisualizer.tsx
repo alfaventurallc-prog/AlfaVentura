@@ -4,7 +4,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { SPACES } from "@/data/scenes";
 import { getImageScenesForSpace } from "@/data/imageScenes";
 import { renderSlabOnImage } from "@/three/renderSlabOnImage";
-import type { Point } from "@/three/homography";
 import SpaceSelector from "./SpaceSelector";
 import ApplicationSelector from "./ApplicationSelector";
 import ProductSelector from "./ProductSelector";
@@ -57,7 +56,7 @@ const ImageVisualizer = ({ products }: ImageVisualizerProps) => {
     Promise.all([loadImage(scene.image), loadImage(selectedProduct.image)])
       .then(([baseImg, slabImg]) => {
         if (cancelled) return;
-        const result = renderSlabOnImage(baseImg, slabImg, surface.corners);
+        const result = renderSlabOnImage(baseImg, slabImg, surface.polygons);
         const canvas = canvasRef.current;
         if (!canvas) return;
         canvas.width = result.width;
@@ -74,8 +73,9 @@ const ImageVisualizer = ({ products }: ImageVisualizerProps) => {
 
   const detailTransform = useMemo(() => {
     if (!detail || !surface) return undefined;
-    const xs = surface.corners.map((c) => c.x);
-    const ys = surface.corners.map((c) => c.y);
+    const allPoints = surface.polygons.flat();
+    const xs = allPoints.map((c) => c.x);
+    const ys = allPoints.map((c) => c.y);
     const minX = Math.min(...xs);
     const maxX = Math.max(...xs);
     const minY = Math.min(...ys);
