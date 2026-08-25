@@ -5,11 +5,9 @@ import { renderSlabOnImage } from "@/three/renderSlabOnImage";
 import type { Point } from "@/three/homography";
 
 const TEST_IMAGES = ["/ban4.png", "/ban1.webp", "/02.png", "/who.webp"];
-const TEST_SLABS = [
-  "/quartz-calacatta-series.webp",
-  "/quartz-carrara-series.webp",
-  "/quartz-basic-series.webp",
-  "/quartz-multi-exotic.webp",
+const FALLBACK_SLABS = [
+  { name: "Calacatta (fallback swatch)", image: "/quartz-calacatta-series.webp" },
+  { name: "Carrara (fallback swatch)", image: "/quartz-carrara-series.webp" },
 ];
 
 const loadImage = (src: string) =>
@@ -21,9 +19,15 @@ const loadImage = (src: string) =>
     img.src = src;
   });
 
-const MaskEditor = () => {
+interface SlabOption {
+  name: string;
+  image: string;
+}
+
+const MaskEditor = ({ slabOptions }: { slabOptions: SlabOption[] }) => {
+  const slabs = slabOptions.length > 0 ? slabOptions : FALLBACK_SLABS;
   const [baseSrc, setBaseSrc] = useState(TEST_IMAGES[0]);
-  const [slabSrc, setSlabSrc] = useState(TEST_SLABS[0]);
+  const [slabSrc, setSlabSrc] = useState(slabs[0].image);
   const [points, setPoints] = useState<Point[]>([]);
   const [showPreview, setShowPreview] = useState(true);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -107,9 +111,9 @@ const MaskEditor = () => {
           ))}
         </select>
         <select value={slabSrc} onChange={(e) => setSlabSrc(e.target.value)} className="bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-sm">
-          {TEST_SLABS.map((src) => (
-            <option key={src} value={src}>
-              {src}
+          {slabs.map((s) => (
+            <option key={s.image} value={s.image}>
+              {s.name}
             </option>
           ))}
         </select>
