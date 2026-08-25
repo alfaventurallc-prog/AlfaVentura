@@ -16,10 +16,10 @@ const Try3DPromoSection = () => {
             See It Before You Choose It
           </h2>
           <p className="text-[#A8A29E] text-base mb-6 max-w-md mx-auto md:mx-0">
-            Rotate, zoom, and compare our quartz finishes in an interactive 3D preview.
+            Choose a space, an application, and an Alfa Ventura surface to see it applied live.
           </p>
-          <Link href="/3d-try" className="btn-primary inline-flex">
-            Try in 3D
+          <Link href="/visualizer" className="btn-primary inline-flex">
+            Open Visualizer
           </Link>
         </div>
         <div className="flex-1 relative w-full h-56 md:h-72">

@@ -8,7 +8,7 @@ import { FaHandshake } from "react-icons/fa";
 export const NAV_LINKS = [
   { href: "/", key: "home", label: "Home" },
   { href: "/about", key: "how_alfa_ventura_works", label: "About Us" },
-  { href: "/3d-try", key: "3d_try", label: "3D Try" },
+  { href: "/visualizer", key: "visualizer", label: "Visualizer" },
   { href: "/contact", key: "contact_us", label: "Contact Us" },
 ];
 

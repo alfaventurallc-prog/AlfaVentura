@@ -1,6 +1,9 @@
-export interface Finish {
+export interface VisualizerProduct {
+  id: string;
+  slug: string;
   name: string;
   image: string;
+  categoryName: string;
 }
 
 export interface Category {
