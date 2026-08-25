@@ -14,6 +14,11 @@ export default async function VisualizerPage() {
     productsRes.success && productsRes.data
       ? productsRes.data.products
           .filter((p) => p.images && p.images.length > 0)
+          // Only real slab/material designs go in the surface picker --
+          // items from categories like Vanities or Cabinets tend to be
+          // photos of an installed application, not a raw material swatch,
+          // and mixing the two makes the selector read as inconsistent.
+          .filter((p) => /slab|design/i.test(p.category?.name ?? ""))
           .map((p) => ({
             id: p.id,
             slug: p.slug,

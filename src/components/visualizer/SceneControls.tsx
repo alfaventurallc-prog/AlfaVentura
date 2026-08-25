@@ -23,8 +23,9 @@ const SceneControls = ({ space, activeApplication, cameraControlsRef, lightingMo
 
   const viewDetail = () => {
     const [tx, ty, tz] = space.surfaceFocus[activeApplication] ?? [0, 0, 0];
-    // camera close and slightly above/front of the surface, looking straight at it
-    cameraControlsRef.current?.setLookAt(tx + 0.55, ty + 0.5, tz + 0.85, tx, ty, tz, true);
+    // close enough that the slab fills most of the frame, angled slightly
+    // above so the surface pattern and edge are both readable
+    cameraControlsRef.current?.setLookAt(tx + 0.4, ty + 0.35, tz + 0.65, tx, ty, tz, true);
   };
 
   const reset = () => {
@@ -37,8 +38,8 @@ const SceneControls = ({ space, activeApplication, cameraControlsRef, lightingMo
         <button type="button" className={btnClass} onClick={() => goTo("front")}>
           Front
         </button>
-        <button type="button" className={btnClass} onClick={() => goTo("perspective")}>
-          Perspective
+        <button type="button" className={btnClass} onClick={() => goTo("hero")}>
+          Hero View
         </button>
         <button type="button" className={btnClass} onClick={() => goTo("top")}>
           Top

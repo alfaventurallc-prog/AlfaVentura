@@ -49,7 +49,29 @@ const TexturedFace = ({
   texture.colorSpace = THREE.SRGBColorSpace;
   texture.wrapS = THREE.ClampToEdgeWrapping;
   texture.wrapT = THREE.ClampToEdgeWrapping;
-  texture.repeat.set(1, 1);
+
+  // Cover-fit: crop the photo to the face's own aspect ratio instead of
+  // stretching it to fill, so the slab pattern keeps its real proportions.
+  const img = texture.image as HTMLImageElement | undefined;
+  if (img?.width && img?.height) {
+    const faceWidth = args[0];
+    const faceHeight = heroFace === "top" ? args[2] : args[1];
+    const faceAspect = faceWidth / faceHeight;
+    const imageAspect = img.width / img.height;
+
+    if (imageAspect > faceAspect) {
+      const repeatX = faceAspect / imageAspect;
+      texture.repeat.set(repeatX, 1);
+      texture.offset.set((1 - repeatX) / 2, 0);
+    } else {
+      const repeatY = imageAspect / faceAspect;
+      texture.repeat.set(1, repeatY);
+      texture.offset.set(0, (1 - repeatY) / 2);
+    }
+  } else {
+    texture.repeat.set(1, 1);
+    texture.offset.set(0, 0);
+  }
   texture.needsUpdate = true;
 
   // Derive a normal map from the product photo itself (no authored normal

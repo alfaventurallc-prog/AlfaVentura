@@ -17,7 +17,7 @@ interface VisualizerShellProps {
 
 const VisualizerShell = ({ products }: VisualizerShellProps) => {
   const [spaceId, setSpaceId] = useState(SPACES[0].id);
-  const [activeApplication, setActiveApplication] = useState(SPACES[0].applications[0].id);
+  const [activeApplication, setActiveApplication] = useState(SPACES[0].defaultApplication);
   const [sceneSelections, setSceneSelections] = useState<Record<string, VisualizerProduct | null>>({});
   const [lastSelectedProduct, setLastSelectedProduct] = useState<VisualizerProduct | null>(null);
   const [lightingMode, setLightingMode] = useState<"day" | "evening">("day");
@@ -35,8 +35,8 @@ const VisualizerShell = ({ products }: VisualizerShellProps) => {
     return result;
   }, [sceneSelections, spaceId, space]);
 
-  const moveCameraTo = (target: (typeof SPACES)[number]) => {
-    const [px, py, pz, tx, ty, tz] = target.cameraPresets.perspective;
+  const moveCamera = (preset: (typeof space.cameraPresets)["hero"]) => {
+    const [px, py, pz, tx, ty, tz] = preset;
     cameraControlsRef.current?.setLookAt(px, py, pz, tx, ty, tz, true);
   };
 
@@ -44,12 +44,14 @@ const VisualizerShell = ({ products }: VisualizerShellProps) => {
     if (newSpaceId === spaceId) return;
     const newSpace = getSpace(newSpaceId);
     setSpaceId(newSpaceId);
-    setActiveApplication(newSpace.applications[0].id);
-    moveCameraTo(newSpace);
+    setActiveApplication(newSpace.defaultApplication);
+    moveCamera(newSpace.cameraPresets.hero);
   };
 
   const handleSelectApplication = (applicationId: string) => {
     setActiveApplication(applicationId);
+    const preset = space.applicationCameras[applicationId];
+    if (preset) moveCamera(preset);
   };
 
   const handleSelectProduct = (product: VisualizerProduct) => {
@@ -67,14 +69,16 @@ const VisualizerShell = ({ products }: VisualizerShellProps) => {
         [`${targetSpaceId}:${targetApplicationId}`]: lastSelectedProduct,
       }));
     }
-    moveCameraTo(targetSpace);
+    moveCamera(targetSpace.applicationCameras[targetApplicationId] ?? targetSpace.cameraPresets.hero);
   };
+
+  const activeSurfaceProduct = materialsForSpace[activeApplication] ?? null;
 
   return (
     <div className="flex flex-col lg:flex-row lg:items-start gap-6 lg:gap-8">
       {/* Center: 3D view + product selector */}
       <div className="order-1 lg:order-2 flex-1 min-w-0 flex flex-col gap-5">
-        <div className="relative w-full h-[58vh] min-h-[400px] max-h-[600px] rounded-2xl overflow-hidden bg-[#EDE6DA] border border-[#E8DDD0]">
+        <div className="relative w-full h-[64vh] min-h-[440px] max-h-[680px] rounded-2xl overflow-hidden bg-[#EDE6DA] border border-[#E8DDD0]">
           <VisualizerCanvas
             space={space}
             materials={materialsForSpace}
@@ -89,8 +93,14 @@ const VisualizerShell = ({ products }: VisualizerShellProps) => {
             lightingMode={lightingMode}
             onLightingChange={setLightingMode}
           />
+          {activeSurfaceProduct && (
+            <div className="absolute bottom-3 left-3 bg-white/90 backdrop-blur-sm rounded-xl px-3.5 py-2 shadow-sm">
+              <p className="text-[10px] font-bold tracking-[0.12em] uppercase text-[#9B7040]">Selected Surface</p>
+              <p className="text-sm font-bold text-[#1C1917] leading-tight">{activeSurfaceProduct.name}</p>
+            </div>
+          )}
           {!space.hasFullScene && (
-            <p className="absolute bottom-3 left-1/2 -translate-x-1/2 text-xs text-[#78716C] bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full">
+            <p className="absolute bottom-3 right-3 text-xs text-[#78716C] bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full">
               Starting scene — full room detail coming soon
             </p>
           )}
@@ -101,7 +111,7 @@ const VisualizerShell = ({ products }: VisualizerShellProps) => {
         ) : (
           <ProductSelector
             products={products}
-            activeProductId={materialsForSpace[activeApplication]?.id ?? null}
+            activeProductId={activeSurfaceProduct?.id ?? null}
             onSelect={handleSelectProduct}
           />
         )}

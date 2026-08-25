@@ -67,13 +67,13 @@ const VisualizerCanvas = ({ space, materials, activeApplication, lightingMode, c
     <VisualizerErrorBoundary>
       <Canvas
         shadows
-        gl={{ toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: isDay ? 1.05 : 0.75 }}
-        camera={{ position: space.cameraPresets.perspective.slice(0, 3) as [number, number, number], fov: 40 }}
+        gl={{ toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: isDay ? 0.95 : 0.7 }}
+        camera={{ position: space.cameraPresets.hero.slice(0, 3) as [number, number, number], fov: 40 }}
       >
-        <ambientLight intensity={isDay ? 0.55 : 0.3} />
+        <ambientLight intensity={isDay ? 0.4 : 0.22} />
         <directionalLight
           position={[3.5, 5, 3]}
-          intensity={isDay ? 2.2 : 0.9}
+          intensity={isDay ? 1.3 : 0.6}
           castShadow
           shadow-mapSize={[2048, 2048]}
           shadow-bias={-0.0004}
@@ -85,10 +85,10 @@ const VisualizerCanvas = ({ space, materials, activeApplication, lightingMode, c
           shadow-camera-far={12}
         />
         {/* soft fill from the opposite side so shadows don't go pure black */}
-        <directionalLight position={[-3, 2, -2]} intensity={isDay ? 0.35 : 0.15} />
+        <directionalLight position={[-3, 2, -2]} intensity={isDay ? 0.25 : 0.1} />
         <Suspense fallback={null}>
           <SceneSwitch space={space} materials={materials} activeApplication={activeApplication} />
-          <Environment preset={isDay ? "apartment" : "sunset"} environmentIntensity={isDay ? 0.6 : 0.4} />
+          <Environment preset={isDay ? "apartment" : "sunset"} environmentIntensity={isDay ? 0.35 : 0.25} />
         </Suspense>
         <CameraControls
           ref={cameraControlsRef}
