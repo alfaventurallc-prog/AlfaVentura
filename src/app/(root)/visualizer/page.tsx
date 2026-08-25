@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import VisualizerShell from "@/components/visualizer/VisualizerShell";
+import VisualizerModeTabs from "@/components/visualizer/VisualizerModeTabs";
 import { getProducts } from "@/actions/products";
 
 export const metadata: Metadata = {
@@ -47,7 +47,7 @@ export default async function VisualizerPage() {
           </p>
         </div>
 
-        <VisualizerShell products={products} />
+        <VisualizerModeTabs products={products} />
       </div>
     </section>
   );
