@@ -84,6 +84,7 @@ const VisualizerShell = ({ products }: VisualizerShellProps) => {
           />
           <SceneControls
             space={space}
+            activeApplication={activeApplication}
             cameraControlsRef={cameraControlsRef}
             lightingMode={lightingMode}
             onLightingChange={setLightingMode}

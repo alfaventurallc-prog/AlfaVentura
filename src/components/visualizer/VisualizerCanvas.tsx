@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState, type RefObject } from "react";
 import { Canvas } from "@react-three/fiber";
 import { CameraControls, Environment, type CameraControls as CameraControlsImpl } from "@react-three/drei";
+import * as THREE from "three";
 import KitchenScene from "./scenes/KitchenScene";
 import BathroomScene from "./scenes/BathroomScene";
 import PlaceholderScene from "./scenes/PlaceholderScene";
@@ -60,22 +61,38 @@ const VisualizerCanvas = ({ space, materials, activeApplication, lightingMode, c
     );
   }
 
+  const isDay = lightingMode === "day";
+
   return (
     <VisualizerErrorBoundary>
-      <Canvas shadows camera={{ position: space.cameraPresets.perspective.slice(0, 3) as [number, number, number], fov: 45 }}>
-        <ambientLight intensity={lightingMode === "day" ? 0.7 : 0.35} />
+      <Canvas
+        shadows
+        gl={{ toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: isDay ? 1.05 : 0.75 }}
+        camera={{ position: space.cameraPresets.perspective.slice(0, 3) as [number, number, number], fov: 40 }}
+      >
+        <ambientLight intensity={isDay ? 0.55 : 0.3} />
         <directionalLight
-          position={[5, 6, 4]}
-          intensity={lightingMode === "day" ? 1.2 : 0.5}
+          position={[3.5, 5, 3]}
+          intensity={isDay ? 2.2 : 0.9}
           castShadow
+          shadow-mapSize={[2048, 2048]}
+          shadow-bias={-0.0004}
+          shadow-camera-left={-4}
+          shadow-camera-right={4}
+          shadow-camera-top={4}
+          shadow-camera-bottom={-4}
+          shadow-camera-near={0.5}
+          shadow-camera-far={12}
         />
+        {/* soft fill from the opposite side so shadows don't go pure black */}
+        <directionalLight position={[-3, 2, -2]} intensity={isDay ? 0.35 : 0.15} />
         <Suspense fallback={null}>
           <SceneSwitch space={space} materials={materials} activeApplication={activeApplication} />
-          <Environment preset={lightingMode === "day" ? "apartment" : "sunset"} />
+          <Environment preset={isDay ? "apartment" : "sunset"} environmentIntensity={isDay ? 0.6 : 0.4} />
         </Suspense>
         <CameraControls
           ref={cameraControlsRef}
-          minDistance={2.2}
+          minDistance={0.5}
           maxDistance={9}
           minPolarAngle={0.15}
           maxPolarAngle={Math.PI / 2.05}

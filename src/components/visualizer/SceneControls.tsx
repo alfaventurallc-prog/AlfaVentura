@@ -6,6 +6,7 @@ import type { SpaceDef } from "@/data/scenes";
 
 interface SceneControlsProps {
   space: SpaceDef;
+  activeApplication: string;
   cameraControlsRef: RefObject<CameraControlsImpl | null>;
   lightingMode: "day" | "evening";
   onLightingChange: (mode: "day" | "evening") => void;
@@ -14,10 +15,16 @@ interface SceneControlsProps {
 const btnClass =
   "px-3 py-1.5 rounded-full text-xs font-semibold border border-white/20 bg-white/80 backdrop-blur-sm text-[#44403C] hover:bg-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9B7040]";
 
-const SceneControls = ({ space, cameraControlsRef, lightingMode, onLightingChange }: SceneControlsProps) => {
+const SceneControls = ({ space, activeApplication, cameraControlsRef, lightingMode, onLightingChange }: SceneControlsProps) => {
   const goTo = (preset: keyof SpaceDef["cameraPresets"]) => {
     const [px, py, pz, tx, ty, tz] = space.cameraPresets[preset];
     cameraControlsRef.current?.setLookAt(px, py, pz, tx, ty, tz, true);
+  };
+
+  const viewDetail = () => {
+    const [tx, ty, tz] = space.surfaceFocus[activeApplication] ?? [0, 0, 0];
+    // camera close and slightly above/front of the surface, looking straight at it
+    cameraControlsRef.current?.setLookAt(tx + 0.55, ty + 0.5, tz + 0.85, tx, ty, tz, true);
   };
 
   const reset = () => {
@@ -35,6 +42,9 @@ const SceneControls = ({ space, cameraControlsRef, lightingMode, onLightingChang
         </button>
         <button type="button" className={btnClass} onClick={() => goTo("top")}>
           Top
+        </button>
+        <button type="button" className={btnClass} onClick={viewDetail}>
+          View Detail
         </button>
         <button type="button" className={btnClass} onClick={reset}>
           Reset View
