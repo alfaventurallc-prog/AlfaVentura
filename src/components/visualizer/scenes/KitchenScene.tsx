@@ -1,5 +1,6 @@
+import * as THREE from "three";
 import { MaterialSurface, SolidBox } from "../MaterialSurface";
-import { BackWall, Floor, SideWall } from "./roomParts";
+import { BackWall, Floor, SideWall, Window } from "./roomParts";
 import type { LayoutId } from "@/data/kitchenCatalog";
 import type { VisualizerProduct } from "../../../../types";
 
@@ -55,6 +56,40 @@ const SinkFaucet = ({ x, z }: { x: number; z: number }) => (
   </>
 );
 
+/** Small warm LED line under the upper cabinets -- reads as ambient task
+ * lighting over the counter, a strong "this is a real kitchen" cue. */
+const UnderCabinetLight = ({ x, z, width }: { x: number; z: number; width: number }) => (
+  <mesh position={[x, 0.86, z]}>
+    <boxGeometry args={[width - 0.1, 0.015, 0.02]} />
+    <meshStandardMaterial color="#FFE9C2" emissive="#FFD9A0" emissiveIntensity={1.4} roughness={0.5} toneMapped={false} />
+  </mesh>
+);
+
+/** A bowl of fruit + cutting board resting on a countertop -- small lived-in
+ * details that make an empty slab read as a used kitchen counter. */
+const CountertopDecor = ({ x, z, topY }: { x: number; z: number; topY: number }) => (
+  <group position={[x, topY, z]}>
+    <mesh position={[-0.05, 0.015, 0]} castShadow>
+      <boxGeometry args={[0.34, 0.02, 0.24]} />
+      <meshStandardMaterial color="#9C7A4D" roughness={0.5} />
+    </mesh>
+    <mesh position={[0.32, 0.045, 0.02]} castShadow>
+      <cylinderGeometry args={[0.11, 0.09, 0.06, 20]} />
+      <meshStandardMaterial color="#EDEAE2" roughness={0.3} />
+    </mesh>
+    {[
+      ["#C9432B", 0.3, 0.09, -0.01],
+      ["#D9A62E", 0.35, 0.095, 0.04],
+      ["#8FA85C", 0.29, 0.095, 0.06],
+    ].map(([color, px, py, pz], i) => (
+      <mesh key={i} position={[Number(px), Number(py), Number(pz)]} castShadow>
+        <sphereGeometry args={[0.045, 14, 14]} />
+        <meshStandardMaterial color={color as string} roughness={0.4} />
+      </mesh>
+    ))}
+  </group>
+);
+
 /** Back-wall run: base cabinets + countertop + upper cabinets + backsplash + sink. */
 const WallRun = ({
   width,
@@ -94,13 +129,32 @@ const WallRun = ({
             <CabinetDoor key={i} x={x} z={z - 0.67} width={doorWidth} y={1.15} height={0.45} color={cabinetColor === DOOR_COLOR ? "#2A241E" : DOOR_COLOR} />
           ))}
           <MaterialSurface product={backsplashProduct} args={[width + 0.16, 0.55, 0.05]} position={[centerX, 0.365, z - 0.325]} heroFace="front" />
+          <UnderCabinetLight x={centerX} z={z - 0.42} width={width} />
         </>
       )}
 
       {withSink && <SinkFaucet x={centerX} z={z + 0.05} />}
+      {withSink && <CountertopDecor x={centerX + width / 2 - 0.55} z={z} topY={0.09} />}
     </group>
   );
 };
+
+const PendantLight = ({ x, z }: { x: number; z: number }) => (
+  <group position={[x, 0, z]}>
+    <mesh position={[0, 1.55, 0]}>
+      <cylinderGeometry args={[0.006, 0.006, 0.7, 6]} />
+      <meshStandardMaterial color="#2A241E" roughness={0.4} />
+    </mesh>
+    <mesh position={[0, 1.16, 0]} castShadow>
+      <cylinderGeometry args={[0.1, 0.13, 0.16, 24, 1, true]} />
+      <meshStandardMaterial color="#2A241E" roughness={0.35} metalness={0.3} side={THREE.DoubleSide} />
+    </mesh>
+    <mesh position={[0, 1.09, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      <circleGeometry args={[0.1, 24]} />
+      <meshStandardMaterial color="#FFE9C2" emissive="#FFD9A0" emissiveIntensity={1.2} toneMapped={false} />
+    </mesh>
+  </group>
+);
 
 const Island = ({ cabinetColor, countertopProduct }: { cabinetColor: string; countertopProduct: VisualizerProduct | null }) => (
   <group>
@@ -111,6 +165,9 @@ const Island = ({ cabinetColor, countertopProduct }: { cabinetColor: string; cou
         outer-face x match the top slab exactly so the two surfaces meet flush
         at the mitre line instead of leaving a visible lip/step. */}
     <MaterialSurface product={countertopProduct} args={[0.06, 0.85, 1.0]} position={[-1.0, -0.425, 0.55]} heroFace="side" />
+    <CountertopDecor x={-0.55} z={0.35} topY={0.1} />
+    <PendantLight x={0.25} z={0.35} />
+    <PendantLight x={-0.5} z={0.35} />
 
     <group position={[-0.1, -0.65, 1.25]}>
       <mesh position={[0, 0.35, 0]} castShadow>
@@ -145,6 +202,7 @@ const KitchenScene = ({
     <Floor color={floorColor} roughness={floorRoughness} />
     <BackWall color={WALL_COLOR} />
     <SideWall color={WALL_COLOR} x={-2.7} />
+    <Window x={-2.68} z={0.6} />
 
     {layout === "island" && (
       <>
