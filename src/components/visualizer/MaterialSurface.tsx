@@ -4,6 +4,7 @@ import { Suspense, useEffect, useMemo } from "react";
 import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { generateNormalMapFromImage } from "@/three/generateNormalMap";
+import { extractAverageColor } from "@/three/extractAverageColor";
 import type { VisualizerProduct } from "../../../types";
 
 export type Vec3 = [number, number, number];
@@ -35,6 +36,17 @@ const NeutralFace = ({ args, position, highlighted }: FaceProps) => (
 
 /** Box material-array index for each face: [+X, -X, +Y, -Y, +Z, -Z]. */
 const HERO_INDEX: Record<HeroFace, number> = { top: 2, front: 4, side: 1 };
+
+/** Darken a "#rrggbb" hex color by the given factor (0-1, lower = darker). */
+const shade = (hex: string, factor: number): string => {
+  const n = parseInt(hex.slice(1), 16);
+  const clamp = (v: number) => Math.max(0, Math.min(255, Math.round(v)));
+  const r = clamp(((n >> 16) & 0xff) * factor);
+  const g = clamp(((n >> 8) & 0xff) * factor);
+  const b = clamp((n & 0xff) * factor);
+  const toHex = (v: number) => v.toString(16).padStart(2, "0");
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+};
 
 const TexturedFace = ({
   product,
@@ -89,6 +101,21 @@ const TexturedFace = ({
 
   useEffect(() => () => normalMap?.dispose(), [normalMap]);
 
+  // The other 5 faces of the box (the slab's edge/cross-section) can't show
+  // the full photo without stretching -- but a flat, unrelated cream tone
+  // there reads as a jarring mismatched seam wherever two edge faces meet at
+  // a corner. Tinting them from the same photo's own average color instead
+  // keeps the edge visually part of the same slab.
+  const edgeColor = useMemo(() => {
+    const img = texture.image as HTMLImageElement | undefined;
+    if (!img?.width) return EDGE_COLOR;
+    try {
+      return shade(extractAverageColor(img), 0.85);
+    } catch {
+      return EDGE_COLOR;
+    }
+  }, [texture]);
+
   const heroIndex = HERO_INDEX[heroFace];
   const edgeEmissive = highlighted ? HIGHLIGHT_COLOR : "#000000";
   const edgeEmissiveIntensity = highlighted ? 0.08 : 0;
@@ -113,8 +140,8 @@ const TexturedFace = ({
           <meshStandardMaterial
             key={i}
             attach={`material-${i}`}
-            color={EDGE_COLOR}
-            roughness={0.45}
+            color={edgeColor}
+            roughness={0.35}
             metalness={0}
             emissive={edgeEmissive}
             emissiveIntensity={edgeEmissiveIntensity}
