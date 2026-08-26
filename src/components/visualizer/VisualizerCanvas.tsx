@@ -68,7 +68,7 @@ const VisualizerCanvas = ({
         ref={canvasRef}
         shadows
         gl={{ toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: isDay ? 0.95 : 0.7, preserveDrawingBuffer: true }}
-        camera={{ position: KITCHEN_CAMERA.hero.slice(0, 3) as [number, number, number], fov: 40 }}
+        camera={{ position: KITCHEN_CAMERA.hero.slice(0, 3) as [number, number, number], fov: 36 }}
       >
         <ambientLight intensity={isDay ? 0.4 : 0.22} />
         <directionalLight

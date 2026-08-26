@@ -8,5 +8,8 @@ export type CameraPreset = [number, number, number, number, number, number];
 export const KITCHEN_CAMERA: {
   hero: CameraPreset;
 } = {
-  hero: [2.9, 1.55, 2.7, -0.3, -0.1, -0.35],
+  // Pulled ~18% closer to the same look-at point (and a slightly tighter FOV
+  // in VisualizerCanvas) than the original preset -- that one left too much
+  // empty floor/wall visible on either side of the counters.
+  hero: [2.32, 1.25, 2.15, -0.3, -0.1, -0.35],
 };
