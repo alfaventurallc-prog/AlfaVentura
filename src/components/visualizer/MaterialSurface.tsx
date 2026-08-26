@@ -154,15 +154,9 @@ export const MaterialSurface = ({
   );
 };
 
-export const SolidBox = ({
-  args,
-  position,
-  color = "#9B7040",
-  roughness = 0.6,
-  metalness = 0,
-}: FaceProps & { color?: string; roughness?: number; metalness?: number }) => (
+export const SolidBox = ({ args, position, color = "#9B7040", roughness = 0.6 }: FaceProps & { color?: string; roughness?: number }) => (
   <mesh position={position} castShadow receiveShadow>
     <boxGeometry args={args} />
-    <meshStandardMaterial color={color} roughness={roughness} metalness={metalness} />
+    <meshStandardMaterial color={color} roughness={roughness} metalness={0} />
   </mesh>
 );
