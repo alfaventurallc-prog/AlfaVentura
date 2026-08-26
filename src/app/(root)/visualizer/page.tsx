@@ -1,30 +1,30 @@
 import type { Metadata } from "next";
 import VisualizerShell from "@/components/visualizer/VisualizerShell";
 import { getProducts } from "@/actions/products";
+import type { VisualizerProduct } from "../../../../types";
 
 export const metadata: Metadata = {
   title: "Quartz Visualizer — Alfa Ventura",
   description: "Explore our quartz designs in a real kitchen setting.",
 };
 
+const toVisualizerProduct = (p: { id: string; slug: string; title: string; images: string[]; category?: { name: string } | null }): VisualizerProduct => ({
+  id: p.id,
+  slug: p.slug,
+  name: p.title,
+  image: p.images[0],
+  categoryName: p.category?.name ?? "Alfa Ventura",
+});
+
 export default async function VisualizerPage() {
-  const productsRes = await getProducts({ limit: 40 });
-  const products =
-    productsRes.success && productsRes.data
-      ? productsRes.data.products
-          .filter((p) => p.images && p.images.length > 0)
-          // Only real slab/material designs belong in the quartz collection --
-          // items from categories like Vanities or Cabinets tend to be photos
-          // of an installed application, not a raw material swatch.
-          .filter((p) => /slab|design/i.test(p.category?.name ?? ""))
-          .map((p) => ({
-            id: p.id,
-            slug: p.slug,
-            name: p.title,
-            image: p.images[0],
-            categoryName: p.category?.name ?? "Alfa Ventura",
-          }))
-      : [];
+  const productsRes = await getProducts({ limit: 60 });
+  const withImages = productsRes.success && productsRes.data ? productsRes.data.products.filter((p) => p.images?.length > 0) : [];
+
+  const cabinetProducts = withImages.filter((p) => /cabinet/i.test(p.category?.name ?? "")).map(toVisualizerProduct);
+  // "Countertop"/"backsplash" both draw from the same real quartz slab
+  // catalog -- one stone family used across multiple applications, same as
+  // how the product photos are already organized in the category.
+  const quartzProducts = withImages.filter((p) => /slab|design/i.test(p.category?.name ?? "")).map(toVisualizerProduct);
 
   return (
     <section className="bg-[#FDFAF7] py-12 md:py-20 px-5 md:px-10 xl:px-16">
@@ -37,15 +37,15 @@ export default async function VisualizerPage() {
             className="text-3xl md:text-5xl font-bold text-[#1C1917] leading-tight mb-4"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
-            See It In a Real Kitchen
+            Design Your Kitchen
           </h1>
           <p className="text-[#57534E] text-base md:text-lg max-w-2xl leading-relaxed">
-            Explore our quartz designs in a real kitchen setting — pick a slab below and watch the countertop,
-            island and backsplash change instantly.
+            Explore our quartz designs in a real kitchen setting — switch the layout, swap cabinets, floors and
+            quartz finishes, and watch it update instantly.
           </p>
         </div>
 
-        <VisualizerShell products={products} />
+        <VisualizerShell cabinetProducts={cabinetProducts} quartzProducts={quartzProducts} />
       </div>
     </section>
   );

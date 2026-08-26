@@ -1,9 +1,9 @@
-const FLOOR_COLOR = "#DDD3C4";
+const DEFAULT_FLOOR_COLOR = "#DDD3C4";
 
-export const Floor = () => (
+export const Floor = ({ color = DEFAULT_FLOOR_COLOR, roughness = 0.95 }: { color?: string; roughness?: number }) => (
   <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.06, 0]} receiveShadow>
     <planeGeometry args={[12, 12]} />
-    <meshStandardMaterial color={FLOOR_COLOR} roughness={0.95} />
+    <meshStandardMaterial color={color} roughness={roughness} />
   </mesh>
 );
 

@@ -7,12 +7,20 @@ import * as THREE from "three";
 import KitchenScene from "./scenes/KitchenScene";
 import VisualizerErrorBoundary from "./VisualizerErrorBoundary";
 import { KITCHEN_CAMERA } from "@/data/scenes";
+import type { LayoutId } from "@/data/kitchenCatalog";
 import type { VisualizerProduct } from "../../../types";
 
 interface VisualizerCanvasProps {
-  product: VisualizerProduct | null;
+  layout: LayoutId;
+  mirrored: boolean;
+  cabinetColor: string;
+  countertopProduct: VisualizerProduct | null;
+  backsplashProduct: VisualizerProduct | null;
+  floorColor: string;
+  floorRoughness: number;
   lightingMode: "day" | "evening";
   cameraControlsRef: RefObject<CameraControlsImpl | null>;
+  canvasRef?: RefObject<HTMLCanvasElement | null>;
 }
 
 const hasWebGL = () => {
@@ -24,7 +32,18 @@ const hasWebGL = () => {
   }
 };
 
-const VisualizerCanvas = ({ product, lightingMode, cameraControlsRef }: VisualizerCanvasProps) => {
+const VisualizerCanvas = ({
+  layout,
+  mirrored,
+  cabinetColor,
+  countertopProduct,
+  backsplashProduct,
+  floorColor,
+  floorRoughness,
+  lightingMode,
+  cameraControlsRef,
+  canvasRef,
+}: VisualizerCanvasProps) => {
   const [webglOk, setWebglOk] = useState(true);
 
   useEffect(() => {
@@ -46,8 +65,9 @@ const VisualizerCanvas = ({ product, lightingMode, cameraControlsRef }: Visualiz
   return (
     <VisualizerErrorBoundary>
       <Canvas
+        ref={canvasRef}
         shadows
-        gl={{ toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: isDay ? 0.95 : 0.7 }}
+        gl={{ toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: isDay ? 0.95 : 0.7, preserveDrawingBuffer: true }}
         camera={{ position: KITCHEN_CAMERA.hero.slice(0, 3) as [number, number, number], fov: 40 }}
       >
         <ambientLight intensity={isDay ? 0.4 : 0.22} />
@@ -67,7 +87,15 @@ const VisualizerCanvas = ({ product, lightingMode, cameraControlsRef }: Visualiz
         {/* soft fill from the opposite side so shadows don't go pure black */}
         <directionalLight position={[-3, 2, -2]} intensity={isDay ? 0.25 : 0.1} />
         <Suspense fallback={null}>
-          <KitchenScene product={product} />
+          <KitchenScene
+            layout={layout}
+            mirrored={mirrored}
+            cabinetColor={cabinetColor}
+            countertopProduct={countertopProduct}
+            backsplashProduct={backsplashProduct}
+            floorColor={floorColor}
+            floorRoughness={floorRoughness}
+          />
           <Environment preset={isDay ? "apartment" : "sunset"} environmentIntensity={isDay ? 0.35 : 0.25} />
         </Suspense>
         <CameraControls
