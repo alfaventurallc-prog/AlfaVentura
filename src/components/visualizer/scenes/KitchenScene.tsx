@@ -107,8 +107,10 @@ const Island = ({ cabinetColor, countertopProduct }: { cabinetColor: string; cou
     <SolidBox args={[1.7, 0.85, 0.85]} position={[-0.1, -0.425, 0.55]} color={cabinetColor} roughness={0.55} />
     <CabinetDoor x={-0.1} z={0.965} width={0.72} color={cabinetColor === DOOR_COLOR ? "#2A241E" : DOOR_COLOR} />
     <MaterialSurface product={countertopProduct} args={[1.86, 0.1, 1.0]} position={[-0.1, 0.05, 0.55]} heroFace="top" />
-    {/* waterfall side -- the same slab continuing down the left end */}
-    <MaterialSurface product={countertopProduct} args={[0.06, 0.85, 0.9]} position={[-0.98, -0.425, 0.55]} heroFace="side" />
+    {/* waterfall side -- the same slab continuing down the left end. Depth and
+        outer-face x match the top slab exactly so the two surfaces meet flush
+        at the mitre line instead of leaving a visible lip/step. */}
+    <MaterialSurface product={countertopProduct} args={[0.06, 0.85, 1.0]} position={[-1.0, -0.425, 0.55]} heroFace="side" />
 
     <group position={[-0.1, -0.65, 1.25]}>
       <mesh position={[0, 0.35, 0]} castShadow>
@@ -142,7 +144,7 @@ const KitchenScene = ({
   <group scale={[mirrored ? -1 : 1, 1, 1]}>
     <Floor color={floorColor} roughness={floorRoughness} />
     <BackWall color={WALL_COLOR} />
-    <SideWall color={WALL_COLOR} x={-2.2} />
+    <SideWall color={WALL_COLOR} x={-2.7} />
 
     {layout === "island" && (
       <>
@@ -168,8 +170,11 @@ const KitchenScene = ({
           countertopProduct={countertopProduct}
           backsplashProduct={backsplashProduct}
         />
-        {/* perpendicular return along the left wall, forming the L */}
-        <group position={[-1.9, 0, -0.15]} rotation={[0, Math.PI / 2, 0]}>
+        {/* perpendicular return along the left wall, forming the L. Positioned
+            so its countertop footprint sits just short of the main run's
+            countertop edge -- the two used to overlap in 3D, which z-fought
+            and looked like a broken, messy seam at the inside corner. */}
+        <group position={[-2.27, 0, -0.15]} rotation={[0, Math.PI / 2, 0]}>
           <WallRun
             width={1.7}
             centerX={0}

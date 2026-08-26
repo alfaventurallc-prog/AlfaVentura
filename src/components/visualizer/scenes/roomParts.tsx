@@ -16,7 +16,7 @@ export const BackWall = ({ color }: { color: string }) => (
 
 export const SideWall = ({ color, x }: { color: string; x: number }) => (
   <mesh position={[x, 0.9, 0.4]} rotation={[0, Math.PI / 2, 0]}>
-    <planeGeometry args={[4.3, 4]} />
+    <planeGeometry args={[5.3, 4]} />
     <meshStandardMaterial color={color} roughness={1} />
   </mesh>
 );
