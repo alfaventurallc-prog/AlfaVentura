@@ -42,7 +42,7 @@ const CabinetDoor = ({
 /** Stainless-steel, French-door style fridge -- a tall body plus a thin
  * centre seam and two vertical bar handles so it clearly reads as a fridge
  * rather than a plain box. */
-const Fridge = ({ x, z }: { x: number; z: number }) => {
+const Fridge = ({ x, z, facing = 0 }: { x: number; z: number; facing?: number }) => {
   const width = 0.9;
   const depth = 0.72;
   const height = 1.95;
@@ -50,15 +50,15 @@ const Fridge = ({ x, z }: { x: number; z: number }) => {
   const topY = -0.85 + height;
 
   return (
-    <group>
-      <SolidBox args={[width, height, depth]} position={[x, bodyY, z]} color="#C7CBCE" roughness={0.35} metalness={0.55} />
+    <group position={[x, 0, z]} rotation={[0, facing, 0]}>
+      <SolidBox args={[width, height, depth]} position={[0, bodyY, 0]} color="#C7CBCE" roughness={0.35} metalness={0.55} />
       {/* seam between the two French doors */}
-      <SolidBox args={[0.01, height - 0.06, 0.01]} position={[x, bodyY, z + depth / 2 + 0.005]} color="#8E9296" roughness={0.4} metalness={0.4} />
+      <SolidBox args={[0.01, height - 0.06, 0.01]} position={[0, bodyY, depth / 2 + 0.005]} color="#8E9296" roughness={0.4} metalness={0.4} />
       {/* door handles */}
-      <SolidBox args={[0.02, height * 0.55, 0.03]} position={[x - width * 0.14, bodyY + 0.05, z + depth / 2 + 0.02]} color="#5B5F63" roughness={0.25} metalness={0.6} />
-      <SolidBox args={[0.02, height * 0.55, 0.03]} position={[x + width * 0.14, bodyY + 0.05, z + depth / 2 + 0.02]} color="#5B5F63" roughness={0.25} metalness={0.6} />
+      <SolidBox args={[0.02, height * 0.55, 0.03]} position={[-width * 0.14, bodyY + 0.05, depth / 2 + 0.02]} color="#5B5F63" roughness={0.25} metalness={0.6} />
+      <SolidBox args={[0.02, height * 0.55, 0.03]} position={[width * 0.14, bodyY + 0.05, depth / 2 + 0.02]} color="#5B5F63" roughness={0.25} metalness={0.6} />
       {/* slim top trim so it reads as built-in rather than a floating box */}
-      <SolidBox args={[width + 0.02, 0.02, depth + 0.02]} position={[x, topY - 0.01, z]} color="#B3B7BA" roughness={0.3} metalness={0.5} />
+      <SolidBox args={[width + 0.02, 0.02, depth + 0.02]} position={[0, topY - 0.01, 0]} color="#B3B7BA" roughness={0.3} metalness={0.5} />
     </group>
   );
 };
@@ -227,8 +227,11 @@ const KitchenScene = ({
     <BackWall color={WALL_COLOR} />
     <SideWall color={WALL_COLOR} x={-2.7} />
     <Window x={-2.68} z={0.6} />
-    {/* free-standing fridge just past the main run's right end, on every layout */}
-    <Fridge x={2.55} z={-1.05} />
+    {/* free-standing fridge along the side wall, clear of the island/L-shape
+        return leg footprint and positioned so it actually sits inside the
+        default camera frame (the earlier spot past the main run's right end
+        was outside the view frustum entirely). */}
+    <Fridge x={-2.15} z={1.35} facing={Math.PI / 2} />
 
     {layout === "island" && (
       <>
