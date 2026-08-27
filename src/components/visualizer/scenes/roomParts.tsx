@@ -1,7 +1,11 @@
 const DEFAULT_FLOOR_COLOR = "#DDD3C4";
 
 export const Floor = ({ color = DEFAULT_FLOOR_COLOR, roughness = 0.95 }: { color?: string; roughness?: number }) => (
-  <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.06, 0]} receiveShadow>
+  // Matches the cabinet/appliance bottom convention used throughout
+  // KitchenScene (base boxes bottom out at y=-0.85) -- it used to sit 0.21
+  // lower than that, leaving every cabinet/fridge visibly floating above
+  // the floor instead of resting on it.
+  <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.85, 0]} receiveShadow>
     <planeGeometry args={[12, 12]} />
     <meshStandardMaterial color={color} roughness={roughness} />
   </mesh>
