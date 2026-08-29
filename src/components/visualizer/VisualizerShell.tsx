@@ -58,6 +58,9 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
   // Image Kitchen "Layout B") sharing one product/material config above.
   const [mode, setMode] = useState<"3d" | "image">("3d");
   const [imageView, setImageView] = useState<ImageView>("primary");
+  const [imageLightboxOpen, setImageLightboxOpen] = useState(false);
+  const [surfaceSearch, setSurfaceSearch] = useState("");
+  const surfaceCarouselRef = useRef<HTMLDivElement | null>(null);
 
   const cameraControlsRef = useRef<CameraControlsImpl | null>(null);
   const imageCameraControlsRef = useRef<CameraControlsImpl | null>(null);
@@ -66,6 +69,15 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
   const imageCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const { favorites, isFavorite, toggleFavorite } = useFavorites();
+
+  useEffect(() => {
+    if (!imageLightboxOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setImageLightboxOpen(false);
+    };
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [imageLightboxOpen]);
 
   // Restore a shared/deep-linked configuration from the URL on first load
   useEffect(() => {
@@ -176,7 +188,10 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
             <button
               key={m}
               type="button"
-              onClick={() => setMode(m)}
+              onClick={() => {
+                setMode(m);
+                if (m === "3d") setImageLightboxOpen(false);
+              }}
               className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wide transition-colors ${
                 mode === m ? "bg-[#1C1917] text-white" : "bg-[#F5F1EA] text-[#78716C] hover:bg-[#EDE6DA]"
               }`}
@@ -211,7 +226,11 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
 
         <div
           ref={canvasContainerRef}
-          className="relative w-full h-[64vh] min-h-[440px] max-h-[680px] rounded-2xl overflow-hidden bg-[#EDE6DA] border border-[#E8DDD0]"
+          className={
+            imageLightboxOpen
+              ? "fixed inset-0 z-50 w-screen h-screen rounded-none bg-[#EDE6DA]"
+              : "relative w-full h-[64vh] min-h-[440px] max-h-[680px] rounded-2xl overflow-hidden bg-[#EDE6DA] border border-[#E8DDD0]"
+          }
         >
           {mode === "3d" ? (
             <>
@@ -266,10 +285,44 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
                     </button>
                   ))}
                 </div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-[#78716C] bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/20">
-                  Image Kitchen
-                </p>
+                <button
+                  type="button"
+                  onClick={() => setImageLightboxOpen((v) => !v)}
+                  className="text-xs font-semibold uppercase tracking-wide text-[#44403C] bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/20 hover:bg-white transition-colors"
+                >
+                  {imageLightboxOpen ? "Close ✕" : "Click to Expand"}
+                </button>
               </div>
+
+              {imageLightboxOpen && (
+                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const views: ImageView[] = ["primary", "full", "detail"];
+                      setImageView(views[(views.indexOf(imageView) + views.length - 1) % views.length]);
+                    }}
+                    className="w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm border border-white/20 hover:bg-white transition-colors flex items-center justify-center text-sm font-bold"
+                    aria-label="Previous view"
+                  >
+                    ←
+                  </button>
+                  <span className="text-xs font-semibold uppercase tracking-wide text-[#44403C] bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/20">
+                    {IMAGE_VIEW_LABELS[imageView]}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const views: ImageView[] = ["primary", "full", "detail"];
+                      setImageView(views[(views.indexOf(imageView) + 1) % views.length]);
+                    }}
+                    className="w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm border border-white/20 hover:bg-white transition-colors flex items-center justify-center text-sm font-bold"
+                    aria-label="Next view"
+                  >
+                    →
+                  </button>
+                </div>
+              )}
             </>
           )}
         </div>
@@ -357,6 +410,59 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
           </div>
         )}
 
+        {mode === "image" && (
+          <div>
+            <span className="text-xs font-bold uppercase tracking-wide text-[#78716C] block mb-2">Select Surface</span>
+            <input
+              type="text"
+              value={surfaceSearch}
+              onChange={(e) => setSurfaceSearch(e.target.value)}
+              placeholder="Search surfaces..."
+              className="w-full mb-3 px-3 py-2 rounded-lg border border-[#E8DDD0] text-sm text-[#1C1917] placeholder:text-[#A8A29E] focus:outline-none focus:border-[#9B7040]"
+            />
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => surfaceCarouselRef.current?.scrollBy({ left: -300, behavior: "smooth" })}
+                aria-label="Scroll surfaces left"
+                className="shrink-0 w-8 h-8 rounded-full border border-[#E8DDD0] text-[#44403C] hover:border-[#9B7040] transition-colors flex items-center justify-center"
+              >
+                ←
+              </button>
+              <div ref={surfaceCarouselRef} className="flex-1 min-w-0">
+                {(() => {
+                  const filtered = quartzProducts.filter(
+                    (p) =>
+                      !surfaceSearch.trim() ||
+                      p.name.toLowerCase().includes(surfaceSearch.toLowerCase()) ||
+                      p.categoryName.toLowerCase().includes(surfaceSearch.toLowerCase())
+                  );
+                  return filtered.length === 0 ? (
+                    <p className="text-sm text-[#78716C] py-4 text-center">No surfaces match your search.</p>
+                  ) : (
+                    <MaterialCategorySelector
+                      items={filtered.map(toSwatch)}
+                      activeId={config.countertopId}
+                      onSelect={(id) => setConfig((prev) => ({ ...prev, countertopId: id, backsplashId: id }))}
+                      isFavorite={(id) => isFavorite({ category: "countertop", productId: id })}
+                      onToggleFavorite={(id) => toggleFavorite({ category: "countertop", productId: id })}
+                    />
+                  );
+                })()}
+              </div>
+              <button
+                type="button"
+                onClick={() => surfaceCarouselRef.current?.scrollBy({ left: 300, behavior: "smooth" })}
+                aria-label="Scroll surfaces right"
+                className="shrink-0 w-8 h-8 rounded-full border border-[#E8DDD0] text-[#44403C] hover:border-[#9B7040] transition-colors flex items-center justify-center"
+              >
+                →
+              </button>
+            </div>
+          </div>
+        )}
+
+        {mode === "3d" && (
         <div>
           <span className="text-xs font-bold uppercase tracking-wide text-[#78716C] block mb-2">Application</span>
           <div className="flex gap-1.5 mb-3 overflow-x-auto">
@@ -390,6 +496,7 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
             />
           )}
         </div>
+        )}
       </div>
 
       <div className="lg:w-[320px] lg:shrink-0 lg:pl-6 lg:border-l lg:border-[#E8DDD0] space-y-6">

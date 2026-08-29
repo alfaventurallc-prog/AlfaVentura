@@ -4,7 +4,7 @@ import { getProducts } from "@/actions/products";
 import type { VisualizerProduct } from "../../../../types";
 
 export const metadata: Metadata = {
-  title: "Quartz Visualizer — Alfa Ventura",
+  title: "Virtual Kitchen Design Tool — Alfa Ventura",
   description: "Explore our quartz designs in a real kitchen setting.",
 };
 
@@ -31,13 +31,13 @@ export default async function VisualizerPage() {
       <div className="max-w-[1400px] mx-auto">
         <div className="mb-10">
           <span className="inline-block text-xs font-bold tracking-[0.2em] uppercase text-[#9B7040] border-l-[3px] border-[#9B7040] pl-3 mb-4">
-            Quartz Visualizer
+            Alfa Ventura
           </span>
           <h1
             className="text-3xl md:text-5xl font-bold text-[#1C1917] leading-tight mb-4"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
-            Design Your Kitchen
+            Virtual Kitchen Design Tool
           </h1>
           <p className="text-[#57534E] text-base md:text-lg max-w-2xl leading-relaxed">
             Explore our quartz designs in a real kitchen setting — switch the layout, swap cabinets, floors and

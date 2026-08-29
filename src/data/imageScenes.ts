@@ -17,7 +17,7 @@ export const IMAGE_CAMERAS: Record<ImageView, CameraPreset> = {
 };
 
 export const IMAGE_VIEW_LABELS: Record<ImageView, string> = {
-  primary: "Primary",
-  full: "Full Kitchen",
-  detail: "Detail",
+  primary: "Material View",
+  full: "Full Kitchen View",
+  detail: "Detail View",
 };
