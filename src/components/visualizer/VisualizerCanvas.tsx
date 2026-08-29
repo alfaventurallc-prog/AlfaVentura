@@ -21,6 +21,7 @@ interface VisualizerCanvasProps {
   floorRoughness: number;
   waterfall: WaterfallOption;
   thicknessMm: ThicknessMm;
+  veinRotation: 0 | 90;
   lightingMode: "day" | "evening";
   cameraControlsRef: RefObject<CameraControlsImpl | null>;
   canvasRef?: RefObject<HTMLCanvasElement | null>;
@@ -45,6 +46,7 @@ const VisualizerCanvas = ({
   floorRoughness,
   waterfall,
   thicknessMm,
+  veinRotation,
   lightingMode,
   cameraControlsRef,
   canvasRef,
@@ -102,6 +104,7 @@ const VisualizerCanvas = ({
             floorRoughness={floorRoughness}
             waterfall={waterfall}
             thicknessMm={thicknessMm}
+            veinRotation={veinRotation}
           />
           <Environment preset={isDay ? "apartment" : "sunset"} environmentIntensity={isDay ? 0.35 : 0.25} />
         </Suspense>

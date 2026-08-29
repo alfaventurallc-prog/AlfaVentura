@@ -20,6 +20,7 @@ interface KitchenSceneProps {
   floorRoughness: number;
   waterfall: WaterfallOption;
   thicknessMm: ThicknessMm;
+  veinRotation: 0 | 90;
 }
 
 const CabinetDoor = ({
@@ -129,6 +130,7 @@ const WallRun = ({
   withUpper = true,
   withSink = true,
   thicknessMm = 20,
+  veinRotation = 0,
 }: {
   width: number;
   centerX: number;
@@ -139,6 +141,7 @@ const WallRun = ({
   withUpper?: boolean;
   withSink?: boolean;
   thicknessMm?: ThicknessMm;
+  veinRotation?: 0 | 90;
 }) => {
   const doorCount = Math.max(2, Math.round(width / 0.95));
   const doorWidth = width / doorCount - 0.1;
@@ -159,6 +162,7 @@ const WallRun = ({
         args={[width + 0.16, slabHeight, 0.7]}
         position={[centerX, topY - slabHeight / 2, z]}
         heroFace="top"
+        veinRotationDeg={veinRotation}
       />
 
       {withUpper && (
@@ -200,11 +204,13 @@ const Island = ({
   countertopProduct,
   waterfall,
   thicknessMm = 20,
+  veinRotation = 0,
 }: {
   cabinetColor: string;
   countertopProduct: VisualizerProduct | null;
   waterfall: WaterfallOption;
   thicknessMm?: ThicknessMm;
+  veinRotation?: 0 | 90;
 }) => {
   const topY = 0.1;
   const scale = thicknessScale(thicknessMm);
@@ -224,6 +230,7 @@ const Island = ({
         args={[1.86, slabHeight, 1.0]}
         position={[-0.1, topY - slabHeight / 2, 0.55]}
         heroFace="top"
+        veinRotationDeg={veinRotation}
       />
       {/* waterfall edges -- the same slab continuing down the selected end(s).
           Depth and outer-face x match the top slab exactly so the two surfaces
@@ -281,6 +288,7 @@ const KitchenScene = ({
   floorRoughness,
   waterfall,
   thicknessMm,
+  veinRotation,
 }: KitchenSceneProps) => (
   <group scale={[mirrored ? -1 : 1, 1, 1]}>
     <Floor color={floorColor} roughness={floorRoughness} />
@@ -303,8 +311,15 @@ const KitchenScene = ({
           countertopProduct={countertopProduct}
           backsplashProduct={backsplashProduct}
           thicknessMm={thicknessMm}
+          veinRotation={veinRotation}
         />
-        <Island cabinetColor={cabinetColor} countertopProduct={countertopProduct} waterfall={waterfall} thicknessMm={thicknessMm} />
+        <Island
+          cabinetColor={cabinetColor}
+          countertopProduct={countertopProduct}
+          waterfall={waterfall}
+          thicknessMm={thicknessMm}
+          veinRotation={veinRotation}
+        />
       </>
     )}
 
@@ -318,6 +333,7 @@ const KitchenScene = ({
           countertopProduct={countertopProduct}
           backsplashProduct={backsplashProduct}
           thicknessMm={thicknessMm}
+          veinRotation={veinRotation}
         />
         {/* perpendicular return along the left wall, forming the L. Positioned
             so its countertop footprint sits just short of the main run's
@@ -334,6 +350,7 @@ const KitchenScene = ({
             withUpper={false}
             withSink={false}
             thicknessMm={thicknessMm}
+            veinRotation={veinRotation}
           />
         </group>
       </>
@@ -349,6 +366,7 @@ const KitchenScene = ({
           countertopProduct={countertopProduct}
           backsplashProduct={backsplashProduct}
           thicknessMm={thicknessMm}
+          veinRotation={veinRotation}
         />
         <WallRun
           width={3.4}
@@ -360,6 +378,7 @@ const KitchenScene = ({
           withUpper={false}
           withSink={false}
           thicknessMm={thicknessMm}
+          veinRotation={veinRotation}
         />
       </>
     )}

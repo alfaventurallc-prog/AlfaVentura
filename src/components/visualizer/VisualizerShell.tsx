@@ -35,6 +35,7 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
     floorId: FLOOR_FINISHES[0].id,
     waterfall: "both",
     thicknessMm: 20,
+    veinRotation: 0,
   });
   const [activeCategory, setActiveCategory] = useState<MaterialCategory>("countertop");
   const [lightingMode, setLightingMode] = useState<"day" | "evening">("day");
@@ -189,6 +190,7 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
             floorRoughness={floorFinish.roughness}
             waterfall={config.waterfall}
             thicknessMm={config.thicknessMm}
+            veinRotation={config.veinRotation}
             lightingMode={lightingMode}
             cameraControlsRef={cameraControlsRef}
             canvasRef={canvasRef}
@@ -221,6 +223,24 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
                 }`}
               >
                 {mm}mm
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs font-bold uppercase tracking-wide text-[#78716C]">Vein Direction</span>
+          <div className="flex gap-1.5">
+            {([0, 90] as const).map((deg) => (
+              <button
+                key={deg}
+                type="button"
+                onClick={() => setConfig((prev) => ({ ...prev, veinRotation: deg }))}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-colors ${
+                  config.veinRotation === deg ? "bg-[#1C1917] text-white" : "bg-[#F5F1EA] text-[#78716C] hover:bg-[#EDE6DA]"
+                }`}
+              >
+                {deg === 0 ? "Horizontal" : "Vertical"}
               </button>
             ))}
           </div>

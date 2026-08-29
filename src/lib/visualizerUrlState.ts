@@ -12,6 +12,9 @@ export interface KitchenConfig {
   floorId: string | null;
   waterfall: WaterfallOption;
   thicknessMm: ThicknessMm;
+  /** Vein/pattern direction on the countertop top surface: 0 = as
+   * photographed ("horizontal"), 90 = turned a quarter-turn ("vertical"). */
+  veinRotation: 0 | 90;
 }
 
 export const encodeConfigToParams = (config: KitchenConfig): URLSearchParams => {
@@ -24,6 +27,7 @@ export const encodeConfigToParams = (config: KitchenConfig): URLSearchParams => 
   if (config.floorId) params.set("floor", config.floorId);
   if (config.waterfall !== "both") params.set("waterfall", config.waterfall);
   if (config.thicknessMm !== 20) params.set("thickness", String(config.thicknessMm));
+  if (config.veinRotation !== 0) params.set("vein", String(config.veinRotation));
   return params;
 };
 
@@ -31,6 +35,7 @@ export const decodeConfigFromParams = (params: URLSearchParams): Partial<Kitchen
   const layout = params.get("layout");
   const waterfall = params.get("waterfall");
   const thickness = Number(params.get("thickness"));
+  const vein = params.get("vein");
   return {
     ...(layout === "island" || layout === "lshape" || layout === "galley" ? { layout } : {}),
     mirrored: params.get("mirrored") === "1",
@@ -40,5 +45,6 @@ export const decodeConfigFromParams = (params: URLSearchParams): Partial<Kitchen
     floorId: params.get("floor"),
     ...(waterfall === "none" || waterfall === "left" || waterfall === "right" || waterfall === "both" ? { waterfall } : {}),
     ...(THICKNESS_OPTIONS.includes(thickness as ThicknessMm) ? { thicknessMm: thickness as ThicknessMm } : {}),
+    ...(vein === "90" ? { veinRotation: 90 as const } : {}),
   };
 };

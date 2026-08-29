@@ -22,6 +22,8 @@ interface FaceProps {
   highlighted?: boolean;
   /** Which face of the box is the visible "hero" surface the texture goes on. */
   heroFace?: HeroFace;
+  /** Rotates the slab's vein/pattern in-plane (0 = as photographed, 90 = turned a quarter-turn) -- a texture transform, not a fake per-product attribute. */
+  veinRotationDeg?: number;
 }
 
 const NeutralFace = ({ args, position, highlighted }: FaceProps) => (
@@ -56,6 +58,7 @@ const TexturedFace = ({
   position,
   highlighted,
   heroFace = "top",
+  veinRotationDeg = 0,
 }: FaceProps & { product: VisualizerProduct }) => {
   const texture = useTexture(product.image);
   // Clamp (not repeat) so one full slab photo spans the hero face once,
@@ -64,12 +67,18 @@ const TexturedFace = ({
   texture.wrapS = THREE.ClampToEdgeWrapping;
   texture.wrapT = THREE.ClampToEdgeWrapping;
 
+  // A quarter-turn on the vein swaps which face dimension the image's own
+  // width/height should cover-fit against.
+  const rotated = Math.abs(veinRotationDeg % 180) === 90;
+
   // Cover-fit: crop the photo to the face's own aspect ratio instead of
   // stretching it to fill, so the slab pattern keeps its real proportions.
   const img = texture.image as HTMLImageElement | undefined;
   if (img?.width && img?.height) {
-    const faceWidth = heroFace === "side" || heroFace === "sideEnd" ? args[2] : args[0];
-    const faceHeight = heroFace === "top" ? args[2] : args[1];
+    const rawFaceWidth = heroFace === "side" || heroFace === "sideEnd" ? args[2] : args[0];
+    const rawFaceHeight = heroFace === "top" ? args[2] : args[1];
+    const faceWidth = rotated ? rawFaceHeight : rawFaceWidth;
+    const faceHeight = rotated ? rawFaceWidth : rawFaceHeight;
     const faceAspect = faceWidth / faceHeight;
     const imageAspect = img.width / img.height;
 
@@ -86,6 +95,8 @@ const TexturedFace = ({
     texture.repeat.set(1, 1);
     texture.offset.set(0, 0);
   }
+  texture.center.set(0.5, 0.5);
+  texture.rotation = THREE.MathUtils.degToRad(veinRotationDeg);
   texture.needsUpdate = true;
 
   // Derive a normal map from the product photo itself (no authored normal
@@ -95,11 +106,21 @@ const TexturedFace = ({
     const img = texture.image as HTMLImageElement | undefined;
     if (!img || !img.width) return null;
     try {
-      return generateNormalMapFromImage(img, 0.6);
+      const map = generateNormalMapFromImage(img, 0.6);
+      // Keep the bump detail aligned with the (possibly rotated) color map.
+      map.wrapS = texture.wrapS;
+      map.wrapT = texture.wrapT;
+      map.repeat.copy(texture.repeat);
+      map.offset.copy(texture.offset);
+      map.center.copy(texture.center);
+      map.rotation = texture.rotation;
+      map.needsUpdate = true;
+      return map;
     } catch {
       return null;
     }
-  }, [texture]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [texture, veinRotationDeg]);
 
   useEffect(() => () => normalMap?.dispose(), [normalMap]);
 
@@ -171,6 +192,7 @@ export const MaterialSurface = ({
   position,
   highlighted,
   heroFace = "top",
+  veinRotationDeg = 0,
 }: FaceProps & { product: VisualizerProduct | null }) => {
   if (!product) {
     return <NeutralFace args={args} position={position} highlighted={highlighted} />;
@@ -178,7 +200,14 @@ export const MaterialSurface = ({
 
   return (
     <Suspense fallback={<NeutralFace args={args} position={position} highlighted={highlighted} />}>
-      <TexturedFace product={product} args={args} position={position} highlighted={highlighted} heroFace={heroFace} />
+      <TexturedFace
+        product={product}
+        args={args}
+        position={position}
+        highlighted={highlighted}
+        heroFace={heroFace}
+        veinRotationDeg={veinRotationDeg}
+      />
     </Suspense>
   );
 };
