@@ -1,4 +1,5 @@
-import type { LayoutId } from "@/data/kitchenCatalog";
+import type { LayoutId, ThicknessMm } from "@/data/kitchenCatalog";
+import { THICKNESS_OPTIONS } from "@/data/kitchenCatalog";
 
 export type WaterfallOption = "none" | "left" | "right" | "both";
 
@@ -10,6 +11,7 @@ export interface KitchenConfig {
   backsplashId: string | null;
   floorId: string | null;
   waterfall: WaterfallOption;
+  thicknessMm: ThicknessMm;
 }
 
 export const encodeConfigToParams = (config: KitchenConfig): URLSearchParams => {
@@ -21,12 +23,14 @@ export const encodeConfigToParams = (config: KitchenConfig): URLSearchParams => 
   if (config.backsplashId) params.set("backsplash", config.backsplashId);
   if (config.floorId) params.set("floor", config.floorId);
   if (config.waterfall !== "both") params.set("waterfall", config.waterfall);
+  if (config.thicknessMm !== 20) params.set("thickness", String(config.thicknessMm));
   return params;
 };
 
 export const decodeConfigFromParams = (params: URLSearchParams): Partial<KitchenConfig> => {
   const layout = params.get("layout");
   const waterfall = params.get("waterfall");
+  const thickness = Number(params.get("thickness"));
   return {
     ...(layout === "island" || layout === "lshape" || layout === "galley" ? { layout } : {}),
     mirrored: params.get("mirrored") === "1",
@@ -35,5 +39,6 @@ export const decodeConfigFromParams = (params: URLSearchParams): Partial<Kitchen
     backsplashId: params.get("backsplash"),
     floorId: params.get("floor"),
     ...(waterfall === "none" || waterfall === "left" || waterfall === "right" || waterfall === "both" ? { waterfall } : {}),
+    ...(THICKNESS_OPTIONS.includes(thickness as ThicknessMm) ? { thicknessMm: thickness as ThicknessMm } : {}),
   };
 };

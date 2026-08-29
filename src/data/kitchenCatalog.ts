@@ -31,6 +31,17 @@ export const FLOOR_FINISHES: FloorFinish[] = [
   { id: "polished-concrete", name: "Polished Concrete", color: "#C9C4BC", roughness: 0.5 },
 ];
 
+// Standard industry slab thicknesses -- not attributed to any specific
+// Alfa Ventura product (the catalog has no per-product thickness field yet),
+// this is a generic customization affecting the countertop/waterfall
+// geometry, same as offering a floor finish independent of the stone brand.
+export const THICKNESS_OPTIONS = [20, 30] as const;
+export type ThicknessMm = (typeof THICKNESS_OPTIONS)[number];
+
+/** Countertop top slabs are modelled at a 20mm baseline; scale that world
+ * height by the selected thickness so 30mm renders visibly chunkier. */
+export const thicknessScale = (mm: ThicknessMm): number => mm / 20;
+
 export type MaterialCategory = "cabinet" | "countertop" | "backsplash" | "floor";
 
 export const MATERIAL_CATEGORY_LABELS: Record<MaterialCategory, string> = {

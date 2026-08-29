@@ -1,7 +1,8 @@
 import * as THREE from "three";
 import { MaterialSurface, SolidBox } from "../MaterialSurface";
 import { BackWall, Floor, SideWall, Window } from "./roomParts";
-import type { LayoutId } from "@/data/kitchenCatalog";
+import type { LayoutId, ThicknessMm } from "@/data/kitchenCatalog";
+import { thicknessScale } from "@/data/kitchenCatalog";
 import type { WaterfallOption } from "@/lib/visualizerUrlState";
 import type { VisualizerProduct } from "../../../../types";
 
@@ -18,6 +19,7 @@ interface KitchenSceneProps {
   floorColor: string;
   floorRoughness: number;
   waterfall: WaterfallOption;
+  thicknessMm: ThicknessMm;
 }
 
 const CabinetDoor = ({
@@ -126,6 +128,7 @@ const WallRun = ({
   backsplashProduct,
   withUpper = true,
   withSink = true,
+  thicknessMm = 20,
 }: {
   width: number;
   centerX: number;
@@ -135,10 +138,15 @@ const WallRun = ({
   backsplashProduct: VisualizerProduct | null;
   withUpper?: boolean;
   withSink?: boolean;
+  thicknessMm?: ThicknessMm;
 }) => {
   const doorCount = Math.max(2, Math.round(width / 0.95));
   const doorWidth = width / doorCount - 0.1;
   const doorXs = Array.from({ length: doorCount }, (_, i) => centerX - width / 2 + width / doorCount * (i + 0.5));
+  // Top surface stays at a fixed height regardless of thickness -- the extra
+  // material extends downward, like a real slab measured from its top face.
+  const topY = 0.09;
+  const slabHeight = topY * thicknessScale(thicknessMm);
 
   return (
     <group>
@@ -146,7 +154,12 @@ const WallRun = ({
       {doorXs.map((x, i) => (
         <CabinetDoor key={i} x={x} z={z + 0.31 - 0.03} width={doorWidth} color={cabinetColor === DOOR_COLOR ? "#2A241E" : DOOR_COLOR} />
       ))}
-      <MaterialSurface product={countertopProduct} args={[width + 0.16, 0.09, 0.7]} position={[centerX, 0.045, z]} heroFace="top" />
+      <MaterialSurface
+        product={countertopProduct}
+        args={[width + 0.16, slabHeight, 0.7]}
+        position={[centerX, topY - slabHeight / 2, z]}
+        heroFace="top"
+      />
 
       {withUpper && (
         <>
@@ -186,49 +199,77 @@ const Island = ({
   cabinetColor,
   countertopProduct,
   waterfall,
+  thicknessMm = 20,
 }: {
   cabinetColor: string;
   countertopProduct: VisualizerProduct | null;
   waterfall: WaterfallOption;
-}) => (
-  <group>
-    <SolidBox args={[1.7, 0.85, 0.85]} position={[-0.1, -0.425, 0.55]} color={cabinetColor} roughness={0.55} />
-    <CabinetDoor x={-0.1} z={0.965} width={0.72} color={cabinetColor === DOOR_COLOR ? "#2A241E" : DOOR_COLOR} />
-    <MaterialSurface product={countertopProduct} args={[1.86, 0.1, 1.0]} position={[-0.1, 0.05, 0.55]} heroFace="top" />
-    {/* waterfall edges -- the same slab continuing down the selected end(s).
-        Depth and outer-face x match the top slab exactly so the two surfaces
-        meet flush at the mitre line instead of leaving a visible lip/step.
-        Left and right panels use identical args/y/z, mirrored in x, so
-        "both" is perfectly symmetrical. */}
-    {(waterfall === "left" || waterfall === "both") && (
-      <MaterialSurface product={countertopProduct} args={[0.06, 0.85, 1.0]} position={[-1.0, -0.425, 0.55]} heroFace="side" />
-    )}
-    {(waterfall === "right" || waterfall === "both") && (
-      <MaterialSurface product={countertopProduct} args={[0.06, 0.85, 1.0]} position={[0.8, -0.425, 0.55]} heroFace="sideEnd" />
-    )}
-    <CountertopDecor x={-0.55} z={0.35} topY={0.1} />
-    <PendantLight x={0.25} z={0.35} />
-    <PendantLight x={-0.5} z={0.35} />
+  thicknessMm?: ThicknessMm;
+}) => {
+  const topY = 0.1;
+  const scale = thicknessScale(thicknessMm);
+  const slabHeight = topY * scale;
+  // The waterfall panel's own thickness (how chunky the slab edge reads)
+  // scales the same way as the top, so both stay visually one slab.
+  const waterfallThickness = 0.06 * scale;
+  const leftOuterX = -1.03;
+  const rightOuterX = 0.83;
 
-    <group position={[-0.1, -0.65, 1.25]}>
-      <mesh position={[0, 0.35, 0]} castShadow>
-        <cylinderGeometry args={[0.2, 0.2, 0.06, 24]} />
-        <meshStandardMaterial color={DOOR_COLOR} roughness={0.5} />
-      </mesh>
-      {[
-        [-0.14, -0.14],
-        [0.14, -0.14],
-        [-0.14, 0.14],
-        [0.14, 0.14],
-      ].map(([x, z], i) => (
-        <mesh key={i} position={[x, 0, z]} castShadow>
-          <cylinderGeometry args={[0.014, 0.014, 0.68, 8]} />
-          <meshStandardMaterial color={HANDLE_COLOR} roughness={0.3} metalness={0.6} />
+  return (
+    <group>
+      <SolidBox args={[1.7, 0.85, 0.85]} position={[-0.1, -0.425, 0.55]} color={cabinetColor} roughness={0.55} />
+      <CabinetDoor x={-0.1} z={0.965} width={0.72} color={cabinetColor === DOOR_COLOR ? "#2A241E" : DOOR_COLOR} />
+      <MaterialSurface
+        product={countertopProduct}
+        args={[1.86, slabHeight, 1.0]}
+        position={[-0.1, topY - slabHeight / 2, 0.55]}
+        heroFace="top"
+      />
+      {/* waterfall edges -- the same slab continuing down the selected end(s).
+          Depth and outer-face x match the top slab exactly so the two surfaces
+          meet flush at the mitre line instead of leaving a visible lip/step.
+          Left and right panels use identical args/y/z, mirrored in x, so
+          "both" is perfectly symmetrical. */}
+      {(waterfall === "left" || waterfall === "both") && (
+        <MaterialSurface
+          product={countertopProduct}
+          args={[waterfallThickness, 0.85, 1.0]}
+          position={[leftOuterX + waterfallThickness / 2, -0.425, 0.55]}
+          heroFace="side"
+        />
+      )}
+      {(waterfall === "right" || waterfall === "both") && (
+        <MaterialSurface
+          product={countertopProduct}
+          args={[waterfallThickness, 0.85, 1.0]}
+          position={[rightOuterX - waterfallThickness / 2, -0.425, 0.55]}
+          heroFace="sideEnd"
+        />
+      )}
+      <CountertopDecor x={-0.55} z={0.35} topY={0.1} />
+      <PendantLight x={0.25} z={0.35} />
+      <PendantLight x={-0.5} z={0.35} />
+
+      <group position={[-0.1, -0.65, 1.25]}>
+        <mesh position={[0, 0.35, 0]} castShadow>
+          <cylinderGeometry args={[0.2, 0.2, 0.06, 24]} />
+          <meshStandardMaterial color={DOOR_COLOR} roughness={0.5} />
         </mesh>
-      ))}
+        {[
+          [-0.14, -0.14],
+          [0.14, -0.14],
+          [-0.14, 0.14],
+          [0.14, 0.14],
+        ].map(([x, z], i) => (
+          <mesh key={i} position={[x, 0, z]} castShadow>
+            <cylinderGeometry args={[0.014, 0.014, 0.68, 8]} />
+            <meshStandardMaterial color={HANDLE_COLOR} roughness={0.3} metalness={0.6} />
+          </mesh>
+        ))}
+      </group>
     </group>
-  </group>
-);
+  );
+};
 
 const KitchenScene = ({
   layout,
@@ -239,6 +280,7 @@ const KitchenScene = ({
   floorColor,
   floorRoughness,
   waterfall,
+  thicknessMm,
 }: KitchenSceneProps) => (
   <group scale={[mirrored ? -1 : 1, 1, 1]}>
     <Floor color={floorColor} roughness={floorRoughness} />
@@ -260,8 +302,9 @@ const KitchenScene = ({
           cabinetColor={cabinetColor}
           countertopProduct={countertopProduct}
           backsplashProduct={backsplashProduct}
+          thicknessMm={thicknessMm}
         />
-        <Island cabinetColor={cabinetColor} countertopProduct={countertopProduct} waterfall={waterfall} />
+        <Island cabinetColor={cabinetColor} countertopProduct={countertopProduct} waterfall={waterfall} thicknessMm={thicknessMm} />
       </>
     )}
 
@@ -274,6 +317,7 @@ const KitchenScene = ({
           cabinetColor={cabinetColor}
           countertopProduct={countertopProduct}
           backsplashProduct={backsplashProduct}
+          thicknessMm={thicknessMm}
         />
         {/* perpendicular return along the left wall, forming the L. Positioned
             so its countertop footprint sits just short of the main run's
@@ -289,6 +333,7 @@ const KitchenScene = ({
             backsplashProduct={backsplashProduct}
             withUpper={false}
             withSink={false}
+            thicknessMm={thicknessMm}
           />
         </group>
       </>
@@ -303,6 +348,7 @@ const KitchenScene = ({
           cabinetColor={cabinetColor}
           countertopProduct={countertopProduct}
           backsplashProduct={backsplashProduct}
+          thicknessMm={thicknessMm}
         />
         <WallRun
           width={3.4}
@@ -313,6 +359,7 @@ const KitchenScene = ({
           backsplashProduct={null}
           withUpper={false}
           withSink={false}
+          thicknessMm={thicknessMm}
         />
       </>
     )}

@@ -7,7 +7,7 @@ import * as THREE from "three";
 import KitchenScene from "./scenes/KitchenScene";
 import VisualizerErrorBoundary from "./VisualizerErrorBoundary";
 import { KITCHEN_CAMERA } from "@/data/scenes";
-import type { LayoutId } from "@/data/kitchenCatalog";
+import type { LayoutId, ThicknessMm } from "@/data/kitchenCatalog";
 import type { WaterfallOption } from "@/lib/visualizerUrlState";
 import type { VisualizerProduct } from "../../../types";
 
@@ -20,6 +20,7 @@ interface VisualizerCanvasProps {
   floorColor: string;
   floorRoughness: number;
   waterfall: WaterfallOption;
+  thicknessMm: ThicknessMm;
   lightingMode: "day" | "evening";
   cameraControlsRef: RefObject<CameraControlsImpl | null>;
   canvasRef?: RefObject<HTMLCanvasElement | null>;
@@ -43,6 +44,7 @@ const VisualizerCanvas = ({
   floorColor,
   floorRoughness,
   waterfall,
+  thicknessMm,
   lightingMode,
   cameraControlsRef,
   canvasRef,
@@ -99,6 +101,7 @@ const VisualizerCanvas = ({
             floorColor={floorColor}
             floorRoughness={floorRoughness}
             waterfall={waterfall}
+            thicknessMm={thicknessMm}
           />
           <Environment preset={isDay ? "apartment" : "sunset"} environmentIntensity={isDay ? 0.35 : 0.25} />
         </Suspense>
