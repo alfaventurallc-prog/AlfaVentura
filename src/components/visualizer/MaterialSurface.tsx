@@ -8,7 +8,9 @@ import { extractAverageColor } from "@/three/extractAverageColor";
 import type { VisualizerProduct } from "../../../types";
 
 export type Vec3 = [number, number, number];
-export type HeroFace = "top" | "front" | "side";
+/** "side" is the -X face, "sideEnd" is the +X face -- e.g. a waterfall edge
+ * on the near end of an island vs. the matching one on the far end. */
+export type HeroFace = "top" | "front" | "side" | "sideEnd";
 
 const DEFAULT_COLOR = "#EDE8DD";
 const EDGE_COLOR = "#E9E4D8";
@@ -35,7 +37,7 @@ const NeutralFace = ({ args, position, highlighted }: FaceProps) => (
 );
 
 /** Box material-array index for each face: [+X, -X, +Y, -Y, +Z, -Z]. */
-const HERO_INDEX: Record<HeroFace, number> = { top: 2, front: 4, side: 1 };
+const HERO_INDEX: Record<HeroFace, number> = { top: 2, front: 4, side: 1, sideEnd: 0 };
 
 /** Darken a "#rrggbb" hex color by the given factor (0-1, lower = darker). */
 const shade = (hex: string, factor: number): string => {
@@ -66,7 +68,7 @@ const TexturedFace = ({
   // stretching it to fill, so the slab pattern keeps its real proportions.
   const img = texture.image as HTMLImageElement | undefined;
   if (img?.width && img?.height) {
-    const faceWidth = heroFace === "side" ? args[2] : args[0];
+    const faceWidth = heroFace === "side" || heroFace === "sideEnd" ? args[2] : args[0];
     const faceHeight = heroFace === "top" ? args[2] : args[1];
     const faceAspect = faceWidth / faceHeight;
     const imageAspect = img.width / img.height;
