@@ -9,7 +9,16 @@ import LayoutSelector from "./LayoutSelector";
 import MaterialCategorySelector, { type SwatchItem } from "./MaterialCategorySelector";
 import FavoritesPanel from "./FavoritesPanel";
 import ProductInfoPanel from "./ProductInfoPanel";
-import { FLOOR_FINISHES, MATERIAL_CATEGORY_LABELS, THICKNESS_OPTIONS, type LayoutId, type MaterialCategory, type ThicknessMm } from "@/data/kitchenCatalog";
+import {
+  FLOOR_FINISHES,
+  MATERIAL_CATEGORY_LABELS,
+  THICKNESS_OPTIONS,
+  EDGE_PROFILES,
+  type LayoutId,
+  type MaterialCategory,
+  type ThicknessMm,
+  type EdgeProfile,
+} from "@/data/kitchenCatalog";
 import { getAverageColorForImage } from "@/three/extractAverageColor";
 import { encodeConfigToParams, decodeConfigFromParams, type KitchenConfig, type WaterfallOption } from "@/lib/visualizerUrlState";
 import { useFavorites } from "@/hooks/useFavorites";
@@ -36,6 +45,7 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
     waterfall: "both",
     thicknessMm: 20,
     veinRotation: 0,
+    edgeProfile: "square",
   });
   const [activeCategory, setActiveCategory] = useState<MaterialCategory>("countertop");
   const [lightingMode, setLightingMode] = useState<"day" | "evening">("day");
@@ -191,6 +201,7 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
             waterfall={config.waterfall}
             thicknessMm={config.thicknessMm}
             veinRotation={config.veinRotation}
+            edgeProfile={config.edgeProfile}
             lightingMode={lightingMode}
             cameraControlsRef={cameraControlsRef}
             canvasRef={canvasRef}
@@ -241,6 +252,24 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
                 }`}
               >
                 {deg === 0 ? "Horizontal" : "Vertical"}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs font-bold uppercase tracking-wide text-[#78716C]">Edge Profile</span>
+          <div className="flex gap-1.5">
+            {EDGE_PROFILES.map((profile: EdgeProfile) => (
+              <button
+                key={profile}
+                type="button"
+                onClick={() => setConfig((prev) => ({ ...prev, edgeProfile: profile }))}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-colors ${
+                  config.edgeProfile === profile ? "bg-[#1C1917] text-white" : "bg-[#F5F1EA] text-[#78716C] hover:bg-[#EDE6DA]"
+                }`}
+              >
+                {profile}
               </button>
             ))}
           </div>

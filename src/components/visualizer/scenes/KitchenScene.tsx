@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { MaterialSurface, SolidBox } from "../MaterialSurface";
 import { BackWall, Floor, SideWall, Window } from "./roomParts";
-import type { LayoutId, ThicknessMm } from "@/data/kitchenCatalog";
+import type { LayoutId, ThicknessMm, EdgeProfile } from "@/data/kitchenCatalog";
 import { thicknessScale } from "@/data/kitchenCatalog";
 import type { WaterfallOption } from "@/lib/visualizerUrlState";
 import type { VisualizerProduct } from "../../../../types";
@@ -21,7 +21,18 @@ interface KitchenSceneProps {
   waterfall: WaterfallOption;
   thicknessMm: ThicknessMm;
   veinRotation: 0 | 90;
+  edgeProfile: EdgeProfile;
 }
+
+/** Visual approximation of a 45-degree chamfer along a slab's front-top
+ * corner -- a true bevel needs custom (non-box) geometry, this is a thin
+ * diagonal strip that reads as a soft chamfer highlight without one. */
+const BevelEdge = ({ length, centerX, topY, frontZ }: { length: number; centerX: number; topY: number; frontZ: number }) => (
+  <mesh position={[centerX, topY - 0.01, frontZ - 0.01]} rotation={[Math.PI / 4, 0, 0]}>
+    <boxGeometry args={[length, 0.02, 0.02]} />
+    <meshStandardMaterial color="#F3EFE6" roughness={0.2} metalness={0} />
+  </mesh>
+);
 
 const CabinetDoor = ({
   x,
@@ -131,6 +142,7 @@ const WallRun = ({
   withSink = true,
   thicknessMm = 20,
   veinRotation = 0,
+  edgeProfile = "square",
 }: {
   width: number;
   centerX: number;
@@ -142,6 +154,7 @@ const WallRun = ({
   withSink?: boolean;
   thicknessMm?: ThicknessMm;
   veinRotation?: 0 | 90;
+  edgeProfile?: EdgeProfile;
 }) => {
   const doorCount = Math.max(2, Math.round(width / 0.95));
   const doorWidth = width / doorCount - 0.1;
@@ -164,6 +177,7 @@ const WallRun = ({
         heroFace="top"
         veinRotationDeg={veinRotation}
       />
+      {edgeProfile === "beveled" && <BevelEdge length={width + 0.16} centerX={centerX} topY={topY} frontZ={z + 0.35} />}
 
       {withUpper && (
         <>
@@ -205,12 +219,14 @@ const Island = ({
   waterfall,
   thicknessMm = 20,
   veinRotation = 0,
+  edgeProfile = "square",
 }: {
   cabinetColor: string;
   countertopProduct: VisualizerProduct | null;
   waterfall: WaterfallOption;
   thicknessMm?: ThicknessMm;
   veinRotation?: 0 | 90;
+  edgeProfile?: EdgeProfile;
 }) => {
   const topY = 0.1;
   const scale = thicknessScale(thicknessMm);
@@ -232,6 +248,7 @@ const Island = ({
         heroFace="top"
         veinRotationDeg={veinRotation}
       />
+      {edgeProfile === "beveled" && <BevelEdge length={1.86} centerX={-0.1} topY={topY} frontZ={1.05} />}
       {/* waterfall edges -- the same slab continuing down the selected end(s).
           Depth and outer-face x match the top slab exactly so the two surfaces
           meet flush at the mitre line instead of leaving a visible lip/step.
@@ -289,6 +306,7 @@ const KitchenScene = ({
   waterfall,
   thicknessMm,
   veinRotation,
+  edgeProfile,
 }: KitchenSceneProps) => (
   <group scale={[mirrored ? -1 : 1, 1, 1]}>
     <Floor color={floorColor} roughness={floorRoughness} />
@@ -312,6 +330,7 @@ const KitchenScene = ({
           backsplashProduct={backsplashProduct}
           thicknessMm={thicknessMm}
           veinRotation={veinRotation}
+          edgeProfile={edgeProfile}
         />
         <Island
           cabinetColor={cabinetColor}
@@ -319,6 +338,7 @@ const KitchenScene = ({
           waterfall={waterfall}
           thicknessMm={thicknessMm}
           veinRotation={veinRotation}
+          edgeProfile={edgeProfile}
         />
       </>
     )}
@@ -334,6 +354,7 @@ const KitchenScene = ({
           backsplashProduct={backsplashProduct}
           thicknessMm={thicknessMm}
           veinRotation={veinRotation}
+          edgeProfile={edgeProfile}
         />
         {/* perpendicular return along the left wall, forming the L. Positioned
             so its countertop footprint sits just short of the main run's
@@ -351,6 +372,7 @@ const KitchenScene = ({
             withSink={false}
             thicknessMm={thicknessMm}
             veinRotation={veinRotation}
+            edgeProfile={edgeProfile}
           />
         </group>
       </>
@@ -367,6 +389,7 @@ const KitchenScene = ({
           backsplashProduct={backsplashProduct}
           thicknessMm={thicknessMm}
           veinRotation={veinRotation}
+          edgeProfile={edgeProfile}
         />
         <WallRun
           width={3.4}
@@ -379,6 +402,7 @@ const KitchenScene = ({
           withSink={false}
           thicknessMm={thicknessMm}
           veinRotation={veinRotation}
+          edgeProfile={edgeProfile}
         />
       </>
     )}

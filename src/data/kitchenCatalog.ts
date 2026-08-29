@@ -42,6 +42,13 @@ export type ThicknessMm = (typeof THICKNESS_OPTIONS)[number];
  * height by the selected thickness so 30mm renders visibly chunkier. */
 export const thicknessScale = (mm: ThicknessMm): number => mm / 20;
 
+// Square is the box's own edge as modelled today. Beveled is a visual
+// approximation (a thin 45-degree strip along the front edge) rather than a
+// true chamfered mesh -- an accurate chamfer needs custom (non-box)
+// geometry, a bigger lift called out separately.
+export const EDGE_PROFILES = ["square", "beveled"] as const;
+export type EdgeProfile = (typeof EDGE_PROFILES)[number];
+
 export type MaterialCategory = "cabinet" | "countertop" | "backsplash" | "floor";
 
 export const MATERIAL_CATEGORY_LABELS: Record<MaterialCategory, string> = {

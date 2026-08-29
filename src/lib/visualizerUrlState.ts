@@ -1,5 +1,5 @@
-import type { LayoutId, ThicknessMm } from "@/data/kitchenCatalog";
-import { THICKNESS_OPTIONS } from "@/data/kitchenCatalog";
+import type { LayoutId, ThicknessMm, EdgeProfile } from "@/data/kitchenCatalog";
+import { THICKNESS_OPTIONS, EDGE_PROFILES } from "@/data/kitchenCatalog";
 
 export type WaterfallOption = "none" | "left" | "right" | "both";
 
@@ -15,6 +15,7 @@ export interface KitchenConfig {
   /** Vein/pattern direction on the countertop top surface: 0 = as
    * photographed ("horizontal"), 90 = turned a quarter-turn ("vertical"). */
   veinRotation: 0 | 90;
+  edgeProfile: EdgeProfile;
 }
 
 export const encodeConfigToParams = (config: KitchenConfig): URLSearchParams => {
@@ -28,6 +29,7 @@ export const encodeConfigToParams = (config: KitchenConfig): URLSearchParams => 
   if (config.waterfall !== "both") params.set("waterfall", config.waterfall);
   if (config.thicknessMm !== 20) params.set("thickness", String(config.thicknessMm));
   if (config.veinRotation !== 0) params.set("vein", String(config.veinRotation));
+  if (config.edgeProfile !== "square") params.set("edge", config.edgeProfile);
   return params;
 };
 
@@ -36,6 +38,7 @@ export const decodeConfigFromParams = (params: URLSearchParams): Partial<Kitchen
   const waterfall = params.get("waterfall");
   const thickness = Number(params.get("thickness"));
   const vein = params.get("vein");
+  const edge = params.get("edge");
   return {
     ...(layout === "island" || layout === "lshape" || layout === "galley" ? { layout } : {}),
     mirrored: params.get("mirrored") === "1",
@@ -46,5 +49,6 @@ export const decodeConfigFromParams = (params: URLSearchParams): Partial<Kitchen
     ...(waterfall === "none" || waterfall === "left" || waterfall === "right" || waterfall === "both" ? { waterfall } : {}),
     ...(THICKNESS_OPTIONS.includes(thickness as ThicknessMm) ? { thicknessMm: thickness as ThicknessMm } : {}),
     ...(vein === "90" ? { veinRotation: 90 as const } : {}),
+    ...(EDGE_PROFILES.includes(edge as EdgeProfile) ? { edgeProfile: edge as EdgeProfile } : {}),
   };
 };
