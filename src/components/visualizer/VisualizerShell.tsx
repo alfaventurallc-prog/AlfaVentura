@@ -11,7 +11,7 @@ import FavoritesPanel from "./FavoritesPanel";
 import ProductInfoPanel from "./ProductInfoPanel";
 import { FLOOR_FINISHES, MATERIAL_CATEGORY_LABELS, type LayoutId, type MaterialCategory } from "@/data/kitchenCatalog";
 import { getAverageColorForImage } from "@/three/extractAverageColor";
-import { encodeConfigToParams, decodeConfigFromParams, type KitchenConfig } from "@/lib/visualizerUrlState";
+import { encodeConfigToParams, decodeConfigFromParams, type KitchenConfig, type WaterfallOption } from "@/lib/visualizerUrlState";
 import { useFavorites } from "@/hooks/useFavorites";
 import type { VisualizerProduct } from "../../../types";
 
@@ -33,6 +33,7 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
     countertopId: quartzProducts[0]?.id ?? null,
     backsplashId: quartzProducts[1]?.id ?? quartzProducts[0]?.id ?? null,
     floorId: FLOOR_FINISHES[0].id,
+    waterfall: "both",
   });
   const [activeCategory, setActiveCategory] = useState<MaterialCategory>("countertop");
   const [lightingMode, setLightingMode] = useState<"day" | "evening">("day");
@@ -162,6 +163,7 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
             backsplashProduct={backsplashProduct}
             floorColor={floorFinish.color}
             floorRoughness={floorFinish.roughness}
+            waterfall={config.waterfall}
             lightingMode={lightingMode}
             cameraControlsRef={cameraControlsRef}
             canvasRef={canvasRef}
@@ -180,6 +182,26 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
           onSelectLayout={(layout: LayoutId) => setConfig((prev) => ({ ...prev, layout }))}
           onToggleMirror={() => setConfig((prev) => ({ ...prev, mirrored: !prev.mirrored }))}
         />
+
+        {config.layout === "island" && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-bold uppercase tracking-wide text-[#78716C]">Waterfall edge</span>
+            <div className="flex gap-1.5">
+              {(["none", "left", "right", "both"] as WaterfallOption[]).map((option) => (
+                <button
+                  key={option}
+                  type="button"
+                  onClick={() => setConfig((prev) => ({ ...prev, waterfall: option }))}
+                  className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-colors ${
+                    config.waterfall === option ? "bg-[#1C1917] text-white" : "bg-[#F5F1EA] text-[#78716C] hover:bg-[#EDE6DA]"
+                  }`}
+                >
+                  {option}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
         <div>
           <div className="flex gap-1.5 mb-3 overflow-x-auto">

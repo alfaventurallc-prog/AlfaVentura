@@ -2,6 +2,7 @@ import * as THREE from "three";
 import { MaterialSurface, SolidBox } from "../MaterialSurface";
 import { BackWall, Floor, SideWall, Window } from "./roomParts";
 import type { LayoutId } from "@/data/kitchenCatalog";
+import type { WaterfallOption } from "@/lib/visualizerUrlState";
 import type { VisualizerProduct } from "../../../../types";
 
 const WALL_COLOR = "#EFEAE0";
@@ -16,6 +17,7 @@ interface KitchenSceneProps {
   backsplashProduct: VisualizerProduct | null;
   floorColor: string;
   floorRoughness: number;
+  waterfall: WaterfallOption;
 }
 
 const CabinetDoor = ({
@@ -180,18 +182,30 @@ const PendantLight = ({ x, z }: { x: number; z: number }) => (
   </group>
 );
 
-const Island = ({ cabinetColor, countertopProduct }: { cabinetColor: string; countertopProduct: VisualizerProduct | null }) => (
+const Island = ({
+  cabinetColor,
+  countertopProduct,
+  waterfall,
+}: {
+  cabinetColor: string;
+  countertopProduct: VisualizerProduct | null;
+  waterfall: WaterfallOption;
+}) => (
   <group>
     <SolidBox args={[1.7, 0.85, 0.85]} position={[-0.1, -0.425, 0.55]} color={cabinetColor} roughness={0.55} />
     <CabinetDoor x={-0.1} z={0.965} width={0.72} color={cabinetColor === DOOR_COLOR ? "#2A241E" : DOOR_COLOR} />
     <MaterialSurface product={countertopProduct} args={[1.86, 0.1, 1.0]} position={[-0.1, 0.05, 0.55]} heroFace="top" />
-    {/* waterfall edges -- the same slab continuing down both ends. Depth and
-        outer-face x match the top slab exactly so the two surfaces meet flush
-        at the mitre line instead of leaving a visible lip/step. Right side
-        mirrors the left exactly (same args, same y/z) for a symmetrical
-        waterfall countertop on both ends. */}
-    <MaterialSurface product={countertopProduct} args={[0.06, 0.85, 1.0]} position={[-1.0, -0.425, 0.55]} heroFace="side" />
-    <MaterialSurface product={countertopProduct} args={[0.06, 0.85, 1.0]} position={[0.8, -0.425, 0.55]} heroFace="sideEnd" />
+    {/* waterfall edges -- the same slab continuing down the selected end(s).
+        Depth and outer-face x match the top slab exactly so the two surfaces
+        meet flush at the mitre line instead of leaving a visible lip/step.
+        Left and right panels use identical args/y/z, mirrored in x, so
+        "both" is perfectly symmetrical. */}
+    {(waterfall === "left" || waterfall === "both") && (
+      <MaterialSurface product={countertopProduct} args={[0.06, 0.85, 1.0]} position={[-1.0, -0.425, 0.55]} heroFace="side" />
+    )}
+    {(waterfall === "right" || waterfall === "both") && (
+      <MaterialSurface product={countertopProduct} args={[0.06, 0.85, 1.0]} position={[0.8, -0.425, 0.55]} heroFace="sideEnd" />
+    )}
     <CountertopDecor x={-0.55} z={0.35} topY={0.1} />
     <PendantLight x={0.25} z={0.35} />
     <PendantLight x={-0.5} z={0.35} />
@@ -224,6 +238,7 @@ const KitchenScene = ({
   backsplashProduct,
   floorColor,
   floorRoughness,
+  waterfall,
 }: KitchenSceneProps) => (
   <group scale={[mirrored ? -1 : 1, 1, 1]}>
     <Floor color={floorColor} roughness={floorRoughness} />
@@ -246,7 +261,7 @@ const KitchenScene = ({
           countertopProduct={countertopProduct}
           backsplashProduct={backsplashProduct}
         />
-        <Island cabinetColor={cabinetColor} countertopProduct={countertopProduct} />
+        <Island cabinetColor={cabinetColor} countertopProduct={countertopProduct} waterfall={waterfall} />
       </>
     )}
 
