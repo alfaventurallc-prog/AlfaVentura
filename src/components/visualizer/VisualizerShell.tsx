@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { CameraControls as CameraControlsImpl } from "@react-three/drei";
 import { toast } from "sonner";
 import VisualizerCanvas from "./VisualizerCanvas";
+import ImageVisualizerCanvas from "./ImageVisualizerCanvas";
 import SceneControls from "./SceneControls";
 import LayoutSelector from "./LayoutSelector";
 import MaterialCategorySelector, { type SwatchItem } from "./MaterialCategorySelector";
@@ -19,6 +20,7 @@ import {
   type ThicknessMm,
   type EdgeProfile,
 } from "@/data/kitchenCatalog";
+import { IMAGE_VIEW_LABELS, type ImageView } from "@/data/imageScenes";
 import { getAverageColorForImage } from "@/three/extractAverageColor";
 import { encodeConfigToParams, decodeConfigFromParams, type KitchenConfig, type WaterfallOption } from "@/lib/visualizerUrlState";
 import { useFavorites } from "@/hooks/useFavorites";
@@ -52,10 +54,16 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
   const [cabinetColor, setCabinetColor] = useState(DEFAULT_CABINET_COLOR);
   const [favoritesOpen, setFavoritesOpen] = useState(false);
   const [hasSavedDesign, setHasSavedDesign] = useState(false);
+  // Two independent presentation environments (3D Kitchen "Layout A" vs.
+  // Image Kitchen "Layout B") sharing one product/material config above.
+  const [mode, setMode] = useState<"3d" | "image">("3d");
+  const [imageView, setImageView] = useState<ImageView>("primary");
 
   const cameraControlsRef = useRef<CameraControlsImpl | null>(null);
+  const imageCameraControlsRef = useRef<CameraControlsImpl | null>(null);
   const canvasContainerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const imageCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const { favorites, isFavorite, toggleFavorite } = useFavorites();
 
@@ -152,10 +160,10 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
   };
 
   const handleDownload = () => {
-    const canvas = canvasRef.current;
+    const canvas = mode === "image" ? imageCanvasRef.current : canvasRef.current;
     if (!canvas) return;
     const link = document.createElement("a");
-    link.download = "alfa-ventura-kitchen-design.png";
+    link.download = mode === "image" ? `alfa-ventura-kitchen-${imageView}.png` : "alfa-ventura-kitchen-design.png";
     link.href = canvas.toDataURL("image/png");
     link.click();
   };
@@ -163,6 +171,21 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
   return (
     <div className="flex flex-col lg:flex-row lg:items-start gap-6 lg:gap-8">
       <div className="flex-1 min-w-0 flex flex-col gap-5">
+        <div className="flex gap-1.5">
+          {(["3d", "image"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setMode(m)}
+              className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wide transition-colors ${
+                mode === m ? "bg-[#1C1917] text-white" : "bg-[#F5F1EA] text-[#78716C] hover:bg-[#EDE6DA]"
+              }`}
+            >
+              {m === "3d" ? "3D Visualizer" : "Image Visualizer"}
+            </button>
+          ))}
+        </div>
+
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs font-bold uppercase tracking-wide text-[#78716C]">Space</span>
           <div className="flex gap-1.5 flex-wrap">
@@ -190,36 +213,75 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
           ref={canvasContainerRef}
           className="relative w-full h-[64vh] min-h-[440px] max-h-[680px] rounded-2xl overflow-hidden bg-[#EDE6DA] border border-[#E8DDD0]"
         >
-          <VisualizerCanvas
-            layout={config.layout}
-            mirrored={config.mirrored}
-            cabinetColor={cabinetColor}
-            countertopProduct={countertopProduct}
-            backsplashProduct={backsplashProduct}
-            floorColor={floorFinish.color}
-            floorRoughness={floorFinish.roughness}
-            waterfall={config.waterfall}
-            thicknessMm={config.thicknessMm}
-            veinRotation={config.veinRotation}
-            edgeProfile={config.edgeProfile}
-            lightingMode={lightingMode}
-            cameraControlsRef={cameraControlsRef}
-            canvasRef={canvasRef}
-          />
-          <SceneControls
-            cameraControlsRef={cameraControlsRef}
-            fullscreenTargetRef={canvasContainerRef}
-            lightingMode={lightingMode}
-            onLightingChange={setLightingMode}
-          />
+          {mode === "3d" ? (
+            <>
+              <VisualizerCanvas
+                layout={config.layout}
+                mirrored={config.mirrored}
+                cabinetColor={cabinetColor}
+                countertopProduct={countertopProduct}
+                backsplashProduct={backsplashProduct}
+                floorColor={floorFinish.color}
+                floorRoughness={floorFinish.roughness}
+                waterfall={config.waterfall}
+                thicknessMm={config.thicknessMm}
+                veinRotation={config.veinRotation}
+                edgeProfile={config.edgeProfile}
+                lightingMode={lightingMode}
+                cameraControlsRef={cameraControlsRef}
+                canvasRef={canvasRef}
+              />
+              <SceneControls
+                cameraControlsRef={cameraControlsRef}
+                fullscreenTargetRef={canvasContainerRef}
+                lightingMode={lightingMode}
+                onLightingChange={setLightingMode}
+              />
+            </>
+          ) : (
+            <>
+              <ImageVisualizerCanvas
+                view={imageView}
+                countertopProduct={countertopProduct}
+                backsplashProduct={backsplashProduct}
+                waterfall={config.waterfall}
+                thicknessMm={config.thicknessMm}
+                veinRotation={config.veinRotation}
+                edgeProfile={config.edgeProfile}
+                cameraControlsRef={imageCameraControlsRef}
+                canvasRef={imageCanvasRef}
+              />
+              <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2">
+                <div className="flex gap-1.5">
+                  {(["primary", "full", "detail"] as ImageView[]).map((view) => (
+                    <button
+                      key={view}
+                      type="button"
+                      onClick={() => setImageView(view)}
+                      className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide border border-white/20 backdrop-blur-sm transition-colors ${
+                        imageView === view ? "bg-[#1C1917] text-white" : "bg-white/80 text-[#44403C] hover:bg-white"
+                      }`}
+                    >
+                      {IMAGE_VIEW_LABELS[view]}
+                    </button>
+                  ))}
+                </div>
+                <p className="text-xs font-semibold uppercase tracking-wide text-[#78716C] bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/20">
+                  Image Kitchen
+                </p>
+              </div>
+            </>
+          )}
         </div>
 
-        <LayoutSelector
-          activeLayout={config.layout}
-          mirrored={config.mirrored}
-          onSelectLayout={(layout: LayoutId) => setConfig((prev) => ({ ...prev, layout }))}
-          onToggleMirror={() => setConfig((prev) => ({ ...prev, mirrored: !prev.mirrored }))}
-        />
+        {mode === "3d" && (
+          <LayoutSelector
+            activeLayout={config.layout}
+            mirrored={config.mirrored}
+            onSelectLayout={(layout: LayoutId) => setConfig((prev) => ({ ...prev, layout }))}
+            onToggleMirror={() => setConfig((prev) => ({ ...prev, mirrored: !prev.mirrored }))}
+          />
+        )}
 
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-xs font-bold uppercase tracking-wide text-[#78716C]">Thickness</span>
@@ -275,7 +337,7 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
           </div>
         </div>
 
-        {config.layout === "island" && (
+        {(mode === "image" || config.layout === "island") && (
           <div className="flex items-center gap-2 flex-wrap">
             <span className="text-xs font-bold uppercase tracking-wide text-[#78716C]">Waterfall edge</span>
             <div className="flex gap-1.5">
