@@ -151,6 +151,29 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
   return (
     <div className="flex flex-col lg:flex-row lg:items-start gap-6 lg:gap-8">
       <div className="flex-1 min-w-0 flex flex-col gap-5">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-xs font-bold uppercase tracking-wide text-[#78716C]">Space</span>
+          <div className="flex gap-1.5 flex-wrap">
+            <button
+              type="button"
+              className="px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide bg-[#1C1917] text-white"
+            >
+              Kitchen
+            </button>
+            {["Bathroom", "Living", "Commercial"].map((space) => (
+              <button
+                key={space}
+                type="button"
+                disabled
+                title="Coming soon"
+                className="px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide bg-[#F5F1EA] text-[#C4BCAF] cursor-not-allowed"
+              >
+                {space}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <div
           ref={canvasContainerRef}
           className="relative w-full h-[64vh] min-h-[440px] max-h-[680px] rounded-2xl overflow-hidden bg-[#EDE6DA] border border-[#E8DDD0]"
@@ -204,6 +227,7 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
         )}
 
         <div>
+          <span className="text-xs font-bold uppercase tracking-wide text-[#78716C] block mb-2">Application</span>
           <div className="flex gap-1.5 mb-3 overflow-x-auto">
             {(Object.keys(MATERIAL_CATEGORY_LABELS) as MaterialCategory[]).map((cat) => (
               <button
@@ -218,6 +242,10 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
               </button>
             ))}
           </div>
+
+          <span className="text-xs font-bold uppercase tracking-wide text-[#78716C] block mb-2">
+            Products &mdash; {MATERIAL_CATEGORY_LABELS[activeCategory]}
+          </span>
 
           {catalog[activeCategory].length === 0 ? (
             <p className="text-sm text-[#78716C] py-4">No options available for this category yet.</p>
