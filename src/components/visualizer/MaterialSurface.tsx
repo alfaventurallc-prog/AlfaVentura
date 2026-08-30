@@ -41,6 +41,44 @@ const NeutralFace = ({ args, position, highlighted }: FaceProps) => (
 /** Box material-array index for each face: [+X, -X, +Y, -Y, +Z, -Z]. */
 const HERO_INDEX: Record<HeroFace, number> = { top: 2, front: 4, side: 1, sideEnd: 0 };
 
+const REPEAT_THRESHOLD = 1.15;
+
+/** Cover-fit (or, past a threshold, natural-scale repeat) a texture against
+ * a given face size -- shared by both the hero face and the countertop's
+ * front-edge/thickness band so the same slab pattern appears un-stretched
+ * on both. Mutates `tex` in place. */
+const fitTextureToFace = (tex: THREE.Texture, faceWidth: number, faceHeight: number, imageAspect: number) => {
+  const faceAspect = faceWidth / faceHeight;
+
+  if (faceAspect / imageAspect > REPEAT_THRESHOLD) {
+    const repeatX = faceAspect / imageAspect;
+    tex.wrapS = THREE.RepeatWrapping;
+    tex.wrapT = THREE.ClampToEdgeWrapping;
+    tex.repeat.set(repeatX, 1);
+    tex.offset.set(0, 0);
+  } else if (imageAspect / faceAspect > REPEAT_THRESHOLD) {
+    const repeatY = faceAspect / imageAspect;
+    tex.wrapS = THREE.ClampToEdgeWrapping;
+    tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(1, repeatY);
+    tex.offset.set(0, 0);
+  } else if (imageAspect > faceAspect) {
+    const repeatX = faceAspect / imageAspect;
+    tex.wrapS = THREE.ClampToEdgeWrapping;
+    tex.wrapT = THREE.ClampToEdgeWrapping;
+    tex.repeat.set(repeatX, 1);
+    tex.offset.set((1 - repeatX) / 2, 0);
+  } else {
+    const repeatY = imageAspect / faceAspect;
+    tex.wrapS = THREE.ClampToEdgeWrapping;
+    tex.wrapT = THREE.ClampToEdgeWrapping;
+    tex.repeat.set(1, repeatY);
+    tex.offset.set(0, (1 - repeatY) / 2);
+  }
+  tex.center.set(0.5, 0.5);
+  tex.needsUpdate = true;
+};
+
 /** Darken a "#rrggbb" hex color by the given factor (0-1, lower = darker). */
 const shade = (hex: string, factor: number): string => {
   const n = parseInt(hex.slice(1), 16);
@@ -75,49 +113,38 @@ const TexturedFace = ({
   // same way a real run that long would actually need more than one slab
   // width, rather than one image stretched to fit.
   const img = texture.image as HTMLImageElement | undefined;
+  const imageAspect = img?.width && img?.height ? img.width / img.height : 1;
+  const rawFaceWidth = heroFace === "side" || heroFace === "sideEnd" ? args[2] : args[0];
+  const rawFaceHeight = heroFace === "top" ? args[2] : args[1];
+  const faceWidth = rotated ? rawFaceHeight : rawFaceWidth;
+  const faceHeight = rotated ? rawFaceWidth : rawFaceHeight;
   if (img?.width && img?.height) {
-    const rawFaceWidth = heroFace === "side" || heroFace === "sideEnd" ? args[2] : args[0];
-    const rawFaceHeight = heroFace === "top" ? args[2] : args[1];
-    const faceWidth = rotated ? rawFaceHeight : rawFaceWidth;
-    const faceHeight = rotated ? rawFaceWidth : rawFaceHeight;
-    const faceAspect = faceWidth / faceHeight;
-    const imageAspect = img.width / img.height;
-    const REPEAT_THRESHOLD = 1.15;
-
-    if (faceAspect / imageAspect > REPEAT_THRESHOLD) {
-      const repeatX = faceAspect / imageAspect;
-      texture.wrapS = THREE.RepeatWrapping;
-      texture.wrapT = THREE.ClampToEdgeWrapping;
-      texture.repeat.set(repeatX, 1);
-      texture.offset.set(0, 0);
-    } else if (imageAspect / faceAspect > REPEAT_THRESHOLD) {
-      const repeatY = faceAspect / imageAspect;
-      texture.wrapS = THREE.ClampToEdgeWrapping;
-      texture.wrapT = THREE.RepeatWrapping;
-      texture.repeat.set(1, repeatY);
-      texture.offset.set(0, 0);
-    } else if (imageAspect > faceAspect) {
-      const repeatX = faceAspect / imageAspect;
-      texture.wrapS = THREE.ClampToEdgeWrapping;
-      texture.wrapT = THREE.ClampToEdgeWrapping;
-      texture.repeat.set(repeatX, 1);
-      texture.offset.set((1 - repeatX) / 2, 0);
-    } else {
-      const repeatY = imageAspect / faceAspect;
-      texture.wrapS = THREE.ClampToEdgeWrapping;
-      texture.wrapT = THREE.ClampToEdgeWrapping;
-      texture.repeat.set(1, repeatY);
-      texture.offset.set(0, (1 - repeatY) / 2);
-    }
+    fitTextureToFace(texture, faceWidth, faceHeight, imageAspect);
   } else {
     texture.wrapS = THREE.ClampToEdgeWrapping;
     texture.wrapT = THREE.ClampToEdgeWrapping;
     texture.repeat.set(1, 1);
     texture.offset.set(0, 0);
   }
-  texture.center.set(0.5, 0.5);
   texture.rotation = THREE.MathUtils.degToRad(veinRotationDeg);
   texture.needsUpdate = true;
+
+  // The countertop's own thickness/front-edge band -- same slab pattern
+  // continuing onto the visible edge, not a flat tint, so it reads as one
+  // continuous piece of material rather than a stone top glued onto a
+  // painted strip. Only meaningful for a horizontal slab (heroFace "top");
+  // a cloned texture gets its own crop since the edge's aspect ratio
+  // (full width x thickness) is very different from the top's.
+  const edgeTexture = useMemo(() => {
+    if (heroFace !== "top" || !img?.width) return null;
+    const t = texture.clone();
+    fitTextureToFace(t, rawFaceWidth, args[1], imageAspect);
+    t.needsUpdate = true;
+    return t;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [texture, heroFace, args[1], rawFaceWidth, imageAspect]);
+
+  useEffect(() => () => edgeTexture?.dispose(), [edgeTexture]);
 
   // Derive a normal map from the product photo itself (no authored normal
   // map exists for any product) so the polished stone catches light with
@@ -178,6 +205,16 @@ const TexturedFace = ({
             metalness={0}
             emissive={highlighted ? HIGHLIGHT_COLOR : "#000000"}
             emissiveIntensity={highlighted ? 0.06 : 0}
+          />
+        ) : i === HERO_INDEX.front && edgeTexture ? (
+          <meshStandardMaterial
+            key={i}
+            attach={`material-${i}`}
+            map={edgeTexture}
+            roughness={0.28}
+            metalness={0}
+            emissive={edgeEmissive}
+            emissiveIntensity={edgeEmissiveIntensity}
           />
         ) : (
           <meshStandardMaterial
