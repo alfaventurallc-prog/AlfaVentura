@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { CameraControls as CameraControlsImpl } from "@react-three/drei";
 import { toast } from "sonner";
 import VisualizerCanvas from "./VisualizerCanvas";
-import ImageVisualizerCanvas from "./ImageVisualizerCanvas";
+import ProductImageGallery from "./ProductImageGallery";
 import SceneControls from "./SceneControls";
 import LayoutSelector from "./LayoutSelector";
 import MaterialCategorySelector, { type SwatchItem } from "./MaterialCategorySelector";
@@ -20,7 +20,6 @@ import {
   type ThicknessMm,
   type EdgeProfile,
 } from "@/data/kitchenCatalog";
-import { IMAGE_VIEW_LABELS, type ImageView } from "@/data/imageScenes";
 import { getAverageColorForImage } from "@/three/extractAverageColor";
 import { encodeConfigToParams, decodeConfigFromParams, type KitchenConfig, type WaterfallOption } from "@/lib/visualizerUrlState";
 import { useFavorites } from "@/hooks/useFavorites";
@@ -54,30 +53,19 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
   const [cabinetColor, setCabinetColor] = useState(DEFAULT_CABINET_COLOR);
   const [favoritesOpen, setFavoritesOpen] = useState(false);
   const [hasSavedDesign, setHasSavedDesign] = useState(false);
-  // Two independent presentation environments (3D Kitchen "Layout A" vs.
-  // Image Kitchen "Layout B") sharing one product/material config above.
+  // Two modes sharing one product/material config above: an interactive 3D
+  // kitchen, and a real-photo gallery for the selected product (the "Image
+  // Visualizer" -- deliberately just the actual uploaded product photos,
+  // not a fabricated installed-kitchen composite).
   const [mode, setMode] = useState<"3d" | "image">("3d");
-  const [imageView, setImageView] = useState<ImageView>("primary");
-  const [imageLightboxOpen, setImageLightboxOpen] = useState(false);
   const [surfaceSearch, setSurfaceSearch] = useState("");
   const surfaceCarouselRef = useRef<HTMLDivElement | null>(null);
 
   const cameraControlsRef = useRef<CameraControlsImpl | null>(null);
-  const imageCameraControlsRef = useRef<CameraControlsImpl | null>(null);
   const canvasContainerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
-  const imageCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const { favorites, isFavorite, toggleFavorite } = useFavorites();
-
-  useEffect(() => {
-    if (!imageLightboxOpen) return;
-    const onKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape") setImageLightboxOpen(false);
-    };
-    window.addEventListener("keydown", onKeyDown);
-    return () => window.removeEventListener("keydown", onKeyDown);
-  }, [imageLightboxOpen]);
 
   // Restore a shared/deep-linked configuration from the URL on first load
   useEffect(() => {
@@ -171,11 +159,27 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
     }
   };
 
-  const handleDownload = () => {
-    const canvas = mode === "image" ? imageCanvasRef.current : canvasRef.current;
+  const handleDownload = async () => {
+    if (mode === "image") {
+      if (!countertopProduct) return;
+      try {
+        const res = await fetch(countertopProduct.image);
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement("a");
+        link.download = `alfa-ventura-${countertopProduct.slug}.jpg`;
+        link.href = url;
+        link.click();
+        URL.revokeObjectURL(url);
+      } catch {
+        toast.error("Couldn't download the photo — try opening it in a new tab instead.");
+      }
+      return;
+    }
+    const canvas = canvasRef.current;
     if (!canvas) return;
     const link = document.createElement("a");
-    link.download = mode === "image" ? `alfa-ventura-kitchen-${imageView}.png` : "alfa-ventura-kitchen-design.png";
+    link.download = "alfa-ventura-kitchen-design.png";
     link.href = canvas.toDataURL("image/png");
     link.click();
   };
@@ -188,10 +192,7 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
             <button
               key={m}
               type="button"
-              onClick={() => {
-                setMode(m);
-                if (m === "3d") setImageLightboxOpen(false);
-              }}
+              onClick={() => setMode(m)}
               className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wide transition-colors ${
                 mode === m ? "bg-[#1C1917] text-white" : "bg-[#F5F1EA] text-[#78716C] hover:bg-[#EDE6DA]"
               }`}
@@ -201,36 +202,34 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
           ))}
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-bold uppercase tracking-wide text-[#78716C]">Space</span>
-          <div className="flex gap-1.5 flex-wrap">
-            <button
-              type="button"
-              className="px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide bg-[#1C1917] text-white"
-            >
-              Kitchen
-            </button>
-            {["Bathroom", "Living", "Commercial"].map((space) => (
+        {mode === "3d" && (
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="text-xs font-bold uppercase tracking-wide text-[#78716C]">Space</span>
+            <div className="flex gap-1.5 flex-wrap">
               <button
-                key={space}
                 type="button"
-                disabled
-                title="Coming soon"
-                className="px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide bg-[#F5F1EA] text-[#C4BCAF] cursor-not-allowed"
+                className="px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide bg-[#1C1917] text-white"
               >
-                {space}
+                Kitchen
               </button>
-            ))}
+              {["Bathroom", "Living", "Commercial"].map((space) => (
+                <button
+                  key={space}
+                  type="button"
+                  disabled
+                  title="Coming soon"
+                  className="px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide bg-[#F5F1EA] text-[#C4BCAF] cursor-not-allowed"
+                >
+                  {space}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         <div
           ref={canvasContainerRef}
-          className={
-            imageLightboxOpen
-              ? "fixed inset-0 z-50 w-screen h-screen rounded-none bg-[#EDE6DA]"
-              : "relative w-full h-[64vh] min-h-[440px] max-h-[680px] rounded-2xl overflow-hidden bg-[#EDE6DA] border border-[#E8DDD0]"
-          }
+          className="relative w-full h-[64vh] min-h-[440px] max-h-[680px] rounded-2xl overflow-hidden bg-[#EDE6DA] border border-[#E8DDD0]"
         >
           {mode === "3d" ? (
             <>
@@ -258,156 +257,127 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
               />
             </>
           ) : (
-            <>
-              <ImageVisualizerCanvas
-                view={imageView}
-                countertopProduct={countertopProduct}
-                backsplashProduct={backsplashProduct}
-                waterfall={config.waterfall}
-                thicknessMm={config.thicknessMm}
-                veinRotation={config.veinRotation}
-                edgeProfile={config.edgeProfile}
-                cameraControlsRef={imageCameraControlsRef}
-                canvasRef={imageCanvasRef}
-              />
-              <div className="absolute top-3 left-3 right-3 flex items-center justify-between gap-2">
-                <div className="flex gap-1.5">
-                  {(["primary", "full", "detail"] as ImageView[]).map((view) => (
-                    <button
-                      key={view}
-                      type="button"
-                      onClick={() => setImageView(view)}
-                      className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide border border-white/20 backdrop-blur-sm transition-colors ${
-                        imageView === view ? "bg-[#1C1917] text-white" : "bg-white/80 text-[#44403C] hover:bg-white"
-                      }`}
-                    >
-                      {IMAGE_VIEW_LABELS[view]}
-                    </button>
-                  ))}
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setImageLightboxOpen((v) => !v)}
-                  className="text-xs font-semibold uppercase tracking-wide text-[#44403C] bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/20 hover:bg-white transition-colors"
-                >
-                  {imageLightboxOpen ? "Close ✕" : "Click to Expand"}
-                </button>
-              </div>
-
-              {imageLightboxOpen && (
-                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const views: ImageView[] = ["primary", "full", "detail"];
-                      setImageView(views[(views.indexOf(imageView) + views.length - 1) % views.length]);
-                    }}
-                    className="w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm border border-white/20 hover:bg-white transition-colors flex items-center justify-center text-sm font-bold"
-                    aria-label="Previous view"
-                  >
-                    ←
-                  </button>
-                  <span className="text-xs font-semibold uppercase tracking-wide text-[#44403C] bg-white/80 backdrop-blur-sm px-3 py-1.5 rounded-full border border-white/20">
-                    {IMAGE_VIEW_LABELS[imageView]}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const views: ImageView[] = ["primary", "full", "detail"];
-                      setImageView(views[(views.indexOf(imageView) + 1) % views.length]);
-                    }}
-                    className="w-9 h-9 rounded-full bg-white/80 backdrop-blur-sm border border-white/20 hover:bg-white transition-colors flex items-center justify-center text-sm font-bold"
-                    aria-label="Next view"
-                  >
-                    →
-                  </button>
-                </div>
-              )}
-            </>
+            <ProductImageGallery product={countertopProduct} />
           )}
         </div>
 
         {mode === "3d" && (
-          <LayoutSelector
-            activeLayout={config.layout}
-            mirrored={config.mirrored}
-            onSelectLayout={(layout: LayoutId) => setConfig((prev) => ({ ...prev, layout }))}
-            onToggleMirror={() => setConfig((prev) => ({ ...prev, mirrored: !prev.mirrored }))}
-          />
-        )}
+          <>
+            <LayoutSelector
+              activeLayout={config.layout}
+              mirrored={config.mirrored}
+              onSelectLayout={(layout: LayoutId) => setConfig((prev) => ({ ...prev, layout }))}
+              onToggleMirror={() => setConfig((prev) => ({ ...prev, mirrored: !prev.mirrored }))}
+            />
 
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-bold uppercase tracking-wide text-[#78716C]">Thickness</span>
-          <div className="flex gap-1.5">
-            {THICKNESS_OPTIONS.map((mm) => (
-              <button
-                key={mm}
-                type="button"
-                onClick={() => setConfig((prev) => ({ ...prev, thicknessMm: mm as ThicknessMm }))}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-colors ${
-                  config.thicknessMm === mm ? "bg-[#1C1917] text-white" : "bg-[#F5F1EA] text-[#78716C] hover:bg-[#EDE6DA]"
-                }`}
-              >
-                {mm}mm
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-bold uppercase tracking-wide text-[#78716C]">Vein Direction</span>
-          <div className="flex gap-1.5">
-            {([0, 90] as const).map((deg) => (
-              <button
-                key={deg}
-                type="button"
-                onClick={() => setConfig((prev) => ({ ...prev, veinRotation: deg }))}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-colors ${
-                  config.veinRotation === deg ? "bg-[#1C1917] text-white" : "bg-[#F5F1EA] text-[#78716C] hover:bg-[#EDE6DA]"
-                }`}
-              >
-                {deg === 0 ? "Horizontal" : "Vertical"}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="text-xs font-bold uppercase tracking-wide text-[#78716C]">Edge Profile</span>
-          <div className="flex gap-1.5">
-            {EDGE_PROFILES.map((profile: EdgeProfile) => (
-              <button
-                key={profile}
-                type="button"
-                onClick={() => setConfig((prev) => ({ ...prev, edgeProfile: profile }))}
-                className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-colors ${
-                  config.edgeProfile === profile ? "bg-[#1C1917] text-white" : "bg-[#F5F1EA] text-[#78716C] hover:bg-[#EDE6DA]"
-                }`}
-              >
-                {profile}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {(mode === "image" || config.layout === "island") && (
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-bold uppercase tracking-wide text-[#78716C]">Waterfall edge</span>
-            <div className="flex gap-1.5">
-              {(["none", "left", "right", "both"] as WaterfallOption[]).map((option) => (
-                <button
-                  key={option}
-                  type="button"
-                  onClick={() => setConfig((prev) => ({ ...prev, waterfall: option }))}
-                  className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-colors ${
-                    config.waterfall === option ? "bg-[#1C1917] text-white" : "bg-[#F5F1EA] text-[#78716C] hover:bg-[#EDE6DA]"
-                  }`}
-                >
-                  {option}
-                </button>
-              ))}
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-bold uppercase tracking-wide text-[#78716C]">Thickness</span>
+              <div className="flex gap-1.5">
+                {THICKNESS_OPTIONS.map((mm) => (
+                  <button
+                    key={mm}
+                    type="button"
+                    onClick={() => setConfig((prev) => ({ ...prev, thicknessMm: mm as ThicknessMm }))}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-colors ${
+                      config.thicknessMm === mm ? "bg-[#1C1917] text-white" : "bg-[#F5F1EA] text-[#78716C] hover:bg-[#EDE6DA]"
+                    }`}
+                  >
+                    {mm}mm
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-bold uppercase tracking-wide text-[#78716C]">Vein Direction</span>
+              <div className="flex gap-1.5">
+                {([0, 90] as const).map((deg) => (
+                  <button
+                    key={deg}
+                    type="button"
+                    onClick={() => setConfig((prev) => ({ ...prev, veinRotation: deg }))}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-colors ${
+                      config.veinRotation === deg ? "bg-[#1C1917] text-white" : "bg-[#F5F1EA] text-[#78716C] hover:bg-[#EDE6DA]"
+                    }`}
+                  >
+                    {deg === 0 ? "Horizontal" : "Vertical"}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-bold uppercase tracking-wide text-[#78716C]">Edge Profile</span>
+              <div className="flex gap-1.5">
+                {EDGE_PROFILES.map((profile: EdgeProfile) => (
+                  <button
+                    key={profile}
+                    type="button"
+                    onClick={() => setConfig((prev) => ({ ...prev, edgeProfile: profile }))}
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-colors ${
+                      config.edgeProfile === profile ? "bg-[#1C1917] text-white" : "bg-[#F5F1EA] text-[#78716C] hover:bg-[#EDE6DA]"
+                    }`}
+                  >
+                    {profile}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {config.layout === "island" && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-bold uppercase tracking-wide text-[#78716C]">Waterfall edge</span>
+                <div className="flex gap-1.5">
+                  {(["none", "left", "right", "both"] as WaterfallOption[]).map((option) => (
+                    <button
+                      key={option}
+                      type="button"
+                      onClick={() => setConfig((prev) => ({ ...prev, waterfall: option }))}
+                      className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-colors ${
+                        config.waterfall === option ? "bg-[#1C1917] text-white" : "bg-[#F5F1EA] text-[#78716C] hover:bg-[#EDE6DA]"
+                      }`}
+                    >
+                      {option}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div>
+              <span className="text-xs font-bold uppercase tracking-wide text-[#78716C] block mb-2">Application</span>
+              <div className="flex gap-1.5 mb-3 overflow-x-auto">
+                {(Object.keys(MATERIAL_CATEGORY_LABELS) as MaterialCategory[]).map((cat) => (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => setActiveCategory(cat)}
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide shrink-0 transition-colors ${
+                      activeCategory === cat ? "bg-[#1C1917] text-white" : "bg-[#F5F1EA] text-[#78716C] hover:bg-[#EDE6DA]"
+                    }`}
+                  >
+                    {MATERIAL_CATEGORY_LABELS[cat]}
+                  </button>
+                ))}
+              </div>
+
+              <span className="text-xs font-bold uppercase tracking-wide text-[#78716C] block mb-2">
+                Products &mdash; {MATERIAL_CATEGORY_LABELS[activeCategory]}
+              </span>
+
+              {catalog[activeCategory].length === 0 ? (
+                <p className="text-sm text-[#78716C] py-4">No options available for this category yet.</p>
+              ) : (
+                <MaterialCategorySelector
+                  items={catalog[activeCategory]}
+                  activeId={activeIdForCategory[activeCategory]}
+                  onSelect={(id) => applySelection(activeCategory, id)}
+                  isFavorite={(id) => isFavorite({ category: activeCategory, productId: id })}
+                  onToggleFavorite={(id) => toggleFavorite({ category: activeCategory, productId: id })}
+                />
+              )}
+            </div>
+          </>
         )}
 
         {mode === "image" && (
@@ -460,42 +430,6 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
               </button>
             </div>
           </div>
-        )}
-
-        {mode === "3d" && (
-        <div>
-          <span className="text-xs font-bold uppercase tracking-wide text-[#78716C] block mb-2">Application</span>
-          <div className="flex gap-1.5 mb-3 overflow-x-auto">
-            {(Object.keys(MATERIAL_CATEGORY_LABELS) as MaterialCategory[]).map((cat) => (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => setActiveCategory(cat)}
-                className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide shrink-0 transition-colors ${
-                  activeCategory === cat ? "bg-[#1C1917] text-white" : "bg-[#F5F1EA] text-[#78716C] hover:bg-[#EDE6DA]"
-                }`}
-              >
-                {MATERIAL_CATEGORY_LABELS[cat]}
-              </button>
-            ))}
-          </div>
-
-          <span className="text-xs font-bold uppercase tracking-wide text-[#78716C] block mb-2">
-            Products &mdash; {MATERIAL_CATEGORY_LABELS[activeCategory]}
-          </span>
-
-          {catalog[activeCategory].length === 0 ? (
-            <p className="text-sm text-[#78716C] py-4">No options available for this category yet.</p>
-          ) : (
-            <MaterialCategorySelector
-              items={catalog[activeCategory]}
-              activeId={activeIdForCategory[activeCategory]}
-              onSelect={(id) => applySelection(activeCategory, id)}
-              isFavorite={(id) => isFavorite({ category: activeCategory, productId: id })}
-              onToggleFavorite={(id) => toggleFavorite({ category: activeCategory, productId: id })}
-            />
-          )}
-        </div>
         )}
       </div>
 

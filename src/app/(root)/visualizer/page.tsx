@@ -13,6 +13,7 @@ const toVisualizerProduct = (p: { id: string; slug: string; title: string; image
   slug: p.slug,
   name: p.title,
   image: p.images[0],
+  images: p.images,
   categoryName: p.category?.name ?? "Alfa Ventura",
 });
 

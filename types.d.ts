@@ -3,6 +3,9 @@ export interface VisualizerProduct {
   slug: string;
   name: string;
   image: string;
+  /** All of the real photos uploaded for this product (Cloudinary URLs) --
+   * the Image Visualizer shows these directly, never a fabricated composite. */
+  images: string[];
   categoryName: string;
 }
 
