@@ -16,6 +16,9 @@ export interface KitchenConfig {
    * photographed ("horizontal"), 90 = turned a quarter-turn ("vertical"). */
   veinRotation: 0 | 90;
   edgeProfile: EdgeProfile;
+  /** Which of the selected product's real photos (images[]) to use as the
+   * 3D texture -- some products have a better-suited second shot. */
+  photoIndex: number;
 }
 
 export const encodeConfigToParams = (config: KitchenConfig): URLSearchParams => {
@@ -30,6 +33,7 @@ export const encodeConfigToParams = (config: KitchenConfig): URLSearchParams => 
   if (config.thicknessMm !== 20) params.set("thickness", String(config.thicknessMm));
   if (config.veinRotation !== 0) params.set("vein", String(config.veinRotation));
   if (config.edgeProfile !== "square") params.set("edge", config.edgeProfile);
+  if (config.photoIndex !== 0) params.set("photo", String(config.photoIndex));
   return params;
 };
 
@@ -39,6 +43,7 @@ export const decodeConfigFromParams = (params: URLSearchParams): Partial<Kitchen
   const thickness = Number(params.get("thickness"));
   const vein = params.get("vein");
   const edge = params.get("edge");
+  const photo = Number(params.get("photo"));
   return {
     ...(layout === "island" || layout === "lshape" || layout === "galley" ? { layout } : {}),
     mirrored: params.get("mirrored") === "1",
@@ -50,5 +55,6 @@ export const decodeConfigFromParams = (params: URLSearchParams): Partial<Kitchen
     ...(THICKNESS_OPTIONS.includes(thickness as ThicknessMm) ? { thicknessMm: thickness as ThicknessMm } : {}),
     ...(vein === "90" ? { veinRotation: 90 as const } : {}),
     ...(EDGE_PROFILES.includes(edge as EdgeProfile) ? { edgeProfile: edge as EdgeProfile } : {}),
+    ...(Number.isInteger(photo) && photo >= 0 ? { photoIndex: photo } : {}),
   };
 };

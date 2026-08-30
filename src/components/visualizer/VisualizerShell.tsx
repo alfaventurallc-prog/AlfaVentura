@@ -47,6 +47,7 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
     thicknessMm: 20,
     veinRotation: 0,
     edgeProfile: "square",
+    photoIndex: 0,
   });
   const [activeCategory, setActiveCategory] = useState<MaterialCategory>("countertop");
   const [lightingMode, setLightingMode] = useState<"day" | "evening">("day");
@@ -98,6 +99,15 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
   const countertopProduct = quartzProducts.find((p) => p.id === config.countertopId) ?? null;
   const backsplashProduct = quartzProducts.find((p) => p.id === config.backsplashId) ?? null;
   const floorFinish = FLOOR_FINISHES.find((f) => f.id === config.floorId) ?? FLOOR_FINISHES[0];
+
+  // The 3D surfaces texture from `.image` -- swap in whichever of the
+  // product's real photos (images[]) is selected as the texture source,
+  // falling back to the first photo if that index doesn't exist for this
+  // product (not every product has a second photo).
+  const withTexturePhoto = (p: VisualizerProduct | null): VisualizerProduct | null =>
+    p ? { ...p, image: p.images[config.photoIndex] ?? p.images[0] ?? p.image } : null;
+  const countertopTextureProduct = withTexturePhoto(countertopProduct);
+  const backsplashTextureProduct = withTexturePhoto(backsplashProduct);
 
   const catalog: Record<MaterialCategory, SwatchItem[]> = {
     cabinet: cabinetProducts.map(toSwatch),
@@ -237,8 +247,8 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
                 layout={config.layout}
                 mirrored={config.mirrored}
                 cabinetColor={cabinetColor}
-                countertopProduct={countertopProduct}
-                backsplashProduct={backsplashProduct}
+                countertopProduct={countertopTextureProduct}
+                backsplashProduct={backsplashTextureProduct}
                 floorColor={floorFinish.color}
                 floorRoughness={floorFinish.roughness}
                 waterfall={config.waterfall}
@@ -269,6 +279,26 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
               onSelectLayout={(layout: LayoutId) => setConfig((prev) => ({ ...prev, layout }))}
               onToggleMirror={() => setConfig((prev) => ({ ...prev, mirrored: !prev.mirrored }))}
             />
+
+            {(countertopProduct?.images.length ?? 0) > 1 && (
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="text-xs font-bold uppercase tracking-wide text-[#78716C]">Texture Photo</span>
+                <div className="flex gap-1.5">
+                  {countertopProduct!.images.map((_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setConfig((prev) => ({ ...prev, photoIndex: i }))}
+                      className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-colors ${
+                        config.photoIndex === i ? "bg-[#1C1917] text-white" : "bg-[#F5F1EA] text-[#78716C] hover:bg-[#EDE6DA]"
+                      }`}
+                    >
+                      Photo {i + 1}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs font-bold uppercase tracking-wide text-[#78716C]">Thickness</span>
