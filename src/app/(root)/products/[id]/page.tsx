@@ -1,7 +1,6 @@
 import { getProductById } from "@/actions/products";
 import EnquireProductForm from "@/components/EnquireProductForm";
 import ProductMediaSlider from "@/components/ProductMediaSlider";
-import Link from "next/link";
 
 type ProductDetail = {
   category: {
@@ -36,9 +35,6 @@ const ProductDetailPage = async ({ params }: { params: Promise<{ id: string }> }
   }
 
   const product: ProductDetail = prodRes.data;
-  // Same category match the Visualizer's own product source uses --
-  // only quartz slab/design products are visualizable today.
-  const isVisualizable = /slab|design/i.test(product.category?.name ?? "");
 
   const media = [
     ...(product.images?.map((url) => ({ url, type: "image" })) || []),
@@ -80,22 +76,6 @@ const ProductDetailPage = async ({ params }: { params: Promise<{ id: string }> }
                 Series combines exclusive design, exceptional craftsmanship, and enduring performance, ensuring {product?.title}{" "}
                 stands out as a statement of both style and substance.
               </p>
-            )}
-            {isVisualizable && (
-              <div className="flex flex-wrap gap-3 mb-5">
-                <Link
-                  href={`/visualizer-v2?product=${product.id}`}
-                  className="inline-block px-5 py-2.5 rounded-lg border border-[#9B7040] text-[#9B7040] text-sm font-semibold hover:bg-[#9B7040] hover:text-white transition-colors"
-                >
-                  Visualize in Your Space
-                </Link>
-                <Link
-                  href={`/visualizer-v2?product=${product.id}&mode=image`}
-                  className="inline-block px-5 py-2.5 rounded-lg border border-[#9B7040] text-[#9B7040] text-sm font-semibold hover:bg-[#9B7040] hover:text-white transition-colors"
-                >
-                  View in Your Own Photo
-                </Link>
-              </div>
             )}
             <p className="text-[#6B5E52] text-sm mt-5">
               Want to know more about this product? Click the button below to get in touch with us!
