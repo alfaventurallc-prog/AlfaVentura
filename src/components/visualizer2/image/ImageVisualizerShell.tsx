@@ -284,10 +284,14 @@ const ImageVisualizerShell = ({ products, deepLinkProductId, initialDesign }: Im
 
   const handleDownload = (format: "png" | "jpg") => {
     if (!resultDataUrl) return;
-    const link = document.createElement("a");
-    link.download = `alfa-ventura-visualization.${format}`;
-    link.href = resultDataUrl;
-    link.click();
+    const preparingToast = toast.loading("Preparing download...");
+    requestAnimationFrame(() => {
+      const link = document.createElement("a");
+      link.download = `alfa-ventura-visualization.${format}`;
+      link.href = resultDataUrl;
+      link.click();
+      toast.success("Download ready.", { id: preparingToast });
+    });
   };
 
   const handleReset = () => {

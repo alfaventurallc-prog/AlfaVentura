@@ -256,9 +256,11 @@ const VisualizerV2Shell = ({ alfaProducts, deepLinkProductId, initialMode = "3d"
       }
     }
     patchSurfaceConfig(selectedSurface, patch);
+    if (patch.layout) track("layout_changed", { surfaceId: selectedSurface, layout: patch.layout });
   };
 
   const patchFabrication = (surfaceId: string, patch: Partial<CountertopFabricationConfig>) => {
+    track("fabrication_changed", { surfaceId, ...Object.fromEntries(Object.entries(patch).filter(([, v]) => typeof v !== "object")) });
     setFabricationState((prev) => ({
       ...prev,
       [activeRoomId]: {
@@ -362,11 +364,17 @@ const VisualizerV2Shell = ({ alfaProducts, deepLinkProductId, initialMode = "3d"
   const handleDownload = (format: "png" | "jpg") => {
     const canvas = canvasRef.current;
     if (!canvas) return;
-    const link = document.createElement("a");
-    link.download = `${(currentDesign?.name ?? "alfa-ventura-design").replace(/\s+/g, "-").toLowerCase()}.${format}`;
-    link.href = canvas.toDataURL(format === "jpg" ? "image/jpeg" : "image/png", 0.92);
-    link.click();
-    track("visualization_downloaded", { format, roomId: activeRoomId });
+    const preparingToast = toast.loading("Preparing download...");
+    // The capture itself is synchronous, but a frame's delay keeps the
+    // "Preparing..." state from flashing by unreadably fast.
+    requestAnimationFrame(() => {
+      const link = document.createElement("a");
+      link.download = `${(currentDesign?.name ?? "alfa-ventura-design").replace(/\s+/g, "-").toLowerCase()}.${format}`;
+      link.href = canvas.toDataURL(format === "jpg" ? "image/jpeg" : "image/png", 0.92);
+      link.click();
+      toast.success("Download ready.", { id: preparingToast });
+      track("visualization_downloaded", { format, roomId: activeRoomId });
+    });
   };
 
   const designSummaryRows = buildDesignSummary(activeRoom, surfaceProducts, surfaceConfigs, fabricationConfigs);
