@@ -2,11 +2,15 @@
 
 import { useMemo, useState } from "react";
 import ProceduralSwatch from "./ProceduralSwatch";
-import { PRODUCT_CATEGORIES, type Product } from "@/lib/visualizer2/product";
+import { PRODUCT_CATEGORIES, isProductCompatible, type Product } from "@/lib/visualizer2/product";
 
 interface ProductPanelProps {
   products: Product[];
   selectedSurfaceLabel: string | null;
+  /** The selected surface's type (e.g. "floor", "countertop") -- when set,
+   * the grid only shows products whose applicationTypes actually include
+   * it, via the shared isProductCompatible() compatibility engine. */
+  selectedSurfaceType: string | null;
   activeProduct: Product | null;
   onSelectProduct: (product: Product) => void;
 }
@@ -24,23 +28,32 @@ const ProductThumbnail = ({ product }: { product: Product }) =>
  * block for whatever was last clicked. Clicking a card applies it to
  * whichever surface is currently selected (see VisualizerV2Shell).
  */
-const ProductPanel = ({ products, selectedSurfaceLabel, activeProduct, onSelectProduct }: ProductPanelProps) => {
+const ProductPanel = ({ products, selectedSurfaceLabel, selectedSurfaceType, activeProduct, onSelectProduct }: ProductPanelProps) => {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState<string>("All");
+  const [collection, setCollection] = useState<string>("All");
+
+  const compatibleProducts = useMemo(
+    () => (selectedSurfaceType ? products.filter((p) => isProductCompatible(p, selectedSurfaceType)) : products),
+    [products, selectedSurfaceType]
+  );
+
+  const collections = useMemo(() => Array.from(new Set(compatibleProducts.map((p) => p.collection))).sort(), [compatibleProducts]);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
-    return products.filter((p) => {
+    return compatibleProducts.filter((p) => {
       const matchesCategory = category === "All" || p.category === category;
+      const matchesCollection = collection === "All" || p.collection === collection;
       const matchesSearch =
         !q ||
         p.name.toLowerCase().includes(q) ||
         p.collection.toLowerCase().includes(q) ||
         p.category.toLowerCase().includes(q) ||
         p.finish.toLowerCase().includes(q);
-      return matchesCategory && matchesSearch;
+      return matchesCategory && matchesCollection && matchesSearch;
     });
-  }, [products, search, category]);
+  }, [compatibleProducts, search, category, collection]);
 
   return (
     <div className="flex flex-col gap-3">
@@ -73,6 +86,23 @@ const ProductPanel = ({ products, selectedSurfaceLabel, activeProduct, onSelectP
           </button>
         ))}
       </div>
+
+      {collections.length > 1 && (
+        <div className="flex gap-1.5 overflow-x-auto pb-1">
+          {["All", ...collections].map((c) => (
+            <button
+              key={c}
+              type="button"
+              onClick={() => setCollection(c)}
+              className={`px-3 py-1.5 rounded-full text-xs font-semibold shrink-0 transition-colors ${
+                collection === c ? "bg-[#1C1917] text-white" : "bg-[#F5F1EA] text-[#78716C] hover:bg-[#EDE6DA]"
+              }`}
+            >
+              {c}
+            </button>
+          ))}
+        </div>
+      )}
 
       {filtered.length === 0 ? (
         <p className="text-sm text-[#78716C] py-6 text-center">No materials match your search.</p>

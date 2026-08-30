@@ -10,8 +10,9 @@ import SurfaceTabs from "./SurfaceTabs";
 import ProductPanel from "./ProductPanel";
 import MaterialConfigPanel from "./MaterialConfigPanel";
 import FabricationPanel from "./FabricationPanel";
+import ProductSummary from "./ProductSummary";
 import { DEMO_PRODUCTS } from "@/lib/visualizer2/demoProducts";
-import type { Product } from "@/lib/visualizer2/product";
+import { isProductCompatible, validateProduct, type Product } from "@/lib/visualizer2/product";
 import { DEFAULT_SURFACE_CONFIG, DEFAULT_FABRICATION_CONFIG, type SurfaceMaterialConfig, type CountertopFabricationConfig } from "@/lib/visualizer2/layout";
 import { ROOMS, getRoom } from "@/lib/visualizer2/rooms";
 
@@ -19,6 +20,9 @@ interface VisualizerV2ShellProps {
   /** Real Alfa Ventura quartz products (source: "alfa"), fetched server-side
    * in the page and passed down -- merged with the demo categories below. */
   alfaProducts: Product[];
+  /** From /visualizer-v2?product=PRODUCT_ID -- auto-selects that product
+   * onto the first surface it's compatible with, once on mount. */
+  deepLinkProductId?: string | null;
 }
 
 /** roomId -> surfaceId -> config. Kept as one flat object rather than
@@ -37,7 +41,7 @@ const FABRICATED_TYPES = new Set(["countertop", "island"]);
  * configuration (designState below), 3D rendering (RoomRenderer), and UI
  * controls all stay separate concerns, matching the earlier steps.
  */
-const VisualizerV2Shell = ({ alfaProducts }: VisualizerV2ShellProps) => {
+const VisualizerV2Shell = ({ alfaProducts, deepLinkProductId }: VisualizerV2ShellProps) => {
   const [activeRoomId, setActiveRoomId] = useState(ROOMS[0].id);
   const [selectedSurface, setSelectedSurface] = useState<string | null>(null);
   const [designState, setDesignState] = useState<DesignState>({});
@@ -48,7 +52,9 @@ const VisualizerV2Shell = ({ alfaProducts }: VisualizerV2ShellProps) => {
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const activeRoom = getRoom(activeRoomId);
-  const products = [...alfaProducts, ...DEMO_PRODUCTS];
+  // Demo data is trusted, but still validated defensively -- a malformed
+  // real product should never reach the 3D renderer and crash it.
+  const products = [...alfaProducts, ...DEMO_PRODUCTS].filter(validateProduct);
   const productById = (id: string | null) => (id ? products.find((p) => p.id === id) ?? null : null);
 
   const roomConfigs = designState[activeRoomId] ?? {};
@@ -87,6 +93,36 @@ const VisualizerV2Shell = ({ alfaProducts }: VisualizerV2ShellProps) => {
     const t = setTimeout(() => setRoomLoading(false), 350);
     return () => clearTimeout(t);
   }, [roomLoading]);
+
+  // Deep link: /visualizer-v2?product=PRODUCT_ID -- auto-apply that
+  // product to the first surface in the current room it's actually
+  // compatible with (via the same isProductCompatible everything else
+  // uses), once.
+  const [deepLinkHandled, setDeepLinkHandled] = useState(false);
+  useEffect(() => {
+    if (deepLinkHandled || !deepLinkProductId) return;
+    const product = productById(deepLinkProductId);
+    if (product) {
+      const surface = activeRoom.surfaces.find((s) => isProductCompatible(product, s.type));
+      if (surface) {
+        const mode = product.availableModes[0];
+        const firstSize = product.sizes.find((s) => s.mode === mode) ?? null;
+        setSelectedSurface(surface.id);
+        setDesignState((prev) => ({
+          ...prev,
+          [activeRoomId]: {
+            ...prev[activeRoomId],
+            [surface.id]: { ...DEFAULT_SURFACE_CONFIG, productId: product.id, mode, sizeId: firstSize?.id ?? null },
+          },
+        }));
+        toast.success(`${product.name} loaded from link.`);
+      } else {
+        toast.error("That product isn't compatible with any surface in the default room.");
+      }
+    }
+    setDeepLinkHandled(true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [deepLinkProductId, deepLinkHandled]);
 
   const patchSurfaceConfig = (surfaceId: string, patch: Partial<SurfaceMaterialConfig>) => {
     setDesignState((prev) => ({
@@ -209,9 +245,14 @@ const VisualizerV2Shell = ({ alfaProducts }: VisualizerV2ShellProps) => {
       </div>
 
       <div className="lg:w-[340px] lg:shrink-0 lg:pl-6 lg:border-l lg:border-[#E8DDD0]">
+        {activeProduct && activeConfig && activeSurfaceDef && (
+          <ProductSummary surfaceLabel={activeSurfaceDef.label} product={activeProduct} config={activeConfig} />
+        )}
+
         <ProductPanel
           products={products}
           selectedSurfaceLabel={activeSurfaceDef?.label ?? null}
+          selectedSurfaceType={activeSurfaceDef?.type ?? null}
           activeProduct={activeProduct}
           onSelectProduct={handleSelectProduct}
         />

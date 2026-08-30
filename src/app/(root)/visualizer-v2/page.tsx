@@ -1,42 +1,29 @@
 import type { Metadata } from "next";
 import VisualizerV2Shell from "@/components/visualizer2/VisualizerV2Shell";
 import { getProducts } from "@/actions/products";
-import type { Product } from "@/lib/visualizer2/product";
+import { adaptAlfaProduct } from "@/lib/visualizer2/productAdapter";
+import { validateProduct } from "@/lib/visualizer2/product";
 
 export const metadata: Metadata = {
   title: "3D Visualizer (Preview) — Alfa Ventura",
   description: "An early, in-progress preview of Alfa Ventura's new interactive 3D visualizer.",
 };
 
-const toAlfaProduct = (p: { id: string; title: string; images: string[] }): Product => ({
-  id: p.id,
-  name: p.title,
-  collection: "Alfa Ventura Quartz",
-  category: "Quartz",
-  finish: "Polished",
-  availableSizes: ["600 x 600 mm", "3200 x 1600 mm"],
-  availableModes: ["tile", "slab"],
-  sizes: [
-    { id: "600x600", width: 600, height: 600, unit: "mm", mode: "tile" },
-    { id: "3200x1600", width: 3200, height: 1600, unit: "mm", mode: "slab" },
-  ],
-  source: "alfa",
-  imageUrl: p.images[0],
-  materialType: "quartz",
-  applicationTypes: ["floor", "wall", "backsplash", "countertop", "island"],
-  availableThicknesses: [12, 20, 30],
-  availableEdgeProfiles: ["square", "eased", "beveled", "bullnose"],
-  supportsBookmatch: true,
-  supportsWaterfall: true,
-});
+interface VisualizerV2PageProps {
+  // /visualizer-v2?product=PRODUCT_ID deep-links straight to that product.
+  searchParams: Promise<{ product?: string }>;
+}
 
-export default async function VisualizerV2Page() {
-  const productsRes = await getProducts({ limit: 24 });
+export default async function VisualizerV2Page({ searchParams }: VisualizerV2PageProps) {
+  const { product: deepLinkProductId } = await searchParams;
+
+  const productsRes = await getProducts({ limit: 60 });
   const quartzProducts =
     productsRes.success && productsRes.data
       ? productsRes.data.products
           .filter((p) => p.images?.length > 0 && /slab|design/i.test(p.category?.name ?? ""))
-          .map(toAlfaProduct)
+          .map(adaptAlfaProduct)
+          .filter(validateProduct)
       : [];
 
   return (
@@ -59,7 +46,7 @@ export default async function VisualizerV2Page() {
           </p>
         </div>
 
-        <VisualizerV2Shell alfaProducts={quartzProducts} />
+        <VisualizerV2Shell alfaProducts={quartzProducts} deepLinkProductId={deepLinkProductId ?? null} />
       </div>
     </section>
   );

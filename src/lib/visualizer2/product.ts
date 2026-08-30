@@ -24,6 +24,9 @@ export const FINISH_ROUGHNESS: Record<Finish, number> = {
  */
 export interface Product {
   id: string;
+  /** Real Alfa Ventura products only -- used to link back to the actual
+   * product page (/products/[slug]). Demo products have none. */
+  slug?: string;
   name: string;
   collection: string;
   category: string;
@@ -49,3 +52,37 @@ export interface Product {
 
 export const PRODUCT_CATEGORIES = ["Quartz", "Marble", "Stone", "Concrete", "Terrazzo", "Wood", "Solid Color"] as const;
 export type ProductCategoryName = (typeof PRODUCT_CATEGORIES)[number];
+
+/**
+ * The one place that decides whether a product can go on a given surface
+ * type in a given mode -- every UI list (ProductPanel, MaterialConfigPanel,
+ * FabricationPanel) filters through this instead of re-deriving the same
+ * checks. `mode` is optional: pass it to also check tile/slab support,
+ * omit it to just check surface-type/application compatibility.
+ */
+export const isProductCompatible = (product: Product, surfaceType: string, mode?: MaterialMode): boolean => {
+  if (!product.applicationTypes.includes(surfaceType)) return false;
+  if (mode && !product.availableModes.includes(mode)) return false;
+  return true;
+};
+
+/**
+ * Defensive validation for product records coming from any source (real
+ * catalog or demo data) -- logs a warning and returns false for anything
+ * malformed rather than letting it reach the 3D renderer and crash.
+ */
+export const validateProduct = (product: Product): boolean => {
+  const problems: string[] = [];
+  if (!product.id) problems.push("missing id");
+  if (!product.name) problems.push("missing name");
+  if (!product.sizes?.length) problems.push("no sizes");
+  if (!product.availableModes?.length) problems.push("no availableModes");
+  if (product.source === "alfa" && !product.imageUrl) problems.push("alfa product missing imageUrl");
+  if (product.source === "demo" && !product.descriptor) problems.push("demo product missing descriptor");
+
+  if (problems.length) {
+    console.warn(`[visualizer2] Skipping invalid product "${product.id ?? "(no id)"}": ${problems.join(", ")}`);
+    return false;
+  }
+  return true;
+};
