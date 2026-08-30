@@ -18,7 +18,12 @@ const toVisualizerProduct = (p: { id: string; slug: string; title: string; image
 });
 
 export default async function VisualizerPage() {
-  const productsRes = await getProducts({ limit: 60 });
+  // getProducts orders by newest first -- a low limit here can silently
+  // exclude older Cabinet-category products entirely if enough newer
+  // quartz slabs have been added since, leaving the Cabinet tab empty even
+  // though cabinet products exist in the catalogue. Fetch generously so
+  // every category is represented regardless of creation date.
+  const productsRes = await getProducts({ limit: 500 });
   const withImages = productsRes.success && productsRes.data ? productsRes.data.products.filter((p) => p.images?.length > 0) : [];
 
   const cabinetProducts = withImages.filter((p) => /cabinet/i.test(p.category?.name ?? "")).map(toVisualizerProduct);
