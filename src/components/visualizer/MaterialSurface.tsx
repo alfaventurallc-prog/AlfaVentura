@@ -61,11 +61,7 @@ const TexturedFace = ({
   veinRotationDeg = 0,
 }: FaceProps & { product: VisualizerProduct }) => {
   const texture = useTexture(product.image);
-  // Clamp (not repeat) so one full slab photo spans the hero face once,
-  // instead of tiling into small repeating stripes.
   texture.colorSpace = THREE.SRGBColorSpace;
-  texture.wrapS = THREE.ClampToEdgeWrapping;
-  texture.wrapT = THREE.ClampToEdgeWrapping;
 
   // A quarter-turn on the vein swaps which face dimension the image's own
   // width/height should cover-fit against.
@@ -73,6 +69,11 @@ const TexturedFace = ({
 
   // Cover-fit: crop the photo to the face's own aspect ratio instead of
   // stretching it to fill, so the slab pattern keeps its real proportions.
+  // On a face MUCH wider than the photo (a long countertop run), a single
+  // clamped crop stretches that one photo thin across the whole width and
+  // the veining goes flat/washed-out -- repeat it sideways instead, the
+  // same way a real run that long would actually need more than one slab
+  // width, rather than one image stretched to fit.
   const img = texture.image as HTMLImageElement | undefined;
   if (img?.width && img?.height) {
     const rawFaceWidth = heroFace === "side" || heroFace === "sideEnd" ? args[2] : args[0];
@@ -81,17 +82,36 @@ const TexturedFace = ({
     const faceHeight = rotated ? rawFaceWidth : rawFaceHeight;
     const faceAspect = faceWidth / faceHeight;
     const imageAspect = img.width / img.height;
+    const REPEAT_THRESHOLD = 1.15;
 
-    if (imageAspect > faceAspect) {
+    if (faceAspect / imageAspect > REPEAT_THRESHOLD) {
       const repeatX = faceAspect / imageAspect;
+      texture.wrapS = THREE.RepeatWrapping;
+      texture.wrapT = THREE.ClampToEdgeWrapping;
+      texture.repeat.set(repeatX, 1);
+      texture.offset.set(0, 0);
+    } else if (imageAspect / faceAspect > REPEAT_THRESHOLD) {
+      const repeatY = faceAspect / imageAspect;
+      texture.wrapS = THREE.ClampToEdgeWrapping;
+      texture.wrapT = THREE.RepeatWrapping;
+      texture.repeat.set(1, repeatY);
+      texture.offset.set(0, 0);
+    } else if (imageAspect > faceAspect) {
+      const repeatX = faceAspect / imageAspect;
+      texture.wrapS = THREE.ClampToEdgeWrapping;
+      texture.wrapT = THREE.ClampToEdgeWrapping;
       texture.repeat.set(repeatX, 1);
       texture.offset.set((1 - repeatX) / 2, 0);
     } else {
       const repeatY = imageAspect / faceAspect;
+      texture.wrapS = THREE.ClampToEdgeWrapping;
+      texture.wrapT = THREE.ClampToEdgeWrapping;
       texture.repeat.set(1, repeatY);
       texture.offset.set(0, (1 - repeatY) / 2);
     }
   } else {
+    texture.wrapS = THREE.ClampToEdgeWrapping;
+    texture.wrapT = THREE.ClampToEdgeWrapping;
     texture.repeat.set(1, 1);
     texture.offset.set(0, 0);
   }
