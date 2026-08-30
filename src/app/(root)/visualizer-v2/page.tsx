@@ -5,8 +5,8 @@ import { adaptAlfaProduct } from "@/lib/visualizer2/productAdapter";
 import { validateProduct } from "@/lib/visualizer2/product";
 
 export const metadata: Metadata = {
-  title: "3D Visualizer (Preview) — Alfa Ventura",
-  description: "An early, in-progress preview of Alfa Ventura's new interactive 3D visualizer.",
+  title: "Virtual Kitchen & Space Visualizer — Alfa Ventura",
+  description: "Design your space with real Alfa Ventura quartz — configure countertops, floors and walls in 3D, or upload your own photo.",
 };
 
 interface VisualizerV2PageProps {
@@ -39,12 +39,12 @@ export default async function VisualizerV2Page({ searchParams }: VisualizerV2Pag
             className="text-3xl md:text-5xl font-bold text-[#1C1917] leading-tight mb-4"
             style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
           >
-            3D Visualizer — Foundation Preview
+            Design Your Space
           </h1>
           <p className="text-[#57534E] text-base md:text-lg max-w-2xl leading-relaxed">
-            Step 2: pick a surface (click it in the room, or use the Surface buttons), then choose a material — it
-            applies instantly. Quartz uses real Alfa Ventura products; the other categories are placeholders until
-            those product lines exist in the catalogue.
+            Pick a surface — in the 3D room or your own uploaded photo — then choose an Alfa Ventura material and see
+            it applied instantly. Quartz uses our real catalogue; a few additional material categories are shown as
+            placeholders until those product lines are added.
           </p>
         </div>
 

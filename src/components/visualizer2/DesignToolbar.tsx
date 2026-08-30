@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { DesignRepository } from "@/lib/visualizer2/designRepository";
 import { createDesignId, DEFAULT_DESIGN_NAME, type Design } from "@/lib/visualizer2/design";
+import { track } from "@/lib/visualizer2/analytics";
 
 interface DesignToolbarProps {
   currentDesign: Design | null;
@@ -83,6 +84,7 @@ const DesignToolbar = ({ currentDesign, isDirty, onSave, onNewDesign, onOpenDesi
     const url = DesignRepository.share(design);
     setShareUrl(url);
     setShareDialogOpen(true);
+    track("design_shared", { designId: design.id });
   };
 
   const handleCopyLink = async () => {

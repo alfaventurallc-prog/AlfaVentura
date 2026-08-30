@@ -20,6 +20,7 @@ import {
 import { getSegmentationProvider } from "@/lib/visualizer2/imageVisualizer/segmentationProvider";
 import { serializeImageDesign, createDesignId, DEFAULT_DESIGN_NAME, type Design } from "@/lib/visualizer2/design";
 import { DesignRepository } from "@/lib/visualizer2/designRepository";
+import { track } from "@/lib/visualizer2/analytics";
 
 interface ImageVisualizerShellProps {
   products: Product[];
@@ -182,6 +183,7 @@ const ImageVisualizerShell = ({ products, deepLinkProductId, initialDesign }: Im
         setResultDataUrl(null);
         maskDataUrls.current = {};
         setStatus("analyzing");
+        track("image_uploaded", { fileType: file.type, fileSizeKb: Math.round(file.size / 1024) });
 
         const provider = getSegmentationProvider();
         provider.analyze(bitmap ? (img as unknown as HTMLImageElement) : img).then(() => {
@@ -271,6 +273,7 @@ const ImageVisualizerShell = ({ products, deepLinkProductId, initialDesign }: Im
         const result = compositeMaterialIntoMask({ sourceImage, maskCanvas, patternCanvas, repeatX, repeatY });
         setResultDataUrl(result.toDataURL("image/jpeg", 0.92));
         setStatus("complete");
+        track("image_visualization_generated", { surfaceType, productId: selectedProduct.id, mode: config.mode });
       } catch (e) {
         console.error("[ImageVisualizer] generate failed:", e);
         setError("We couldn't generate the visualization. Your original image is safe.");

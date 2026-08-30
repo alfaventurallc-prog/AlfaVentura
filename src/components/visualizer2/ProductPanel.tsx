@@ -64,6 +64,25 @@ const ProductPanel = ({ products, selectedSurfaceLabel, selectedSurfaceType, act
         </span>
       </div>
 
+      {(search || category !== "All" || collection !== "All") && (
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-[#78716C]">
+            {filtered.length} result{filtered.length === 1 ? "" : "s"}
+          </span>
+          <button
+            type="button"
+            onClick={() => {
+              setSearch("");
+              setCategory("All");
+              setCollection("All");
+            }}
+            className="text-xs font-semibold text-[#9B7040] hover:underline"
+          >
+            Clear Filters
+          </button>
+        </div>
+      )}
+
       <input
         type="text"
         value={search}
@@ -105,7 +124,10 @@ const ProductPanel = ({ products, selectedSurfaceLabel, selectedSurfaceType, act
       )}
 
       {filtered.length === 0 ? (
-        <p className="text-sm text-[#78716C] py-6 text-center">No materials match your search.</p>
+        <div className="py-8 text-center">
+          <p className="text-sm font-semibold text-[#57534E]">No materials found.</p>
+          <p className="text-xs text-[#A8A29E] mt-1">Try another search or collection.</p>
+        </div>
       ) : (
         <div className="grid grid-cols-2 gap-3 max-h-[360px] overflow-y-auto pr-1">
           {filtered.map((product) => {
@@ -115,12 +137,16 @@ const ProductPanel = ({ products, selectedSurfaceLabel, selectedSurfaceType, act
                 key={product.id}
                 type="button"
                 onClick={() => onSelectProduct(product)}
-                className={`relative text-left rounded-xl border overflow-hidden transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9B7040] ${
+                aria-pressed={active}
+                aria-label={`${product.name}, ${product.collection}${active ? " (selected)" : ""}`}
+                className={`group relative text-left rounded-xl border overflow-hidden transition-all motion-safe:hover:-translate-y-0.5 hover:shadow-md focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9B7040] ${
                   active ? "border-[#9B7040] ring-1 ring-[#9B7040]" : "border-[#E8DDD0] hover:border-[#9B7040]"
                 }`}
               >
-                <span className="block w-full h-24 bg-[#EDE6DA]">
-                  <ProductThumbnail product={product} />
+                <span className="block w-full h-24 bg-[#EDE6DA] overflow-hidden">
+                  <span className="block w-full h-full motion-safe:transition-transform motion-safe:duration-300 motion-safe:group-hover:scale-105">
+                    <ProductThumbnail product={product} />
+                  </span>
                 </span>
                 <span className="block px-2.5 py-2">
                   <span className="block text-xs font-bold text-[#1C1917] truncate">{product.name}</span>

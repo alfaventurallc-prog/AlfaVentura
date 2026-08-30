@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useEffect, useState, type RefObject } from "react";
+import { Suspense, useEffect, useRef, useState, type RefObject } from "react";
 import { Canvas } from "@react-three/fiber";
 import { CameraControls, Environment } from "@react-three/drei";
 import type { CameraControls as CameraControlsImpl } from "@react-three/drei";
@@ -55,10 +55,31 @@ const VisualizerV2Canvas = ({
   canvasRef,
 }: VisualizerV2CanvasProps) => {
   const [webglOk, setWebglOk] = useState(true);
+  const [contextLost, setContextLost] = useState(false);
+  const localCanvasRef = useRef<HTMLCanvasElement | null>(null);
 
   useEffect(() => {
     setWebglOk(hasWebGL());
   }, []);
+
+  // WebGL context can be lost (GPU driver reset, too many contexts, mobile
+  // memory pressure) -- without handling this the canvas just freezes on
+  // its last frame with no indication anything's wrong.
+  useEffect(() => {
+    const canvas = localCanvasRef.current;
+    if (!canvas) return;
+    const onLost = (e: Event) => {
+      e.preventDefault();
+      setContextLost(true);
+    };
+    const onRestored = () => setContextLost(false);
+    canvas.addEventListener("webglcontextlost", onLost);
+    canvas.addEventListener("webglcontextrestored", onRestored);
+    return () => {
+      canvas.removeEventListener("webglcontextlost", onLost);
+      canvas.removeEventListener("webglcontextrestored", onRestored);
+    };
+  }, [webglOk]);
 
   if (!webglOk) {
     return (
@@ -68,9 +89,27 @@ const VisualizerV2Canvas = ({
     );
   }
 
+  if (contextLost) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-3 w-full h-full min-h-[380px] bg-[#EDE6DA] text-center px-6">
+        <p className="text-[#78716C] text-sm">The 3D preview lost its graphics context and needs to be reloaded.</p>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="px-4 py-2 rounded-lg bg-[#1C1917] text-white text-sm font-semibold hover:bg-[#33302B] transition-colors"
+        >
+          Reload Visualizer
+        </button>
+      </div>
+    );
+  }
+
   return (
     <Canvas
-      ref={canvasRef}
+      ref={(node) => {
+        localCanvasRef.current = node;
+        if (canvasRef) canvasRef.current = node;
+      }}
       shadows
       dpr={[1, 2]}
       gl={{ toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 0.95, preserveDrawingBuffer: true }}

@@ -21,6 +21,7 @@ import { DEFAULT_SURFACE_CONFIG, DEFAULT_FABRICATION_CONFIG, type SurfaceMateria
 import { ROOMS, getRoom } from "@/lib/visualizer2/rooms";
 import { serializeDesign, deserializeDesign, buildDesignSummary, type Design, type DesignCameraState } from "@/lib/visualizer2/design";
 import { AutosaveStore, DesignRepository } from "@/lib/visualizer2/designRepository";
+import { track } from "@/lib/visualizer2/analytics";
 
 interface VisualizerV2ShellProps {
   /** Real Alfa Ventura quartz products (source: "alfa"), fetched server-side
@@ -93,10 +94,21 @@ const VisualizerV2Shell = ({ alfaProducts, deepLinkProductId, initialMode = "3d"
 
   const handleSelectRoom = (roomId: string) => {
     if (roomId === activeRoomId) return;
+    track("room_selected", { roomId });
     setRoomLoading(true);
     setActiveRoomId(roomId);
     setSelectedSurface(null);
   };
+
+  const handleSelectSurfaceUi = (surfaceId: string) => {
+    track("surface_selected", { surfaceId, roomId: activeRoomId });
+    setSelectedSurface(surfaceId);
+  };
+
+  useEffect(() => {
+    track("visualizer_opened");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Brief "loading" state on room switch -- procedural rooms have nothing
   // real to await, but this is the same seam a future GLB load's actual
@@ -230,6 +242,7 @@ const VisualizerV2Shell = ({ alfaProducts, deepLinkProductId, initialMode = "3d"
     const firstSize = product.sizes.find((s) => s.mode === mode) ?? null;
     patchSurfaceConfig(selectedSurface, { productId: product.id, mode, sizeId: firstSize?.id ?? null });
     toast(`Loading ${product.name}...`, { duration: 1200 });
+    track("product_selected", { productId: product.id, surfaceId: selectedSurface });
   };
 
   const handleConfigChange = (patch: Partial<SurfaceMaterialConfig>) => {
@@ -307,6 +320,7 @@ const VisualizerV2Shell = ({ alfaProducts, deepLinkProductId, initialMode = "3d"
   const handleSaveDesign = (design: Design) => {
     setCurrentDesign(design);
     setSavedSnapshot(JSON.stringify(design));
+    track("design_saved", { designId: design.id, roomId: design.activeRoomId });
   };
 
   const handleOpenDesignFromToolbar = (design: Design) => {
@@ -352,6 +366,7 @@ const VisualizerV2Shell = ({ alfaProducts, deepLinkProductId, initialMode = "3d"
     link.download = `${(currentDesign?.name ?? "alfa-ventura-design").replace(/\s+/g, "-").toLowerCase()}.${format}`;
     link.href = canvas.toDataURL(format === "jpg" ? "image/jpeg" : "image/png", 0.92);
     link.click();
+    track("visualization_downloaded", { format, roomId: activeRoomId });
   };
 
   const designSummaryRows = buildDesignSummary(activeRoom, surfaceProducts, surfaceConfigs, fabricationConfigs);
@@ -414,7 +429,7 @@ const VisualizerV2Shell = ({ alfaProducts, deepLinkProductId, initialMode = "3d"
             surfaceConfigs={surfaceConfigs}
             fabricationConfigs={fabricationConfigs}
             selectedSurface={selectedSurface}
-            onSelectSurface={setSelectedSurface}
+            onSelectSurface={handleSelectSurfaceUi}
             cameraControlsRef={cameraControlsRef}
             canvasRef={canvasRef}
           />
@@ -445,7 +460,7 @@ const VisualizerV2Shell = ({ alfaProducts, deepLinkProductId, initialMode = "3d"
         <SurfaceTabs
           surfaces={activeRoom.surfaces.map((s) => ({ id: s.id, label: s.label }))}
           selectedSurface={selectedSurface}
-          onSelect={setSelectedSurface}
+          onSelect={handleSelectSurfaceUi}
         />
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">

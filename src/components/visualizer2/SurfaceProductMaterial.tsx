@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { getProceduralTexture } from "@/three/proceduralTexture";
@@ -106,6 +106,11 @@ const DemoSurfaceMaterial = ({ product, config, surfaceMm, highlighted, mirrorX,
 
   finishTexture(texture, repeat, offset, rotationDeg, mirrorX, mirrorY);
 
+  // `texture` here is always a fresh clone (of the cached procedural base,
+  // or a plain new CanvasTexture) -- dispose it when replaced/unmounted so
+  // switching products/config repeatedly doesn't leak GPU texture memory.
+  useEffect(() => () => texture.dispose(), [texture]);
+
   return <meshStandardMaterial map={texture} roughness={roughness} metalness={0} {...highlightProps(highlighted)} />;
 };
 
@@ -162,6 +167,10 @@ const AlfaSurfaceMaterial = ({ product, config, surfaceMm, highlighted, mirrorX,
   }, [rawTexture, product.id, JSON.stringify(config), surfaceMm.width, surfaceMm.height]);
 
   finishTexture(texture, repeat, offset, rotationDeg, mirrorX, mirrorY);
+
+  // `texture` is always a fresh clone of the shared drei-cached photo --
+  // dispose the clone (not the shared original) on replace/unmount.
+  useEffect(() => () => texture.dispose(), [texture]);
 
   return <meshStandardMaterial map={texture} roughness={roughness} metalness={0} {...highlightProps(highlighted)} />;
 };
