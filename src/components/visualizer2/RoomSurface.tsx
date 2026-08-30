@@ -1,9 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import type { ThreeEvent } from "@react-three/fiber";
-import * as THREE from "three";
+import SurfaceProductMaterial from "./SurfaceProductMaterial";
 import type { SurfaceId, SurfaceMaterial } from "@/lib/visualizer2/surfaces";
+import type { Product } from "@/lib/visualizer2/product";
+
+/** Nominal tile/slab size (metres) a demo/default texture repeat is
+ * computed against, so it reads as tiled material instead of one image
+ * stretched across the whole surface. A later step (tile/slab dimensions)
+ * will make this configurable per product. */
+const NOMINAL_TILE_SIZE = 1.2;
 
 interface RoomSurfaceProps {
   id: SurfaceId;
@@ -11,6 +18,7 @@ interface RoomSurfaceProps {
   rotation: [number, number, number];
   args: [number, number];
   material: SurfaceMaterial;
+  product: Product | null;
   selected: boolean;
   onSelect: (id: SurfaceId) => void;
 }
@@ -21,8 +29,9 @@ interface RoomSurfaceProps {
  * apply a different product to each without touching the others.
  * Hover/selected state is a restrained emissive lift -- no bright outlines.
  */
-const RoomSurface = ({ id, position, rotation, args, material, selected, onSelect }: RoomSurfaceProps) => {
+const RoomSurface = ({ id, position, rotation, args, material, product, selected, onSelect }: RoomSurfaceProps) => {
   const [hovered, setHovered] = useState(false);
+  const highlighted = selected || hovered;
 
   const handlePointerOver = (e: ThreeEvent<PointerEvent>) => {
     e.stopPropagation();
@@ -41,24 +50,23 @@ const RoomSurface = ({ id, position, rotation, args, material, selected, onSelec
     onSelect(id);
   };
 
-  const emissiveIntensity = selected ? 0.1 : hovered ? 0.05 : 0;
+  const repeat: [number, number] = [args[0] / NOMINAL_TILE_SIZE, args[1] / NOMINAL_TILE_SIZE];
 
   return (
-    <mesh
-      position={position}
-      rotation={rotation}
-      onPointerOver={handlePointerOver}
-      onPointerOut={handlePointerOut}
-      onClick={handleClick}
-      receiveShadow
-    >
+    <mesh position={position} rotation={rotation} onPointerOver={handlePointerOver} onPointerOut={handlePointerOut} onClick={handleClick} receiveShadow>
       <planeGeometry args={args} />
-      <meshStandardMaterial
-        color={material.color}
-        roughness={material.roughness}
-        emissive={selected || hovered ? new THREE.Color("#9B7040") : new THREE.Color("#000000")}
-        emissiveIntensity={emissiveIntensity}
-      />
+      {product ? (
+        <Suspense fallback={<meshStandardMaterial color={material.color} roughness={material.roughness} />}>
+          <SurfaceProductMaterial product={product} repeat={repeat} highlighted={highlighted} />
+        </Suspense>
+      ) : (
+        <meshStandardMaterial
+          color={material.color}
+          roughness={material.roughness}
+          emissive={highlighted ? "#9B7040" : "#000000"}
+          emissiveIntensity={selected ? 0.1 : hovered ? 0.05 : 0}
+        />
+      )}
     </mesh>
   );
 };

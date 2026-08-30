@@ -3,6 +3,7 @@
 import * as THREE from "three";
 import RoomSurface from "./RoomSurface";
 import type { SurfaceId, SurfaceMaterials } from "@/lib/visualizer2/surfaces";
+import type { Product } from "@/lib/visualizer2/product";
 
 const ROOM_WIDTH = 8;
 const ROOM_DEPTH = 8;
@@ -10,6 +11,7 @@ const ROOM_HEIGHT = 4;
 
 interface RoomProps {
   materials: SurfaceMaterials;
+  surfaceProducts: Record<SurfaceId, Product | null>;
   selectedSurface: SurfaceId | null;
   onSelectSurface: (id: SurfaceId) => void;
 }
@@ -25,7 +27,7 @@ interface RoomProps {
  * Each architectural surface below is its own mesh/material so a future
  * step can assign a different Alfa Ventura product to each independently.
  */
-const Room = ({ materials, selectedSurface, onSelectSurface }: RoomProps) => (
+const Room = ({ materials, surfaceProducts, selectedSurface, onSelectSurface }: RoomProps) => (
   <group>
     <RoomSurface
       id="floor"
@@ -33,6 +35,7 @@ const Room = ({ materials, selectedSurface, onSelectSurface }: RoomProps) => (
       rotation={[-Math.PI / 2, 0, 0]}
       args={[ROOM_WIDTH, ROOM_DEPTH]}
       material={materials.floor}
+      product={surfaceProducts.floor}
       selected={selectedSurface === "floor"}
       onSelect={onSelectSurface}
     />
@@ -42,6 +45,7 @@ const Room = ({ materials, selectedSurface, onSelectSurface }: RoomProps) => (
       rotation={[0, 0, 0]}
       args={[ROOM_WIDTH, ROOM_HEIGHT]}
       material={materials.backWall}
+      product={surfaceProducts.backWall}
       selected={selectedSurface === "backWall"}
       onSelect={onSelectSurface}
     />
@@ -51,6 +55,7 @@ const Room = ({ materials, selectedSurface, onSelectSurface }: RoomProps) => (
       rotation={[0, Math.PI / 2, 0]}
       args={[ROOM_DEPTH, ROOM_HEIGHT]}
       material={materials.leftWall}
+      product={surfaceProducts.leftWall}
       selected={selectedSurface === "leftWall"}
       onSelect={onSelectSurface}
     />
@@ -60,6 +65,7 @@ const Room = ({ materials, selectedSurface, onSelectSurface }: RoomProps) => (
       rotation={[0, -Math.PI / 2, 0]}
       args={[ROOM_DEPTH, ROOM_HEIGHT]}
       material={materials.rightWall}
+      product={surfaceProducts.rightWall}
       selected={selectedSurface === "rightWall"}
       onSelect={onSelectSurface}
     />

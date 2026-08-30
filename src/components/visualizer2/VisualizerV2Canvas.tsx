@@ -7,9 +7,11 @@ import type { CameraControls as CameraControlsImpl } from "@react-three/drei";
 import * as THREE from "three";
 import Room from "./Room";
 import type { SurfaceId, SurfaceMaterials } from "@/lib/visualizer2/surfaces";
+import type { Product } from "@/lib/visualizer2/product";
 
 interface VisualizerV2CanvasProps {
   materials: SurfaceMaterials;
+  surfaceProducts: Record<SurfaceId, Product | null>;
   selectedSurface: SurfaceId | null;
   onSelectSurface: (id: SurfaceId) => void;
   cameraControlsRef: RefObject<CameraControlsImpl | null>;
@@ -26,7 +28,7 @@ const hasWebGL = () => {
 
 const HERO_CAMERA_POSITION: [number, number, number] = [4.6, 2.2, 5.4];
 
-const VisualizerV2Canvas = ({ materials, selectedSurface, onSelectSurface, cameraControlsRef }: VisualizerV2CanvasProps) => {
+const VisualizerV2Canvas = ({ materials, surfaceProducts, selectedSurface, onSelectSurface, cameraControlsRef }: VisualizerV2CanvasProps) => {
   const [webglOk, setWebglOk] = useState(true);
 
   useEffect(() => {
@@ -63,7 +65,7 @@ const VisualizerV2Canvas = ({ materials, selectedSurface, onSelectSurface, camer
       />
       <directionalLight position={[-3, 3, -2]} intensity={0.3} />
       <Suspense fallback={null}>
-        <Room materials={materials} selectedSurface={selectedSurface} onSelectSurface={onSelectSurface} />
+        <Room materials={materials} surfaceProducts={surfaceProducts} selectedSurface={selectedSurface} onSelectSurface={onSelectSurface} />
         <Environment preset="apartment" environmentIntensity={0.3} />
       </Suspense>
       {/* minDistance/maxDistance keep the camera from clipping into a wall or
