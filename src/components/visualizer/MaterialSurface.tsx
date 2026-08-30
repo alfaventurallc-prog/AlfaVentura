@@ -129,22 +129,32 @@ const TexturedFace = ({
   texture.rotation = THREE.MathUtils.degToRad(veinRotationDeg);
   texture.needsUpdate = true;
 
-  // The countertop's own thickness/front-edge band -- same slab pattern
-  // continuing onto the visible edge, not a flat tint, so it reads as one
-  // continuous piece of material rather than a stone top glued onto a
-  // painted strip. Only meaningful for a horizontal slab (heroFace "top");
-  // a cloned texture gets its own crop since the edge's aspect ratio
-  // (full width x thickness) is very different from the top's.
-  const edgeTexture = useMemo(() => {
+  // The countertop's own thickness/edge bands -- same slab pattern
+  // continuing onto every visible vertical edge, not a flat tint, so it
+  // reads as one continuous piece of material rather than a stone top
+  // glued onto a painted strip. Only meaningful for a horizontal slab
+  // (heroFace "top"). All four side faces are textured (not just the
+  // "front" one) because a WallRun can sit inside a rotated parent group
+  // (the L-shape return leg rotates its whole group 90 degrees) -- which
+  // local face ends up facing the camera then isn't fixed, so every edge
+  // needs the real texture, not just one hard-coded local direction.
+  const edgeTextures = useMemo(() => {
     if (heroFace !== "top" || !img?.width) return null;
-    const t = texture.clone();
-    fitTextureToFace(t, rawFaceWidth, args[1], imageAspect);
-    t.needsUpdate = true;
-    return t;
+    const front = texture.clone();
+    fitTextureToFace(front, args[0], args[1], imageAspect);
+    const side = texture.clone();
+    fitTextureToFace(side, args[2], args[1], imageAspect);
+    return { front, back: front, side, sideEnd: side };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [texture, heroFace, args[1], rawFaceWidth, imageAspect]);
+  }, [texture, heroFace, args[0], args[1], args[2], imageAspect]);
 
-  useEffect(() => () => edgeTexture?.dispose(), [edgeTexture]);
+  useEffect(
+    () => () => {
+      edgeTextures?.front.dispose();
+      edgeTextures?.side.dispose();
+    },
+    [edgeTextures]
+  );
 
   // Derive a normal map from the product photo itself (no authored normal
   // map exists for any product) so the polished stone catches light with
@@ -189,34 +199,51 @@ const TexturedFace = ({
   const heroIndex = HERO_INDEX[heroFace];
   const edgeEmissive = highlighted ? HIGHLIGHT_COLOR : "#000000";
   const edgeEmissiveIntensity = highlighted ? 0.08 : 0;
+  // Box material index -> which edge texture belongs there: [+X, -X, +Y, -Y, +Z, -Z].
+  const EDGE_TEXTURE_BY_INDEX: (keyof NonNullable<typeof edgeTextures> | null)[] = [
+    "sideEnd",
+    "side",
+    null,
+    null,
+    "front",
+    "back",
+  ];
 
   return (
     <mesh position={position} castShadow receiveShadow>
       <boxGeometry args={args} />
-      {[0, 1, 2, 3, 4, 5].map((i) =>
-        i === heroIndex ? (
-          <meshStandardMaterial
-            key={i}
-            attach={`material-${i}`}
-            map={texture}
-            normalMap={normalMap ?? undefined}
-            normalScale={normalMap ? new THREE.Vector2(0.45, 0.45) : undefined}
-            roughness={0.22}
-            metalness={0}
-            emissive={highlighted ? HIGHLIGHT_COLOR : "#000000"}
-            emissiveIntensity={highlighted ? 0.06 : 0}
-          />
-        ) : i === HERO_INDEX.front && edgeTexture ? (
-          <meshStandardMaterial
-            key={i}
-            attach={`material-${i}`}
-            map={edgeTexture}
-            roughness={0.28}
-            metalness={0}
-            emissive={edgeEmissive}
-            emissiveIntensity={edgeEmissiveIntensity}
-          />
-        ) : (
+      {[0, 1, 2, 3, 4, 5].map((i) => {
+        const edgeKey = EDGE_TEXTURE_BY_INDEX[i];
+        const edgeMap = edgeKey ? edgeTextures?.[edgeKey] : null;
+        if (i === heroIndex) {
+          return (
+            <meshStandardMaterial
+              key={i}
+              attach={`material-${i}`}
+              map={texture}
+              normalMap={normalMap ?? undefined}
+              normalScale={normalMap ? new THREE.Vector2(0.45, 0.45) : undefined}
+              roughness={0.22}
+              metalness={0}
+              emissive={highlighted ? HIGHLIGHT_COLOR : "#000000"}
+              emissiveIntensity={highlighted ? 0.06 : 0}
+            />
+          );
+        }
+        if (edgeMap) {
+          return (
+            <meshStandardMaterial
+              key={i}
+              attach={`material-${i}`}
+              map={edgeMap}
+              roughness={0.28}
+              metalness={0}
+              emissive={edgeEmissive}
+              emissiveIntensity={edgeEmissiveIntensity}
+            />
+          );
+        }
+        return (
           <meshStandardMaterial
             key={i}
             attach={`material-${i}`}
@@ -226,8 +253,8 @@ const TexturedFace = ({
             emissive={edgeEmissive}
             emissiveIntensity={edgeEmissiveIntensity}
           />
-        )
-      )}
+        );
+      })}
     </mesh>
   );
 };
