@@ -14,7 +14,12 @@ const toAlfaProduct = (p: { id: string; title: string; images: string[] }): Prod
   collection: "Alfa Ventura Quartz",
   category: "Quartz",
   finish: "Polished",
-  availableSizes: ["3200 x 1600 mm"],
+  availableSizes: ["600 x 600 mm", "3200 x 1600 mm"],
+  availableModes: ["tile", "slab"],
+  sizes: [
+    { id: "600x600", width: 600, height: 600, unit: "mm", mode: "tile" },
+    { id: "3200x1600", width: 3200, height: 1600, unit: "mm", mode: "slab" },
+  ],
   source: "alfa",
   imageUrl: p.images[0],
 });

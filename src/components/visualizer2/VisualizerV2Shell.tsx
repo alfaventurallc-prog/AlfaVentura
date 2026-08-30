@@ -7,10 +7,12 @@ import VisualizerV2Canvas from "./VisualizerV2Canvas";
 import VisualizerV2Controls from "./VisualizerV2Controls";
 import SurfaceTabs from "./SurfaceTabs";
 import ProductPanel from "./ProductPanel";
+import MaterialConfigPanel from "./MaterialConfigPanel";
 import VisualizerErrorBoundary from "../visualizer/VisualizerErrorBoundary";
 import { DEFAULT_SURFACE_MATERIALS, SURFACE_IDS, SURFACE_LABELS, type SurfaceId } from "@/lib/visualizer2/surfaces";
 import { DEMO_PRODUCTS } from "@/lib/visualizer2/demoProducts";
 import type { Product } from "@/lib/visualizer2/product";
+import { DEFAULT_SURFACE_CONFIG, type SurfaceMaterialConfig } from "@/lib/visualizer2/layout";
 
 interface VisualizerV2ShellProps {
   /** Real Alfa Ventura quartz products (source: "alfa"), fetched server-side
@@ -18,50 +20,85 @@ interface VisualizerV2ShellProps {
   alfaProducts: Product[];
 }
 
-const EMPTY_SURFACE_PRODUCTS: Record<SurfaceId, Product | null> = {
-  floor: null,
-  backWall: null,
-  leftWall: null,
-  rightWall: null,
-};
+const emptyConfigs = (): Record<SurfaceId, SurfaceMaterialConfig> => ({
+  floor: { ...DEFAULT_SURFACE_CONFIG },
+  backWall: { ...DEFAULT_SURFACE_CONFIG },
+  leftWall: { ...DEFAULT_SURFACE_CONFIG },
+  rightWall: { ...DEFAULT_SURFACE_CONFIG },
+});
+
+const VERTICAL_SURFACES: SurfaceId[] = ["backWall", "leftWall", "rightWall"];
 
 /**
- * Step 2: adds the material/product selection engine on top of the Step 1
- * room. Centralized state (selectedSurface, selectedProduct,
- * surfaceProducts) is the single source of truth everything else reads
- * from -- Save/Share/Export/AI-visualizer in later steps all build on this
- * same shape without needing to touch it.
+ * Step 3 extends Step 2's centralized state: each surface now stores a full
+ * SurfaceMaterialConfig (product + mode/size/layout/rotation/scale/offset/
+ * grout/alignment/vein), not just a product id. Product data (product.ts),
+ * per-surface install configuration (this state), 3D rendering
+ * (SurfaceProductMaterial), and UI controls (MaterialConfigPanel) are kept
+ * as separate concerns on purpose.
  */
 const VisualizerV2Shell = ({ alfaProducts }: VisualizerV2ShellProps) => {
   const [selectedSurface, setSelectedSurface] = useState<SurfaceId | null>(null);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [surfaceProducts, setSurfaceProducts] = useState<Record<SurfaceId, Product | null>>(EMPTY_SURFACE_PRODUCTS);
+  const [surfaceConfigs, setSurfaceConfigs] = useState<Record<SurfaceId, SurfaceMaterialConfig>>(emptyConfigs());
 
   const cameraControlsRef = useRef<CameraControlsImpl | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
   const products = [...alfaProducts, ...DEMO_PRODUCTS];
+  const productById = (id: string | null) => (id ? products.find((p) => p.id === id) ?? null : null);
 
-  const handleSelectSurface = (id: SurfaceId) => {
-    setSelectedSurface(id);
-    // Keep the info panel/active-card in sync with whatever's already on
-    // this surface, so re-selecting it doesn't lose that context.
-    setSelectedProduct(surfaceProducts[id]);
+  const surfaceProducts: Record<SurfaceId, Product | null> = {
+    floor: productById(surfaceConfigs.floor.productId),
+    backWall: productById(surfaceConfigs.backWall.productId),
+    leftWall: productById(surfaceConfigs.leftWall.productId),
+    rightWall: productById(surfaceConfigs.rightWall.productId),
+  };
+
+  const activeProduct = selectedSurface ? surfaceProducts[selectedSurface] : null;
+  const activeConfig = selectedSurface ? surfaceConfigs[selectedSurface] : null;
+
+  const handleSelectSurface = (id: SurfaceId) => setSelectedSurface(id);
+
+  const patchSurfaceConfig = (id: SurfaceId, patch: Partial<SurfaceMaterialConfig>) => {
+    setSurfaceConfigs((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
   };
 
   const handleSelectProduct = (product: Product) => {
-    setSelectedProduct(product);
     if (!selectedSurface) {
       toast.error("Select a surface first (click it in the room, or use the Surface buttons).");
       return;
     }
-    setSurfaceProducts((prev) => ({ ...prev, [selectedSurface]: product }));
+    const mode = product.availableModes[0];
+    const firstSize = product.sizes.find((s) => s.mode === mode) ?? null;
+    patchSurfaceConfig(selectedSurface, {
+      productId: product.id,
+      mode,
+      sizeId: firstSize?.id ?? null,
+    });
     toast(`Loading ${product.name}...`, { duration: 1200 });
   };
 
-  const handleResetMaterials = () => {
-    setSurfaceProducts(EMPTY_SURFACE_PRODUCTS);
-    setSelectedProduct(null);
+  const handleConfigChange = (patch: Partial<SurfaceMaterialConfig>) => {
+    if (!selectedSurface) return;
+    // Changing mode invalidates the previous sizeId if it belonged to the other mode.
+    if (patch.mode && activeProduct) {
+      const stillValid = activeProduct.sizes.some((s) => s.id === surfaceConfigs[selectedSurface].sizeId && s.mode === patch.mode);
+      if (!stillValid) {
+        const fallback = activeProduct.sizes.find((s) => s.mode === patch.mode);
+        patch = { ...patch, sizeId: fallback?.id ?? null };
+      }
+    }
+    patchSurfaceConfig(selectedSurface, patch);
+  };
+
+  const handleResetSurface = () => {
+    if (!selectedSurface) return;
+    patchSurfaceConfig(selectedSurface, { ...DEFAULT_SURFACE_CONFIG });
+    toast.success(`${SURFACE_LABELS[selectedSurface]} reset to default.`);
+  };
+
+  const handleResetAllMaterials = () => {
+    setSurfaceConfigs(emptyConfigs());
     toast.success("Materials reset to default.");
   };
 
@@ -76,6 +113,7 @@ const VisualizerV2Shell = ({ alfaProducts }: VisualizerV2ShellProps) => {
             <VisualizerV2Canvas
               materials={DEFAULT_SURFACE_MATERIALS}
               surfaceProducts={surfaceProducts}
+              surfaceConfigs={surfaceConfigs}
               selectedSurface={selectedSurface}
               onSelectSurface={handleSelectSurface}
               cameraControlsRef={cameraControlsRef}
@@ -93,7 +131,7 @@ const VisualizerV2Shell = ({ alfaProducts }: VisualizerV2ShellProps) => {
           </div>
           <button
             type="button"
-            onClick={handleResetMaterials}
+            onClick={handleResetAllMaterials}
             className="px-3 py-2 rounded-lg text-xs font-semibold border border-[#E8DDD0] text-[#44403C] hover:border-[#9B7040] transition-colors"
           >
             Reset Materials
@@ -107,6 +145,7 @@ const VisualizerV2Shell = ({ alfaProducts }: VisualizerV2ShellProps) => {
             <div key={id} className="px-3 py-2 rounded-lg bg-[#F5F1EA] border border-[#E8DDD0]">
               <p className="font-bold uppercase tracking-wide text-[#78716C]">{SURFACE_LABELS[id]}</p>
               <p className="text-[#1C1917] truncate">{surfaceProducts[id]?.name ?? "Default"}</p>
+              {surfaceProducts[id] && <p className="text-[#78716C] truncate">{surfaceConfigs[id].mode} · {surfaceConfigs[id].layout}</p>}
             </div>
           ))}
         </div>
@@ -116,9 +155,19 @@ const VisualizerV2Shell = ({ alfaProducts }: VisualizerV2ShellProps) => {
         <ProductPanel
           products={products}
           selectedSurfaceLabel={selectedSurface ? SURFACE_LABELS[selectedSurface] : null}
-          activeProduct={selectedProduct}
+          activeProduct={activeProduct}
           onSelectProduct={handleSelectProduct}
         />
+
+        {activeProduct && activeConfig && (
+          <MaterialConfigPanel
+            product={activeProduct}
+            config={activeConfig}
+            isVerticalSurface={!!selectedSurface && VERTICAL_SURFACES.includes(selectedSurface)}
+            onChange={handleConfigChange}
+            onReset={handleResetSurface}
+          />
+        )}
       </div>
     </div>
   );

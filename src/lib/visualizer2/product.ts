@@ -1,4 +1,5 @@
 import type { ProceduralDescriptor } from "@/three/proceduralPattern";
+import type { MaterialMode, SizeOption } from "./layout";
 
 export type Finish = "Polished" | "Honed" | "Matte" | "Concrete";
 
@@ -29,6 +30,11 @@ export interface Product {
   source: "alfa" | "demo";
   imageUrl?: string;
   descriptor?: ProceduralDescriptor;
+  /** Step 3: which physical sizes this product comes in, and in which
+   * mode(s) each size applies -- the UI only ever shows sizes valid for
+   * the currently selected product+mode. */
+  sizes: SizeOption[];
+  availableModes: MaterialMode[];
 }
 
 export const PRODUCT_CATEGORIES = ["Quartz", "Marble", "Stone", "Concrete", "Terrazzo", "Wood", "Solid Color"] as const;

@@ -4,6 +4,8 @@ import * as THREE from "three";
 import RoomSurface from "./RoomSurface";
 import type { SurfaceId, SurfaceMaterials } from "@/lib/visualizer2/surfaces";
 import type { Product } from "@/lib/visualizer2/product";
+import type { SurfaceMaterialConfig } from "@/lib/visualizer2/layout";
+import { SURFACE_DIMENSIONS_MM } from "@/lib/visualizer2/roomDimensions";
 
 const ROOM_WIDTH = 8;
 const ROOM_DEPTH = 8;
@@ -12,6 +14,7 @@ const ROOM_HEIGHT = 4;
 interface RoomProps {
   materials: SurfaceMaterials;
   surfaceProducts: Record<SurfaceId, Product | null>;
+  surfaceConfigs: Record<SurfaceId, SurfaceMaterialConfig>;
   selectedSurface: SurfaceId | null;
   onSelectSurface: (id: SurfaceId) => void;
 }
@@ -27,7 +30,7 @@ interface RoomProps {
  * Each architectural surface below is its own mesh/material so a future
  * step can assign a different Alfa Ventura product to each independently.
  */
-const Room = ({ materials, surfaceProducts, selectedSurface, onSelectSurface }: RoomProps) => (
+const Room = ({ materials, surfaceProducts, surfaceConfigs, selectedSurface, onSelectSurface }: RoomProps) => (
   <group>
     <RoomSurface
       id="floor"
@@ -36,6 +39,8 @@ const Room = ({ materials, surfaceProducts, selectedSurface, onSelectSurface }: 
       args={[ROOM_WIDTH, ROOM_DEPTH]}
       material={materials.floor}
       product={surfaceProducts.floor}
+      config={surfaceConfigs.floor}
+      surfaceMm={SURFACE_DIMENSIONS_MM.floor}
       selected={selectedSurface === "floor"}
       onSelect={onSelectSurface}
     />
@@ -46,6 +51,8 @@ const Room = ({ materials, surfaceProducts, selectedSurface, onSelectSurface }: 
       args={[ROOM_WIDTH, ROOM_HEIGHT]}
       material={materials.backWall}
       product={surfaceProducts.backWall}
+      config={surfaceConfigs.backWall}
+      surfaceMm={SURFACE_DIMENSIONS_MM.backWall}
       selected={selectedSurface === "backWall"}
       onSelect={onSelectSurface}
     />
@@ -56,6 +63,8 @@ const Room = ({ materials, surfaceProducts, selectedSurface, onSelectSurface }: 
       args={[ROOM_DEPTH, ROOM_HEIGHT]}
       material={materials.leftWall}
       product={surfaceProducts.leftWall}
+      config={surfaceConfigs.leftWall}
+      surfaceMm={SURFACE_DIMENSIONS_MM.leftWall}
       selected={selectedSurface === "leftWall"}
       onSelect={onSelectSurface}
     />
@@ -66,6 +75,8 @@ const Room = ({ materials, surfaceProducts, selectedSurface, onSelectSurface }: 
       args={[ROOM_DEPTH, ROOM_HEIGHT]}
       material={materials.rightWall}
       product={surfaceProducts.rightWall}
+      config={surfaceConfigs.rightWall}
+      surfaceMm={SURFACE_DIMENSIONS_MM.rightWall}
       selected={selectedSurface === "rightWall"}
       onSelect={onSelectSurface}
     />
