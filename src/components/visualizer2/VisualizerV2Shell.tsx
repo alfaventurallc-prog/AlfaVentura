@@ -29,6 +29,9 @@ interface VisualizerV2ShellProps {
   /** From /visualizer-v2?product=PRODUCT_ID -- auto-selects that product
    * onto the first surface it's compatible with, once on mount. */
   deepLinkProductId?: string | null;
+  /** From /visualizer-v2?mode=image -- the product page's "View in Image
+   * Visualizer" CTA opens straight into that mode. */
+  initialMode?: "3d" | "image";
 }
 
 /** roomId -> surfaceId -> config. Kept as one flat object rather than
@@ -47,8 +50,8 @@ const FABRICATED_TYPES = new Set(["countertop", "island"]);
  * configuration (designState below), 3D rendering (RoomRenderer), and UI
  * controls all stay separate concerns, matching the earlier steps.
  */
-const VisualizerV2Shell = ({ alfaProducts, deepLinkProductId }: VisualizerV2ShellProps) => {
-  const [mode, setMode] = useState<"3d" | "image">("3d");
+const VisualizerV2Shell = ({ alfaProducts, deepLinkProductId, initialMode = "3d" }: VisualizerV2ShellProps) => {
+  const [mode, setMode] = useState<"3d" | "image">(initialMode);
   const [activeRoomId, setActiveRoomId] = useState(ROOMS[0].id);
   const [selectedSurface, setSelectedSurface] = useState<string | null>(null);
   const [designState, setDesignState] = useState<DesignState>({});
@@ -155,12 +158,22 @@ const VisualizerV2Shell = ({ alfaProducts, deepLinkProductId }: VisualizerV2Shel
   // Otherwise, restore the last in-progress session from the autosave slot
   // so a reload doesn't lose unsaved work.
   const [sharedLinkHandled, setSharedLinkHandled] = useState(false);
+  const [initialImageDesign, setInitialImageDesign] = useState<Design["imageVisualization"] | null>(null);
   useEffect(() => {
     if (sharedLinkHandled) return;
     setSharedLinkHandled(true);
     const encoded = new URLSearchParams(window.location.search).get("d");
     if (encoded) {
       const raw = DesignRepository.decodeShared(encoded);
+      // Image Visualizer designs carry an `imageVisualization` payload
+      // instead of 3D room/surface state -- route those to Image mode
+      // rather than through the 3D deserializer.
+      if (raw && typeof raw === "object" && "imageVisualization" in raw && (raw as { imageVisualization?: unknown }).imageVisualization) {
+        setMode("image");
+        setInitialImageDesign((raw as Design).imageVisualization ?? null);
+        toast.success(`Loaded "${(raw as Design).name}" from a shared link.`);
+        return;
+      }
       const parsed = raw ? deserializeDesign(raw, products) : null;
       if (parsed) {
         applyDeserialized(parsed, true);
@@ -370,7 +383,9 @@ const VisualizerV2Shell = ({ alfaProducts, deepLinkProductId }: VisualizerV2Shel
         ))}
       </div>
 
-      {mode === "image" && <ImageVisualizerShell products={products} deepLinkProductId={deepLinkProductId} />}
+      {mode === "image" && (
+        <ImageVisualizerShell products={products} deepLinkProductId={deepLinkProductId} initialDesign={initialImageDesign} />
+      )}
 
       {mode === "3d" && (
     <div className="flex flex-col lg:flex-row lg:items-start gap-6 lg:gap-8">

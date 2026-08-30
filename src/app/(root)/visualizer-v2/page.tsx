@@ -10,12 +10,14 @@ export const metadata: Metadata = {
 };
 
 interface VisualizerV2PageProps {
-  // /visualizer-v2?product=PRODUCT_ID deep-links straight to that product.
-  searchParams: Promise<{ product?: string }>;
+  // /visualizer-v2?product=PRODUCT_ID deep-links straight to that product;
+  // &mode=image opens directly in the Image Visualizer (Step 8's "Product
+  // -> Image Visualizer" flow).
+  searchParams: Promise<{ product?: string; mode?: string }>;
 }
 
 export default async function VisualizerV2Page({ searchParams }: VisualizerV2PageProps) {
-  const { product: deepLinkProductId } = await searchParams;
+  const { product: deepLinkProductId, mode } = await searchParams;
 
   const productsRes = await getProducts({ limit: 60 });
   const quartzProducts =
@@ -46,7 +48,7 @@ export default async function VisualizerV2Page({ searchParams }: VisualizerV2Pag
           </p>
         </div>
 
-        <VisualizerV2Shell alfaProducts={quartzProducts} deepLinkProductId={deepLinkProductId ?? null} />
+        <VisualizerV2Shell alfaProducts={quartzProducts} deepLinkProductId={deepLinkProductId ?? null} initialMode={mode === "image" ? "image" : "3d"} />
       </div>
     </section>
   );

@@ -15,6 +15,24 @@ export interface DesignRoomState {
 }
 
 /**
+ * Step 8: an Image Visualizer session, serialized the same disciplined
+ * way as the 3D design state -- plain data only. There's no object-storage
+ * backend in this project (see Step 7/8 reports), so `sourceImage`/
+ * `masks`/`resultImage` are compressed data URLs rather than references;
+ * that's the one deliberate exception to "don't store huge raw image data"
+ * this build can offer without a real backend, and it's why the source
+ * photo is downscaled before saving (see ImageVisualizerShell).
+ */
+export interface ImageVisualizationState {
+  sourceImageDataUrl: string;
+  masks: Partial<Record<string, string>>;
+  surfaceConfigurations: Record<string, SurfaceMaterialConfig>;
+  activeSurfaceType: string;
+  productId: string | null;
+  resultImageDataUrl?: string;
+}
+
+/**
  * A Design is the complete, plain-JSON-serializable Visualizer state --
  * every room's every surface, not just the one currently on screen (Step 7
  * requirement). Never holds a Three.js object, mesh, texture, or camera
@@ -31,6 +49,8 @@ export interface Design {
   rooms: Record<string, DesignRoomState>;
   camera?: DesignCameraState;
   previewDataUrl?: string;
+  /** Present when this Design was saved from Image Visualizer mode. */
+  imageVisualization?: ImageVisualizationState;
 }
 
 export const DEFAULT_DESIGN_NAME = "Untitled Design";
@@ -78,6 +98,30 @@ export const serializeDesign = ({ id, name, createdAt, activeRoomId, designState
     rooms,
     camera,
     previewDataUrl,
+  };
+};
+
+interface BuildImageDesignParams {
+  id: string;
+  name: string;
+  createdAt?: string;
+  imageVisualization: ImageVisualizationState;
+}
+
+/** Same contract as serializeDesign, for an Image Visualizer session --
+ * rooms/activeRoomId are irrelevant here so they're left empty rather than
+ * fabricated. */
+export const serializeImageDesign = ({ id, name, createdAt, imageVisualization }: BuildImageDesignParams): Design => {
+  const now = new Date().toISOString();
+  return {
+    id,
+    name,
+    schemaVersion: DESIGN_SCHEMA_VERSION,
+    createdAt: createdAt ?? now,
+    updatedAt: now,
+    activeRoomId: ROOMS[0].id,
+    rooms: {},
+    imageVisualization,
   };
 };
 
@@ -146,9 +190,16 @@ export const deserializeDesign = (raw: unknown, catalog: Product[]): Deserialize
     rooms: data.rooms as Record<string, DesignRoomState>,
     camera: isValidCamera(data.camera) ? data.camera : undefined,
     previewDataUrl: typeof data.previewDataUrl === "string" ? data.previewDataUrl : undefined,
+    imageVisualization: isValidImageVisualization(data.imageVisualization) ? data.imageVisualization : undefined,
   };
 
   return { design, designState, fabricationState, warnings };
+};
+
+const isValidImageVisualization = (v: unknown): v is ImageVisualizationState => {
+  if (!v || typeof v !== "object") return false;
+  const iv = v as Partial<ImageVisualizationState>;
+  return typeof iv.sourceImageDataUrl === "string" && !!iv.masks && typeof iv.masks === "object" && !!iv.surfaceConfigurations;
 };
 
 const isValidCamera = (c: unknown): c is DesignCameraState => {

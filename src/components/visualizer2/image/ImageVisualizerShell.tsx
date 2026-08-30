@@ -18,11 +18,38 @@ import {
   type ImageProcessingStatus,
 } from "@/lib/visualizer2/imageVisualizer/types";
 import { getSegmentationProvider } from "@/lib/visualizer2/imageVisualizer/segmentationProvider";
+import { serializeImageDesign, createDesignId, DEFAULT_DESIGN_NAME, type Design } from "@/lib/visualizer2/design";
+import { DesignRepository } from "@/lib/visualizer2/designRepository";
 
 interface ImageVisualizerShellProps {
   products: Product[];
   deepLinkProductId?: string | null;
+  /** Restored from a shared design link (?d=...) or "My Designs" -- see
+   * VisualizerV2Shell, which routes image-mode Designs here instead of
+   * through the 3D deserializer. */
+  initialDesign?: Design["imageVisualization"] | null;
 }
+
+/** Downscales a data URL to a max width (keeps aspect) -- there's no
+ * object-storage backend in this project, so a saved/shared image design
+ * stores a compressed copy of the photo rather than the full-resolution
+ * upload, keeping localStorage/share-URL size reasonable. */
+const downscaleDataUrl = (dataUrl: string, maxWidth: number, quality = 0.8): Promise<string> =>
+  new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const scale = Math.min(1, maxWidth / img.width);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(img.width * scale);
+      canvas.height = Math.round(img.height * scale);
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return resolve(dataUrl);
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      resolve(canvas.toDataURL("image/jpeg", quality));
+    };
+    img.onerror = () => resolve(dataUrl);
+    img.src = dataUrl;
+  });
 
 const VERTICAL_SURFACES = new Set<ImageSurfaceType>(["wall", "backsplash", "accentWall"]);
 
@@ -35,7 +62,9 @@ const VERTICAL_SURFACES = new Set<ImageSurfaceType>(["wall", "backsplash", "acce
  * before/after -> download. Everything runs in the browser; the photo is
  * never uploaded anywhere.
  */
-const ImageVisualizerShell = ({ products, deepLinkProductId }: ImageVisualizerShellProps) => {
+const ImageVisualizerShell = ({ products, deepLinkProductId, initialDesign }: ImageVisualizerShellProps) => {
+  const [currentDesignId, setCurrentDesignId] = useState<string | null>(null);
+  const [currentDesignName, setCurrentDesignName] = useState(DEFAULT_DESIGN_NAME);
   const [status, setStatus] = useState<ImageProcessingStatus>("idle");
   const [error, setError] = useState<string | null>(null);
   const [sourceImage, setSourceImage] = useState<HTMLImageElement | null>(null);
@@ -63,6 +92,66 @@ const ImageVisualizerShell = ({ products, deepLinkProductId }: ImageVisualizerSh
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deepLinkProductId]);
+
+  // Restore a saved/shared Image Visualizer session (see VisualizerV2Shell).
+  useEffect(() => {
+    if (!initialDesign) return;
+    const img = new Image();
+    img.onload = () => {
+      setSourceImage(img);
+      setSourceDataUrl(initialDesign.sourceImageDataUrl);
+      const maxW = 1000;
+      const scale = Math.min(1, maxW / img.naturalWidth);
+      setDisplaySize({ width: Math.round(img.naturalWidth * scale), height: Math.round(img.naturalHeight * scale) });
+      maskDataUrls.current = { ...initialDesign.masks } as Partial<Record<ImageSurfaceType, string>>;
+      setSurfaceConfigs((prev) => ({ ...prev, ...(initialDesign.surfaceConfigurations as Partial<Record<ImageSurfaceType, SurfaceMaterialConfig>>) }));
+      setSurfaceType((initialDesign.activeSurfaceType as ImageSurfaceType) ?? "floor");
+      setSelectedProductId(initialDesign.productId);
+      setResultDataUrl(initialDesign.resultImageDataUrl ?? null);
+      setStatus(initialDesign.resultImageDataUrl ? "complete" : "editing");
+      requestAnimationFrame(() => {
+        const saved = maskDataUrls.current[(initialDesign.activeSurfaceType as ImageSurfaceType) ?? "floor"];
+        if (saved) maskCanvasRef.current?.loadFromDataUrl(saved);
+      });
+      toast.success("Restored saved visualization.");
+    };
+    img.src = initialDesign.sourceImageDataUrl;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialDesign]);
+
+  const handleSaveOrShare = async (action: "save" | "share") => {
+    if (!sourceDataUrl) return;
+    const current = maskCanvasRef.current?.getMaskCanvas();
+    if (current) maskDataUrls.current[surfaceType] = current.toDataURL();
+
+    const compressedSource = await downscaleDataUrl(sourceDataUrl, 1000);
+    const design = serializeImageDesign({
+      id: currentDesignId ?? createDesignId(),
+      name: currentDesignName,
+      imageVisualization: {
+        sourceImageDataUrl: compressedSource,
+        masks: { ...maskDataUrls.current },
+        surfaceConfigurations: surfaceConfigs,
+        activeSurfaceType: surfaceType,
+        productId: selectedProductId,
+        resultImageDataUrl: resultDataUrl ?? undefined,
+      },
+    });
+
+    if (action === "save") {
+      DesignRepository.update(design);
+      setCurrentDesignId(design.id);
+      toast.success("Design saved.");
+    } else {
+      const url = DesignRepository.share(design);
+      try {
+        await navigator.clipboard.writeText(url);
+        toast.success("Share link copied.");
+      } catch {
+        toast.error(`Couldn't copy automatically — here's the link: ${url}`);
+      }
+    }
+  };
 
   const handleFileSelected = async (file: File) => {
     setError(null);
@@ -307,12 +396,25 @@ const ImageVisualizerShell = ({ products, deepLinkProductId }: ImageVisualizerSh
             </div>
 
             {resultDataUrl && status === "complete" && (
-              <div className="flex gap-2">
+              <div className="flex gap-2 flex-wrap items-center">
                 <button type="button" onClick={() => handleDownload("png")} className="px-3 py-2 rounded-lg text-xs font-semibold border border-[#E8DDD0] hover:border-[#9B7040]">
                   Download PNG
                 </button>
                 <button type="button" onClick={() => handleDownload("jpg")} className="px-3 py-2 rounded-lg text-xs font-semibold border border-[#E8DDD0] hover:border-[#9B7040]">
                   Download JPG
+                </button>
+                <input
+                  type="text"
+                  value={currentDesignName}
+                  onChange={(e) => setCurrentDesignName(e.target.value)}
+                  placeholder="Design name"
+                  className="px-2 py-2 rounded-lg border border-[#E8DDD0] text-xs w-32"
+                />
+                <button type="button" onClick={() => handleSaveOrShare("save")} className="px-3 py-2 rounded-lg text-xs font-semibold border border-[#E8DDD0] hover:border-[#9B7040]">
+                  Save Design
+                </button>
+                <button type="button" onClick={() => handleSaveOrShare("share")} className="px-3 py-2 rounded-lg text-xs font-semibold border border-[#E8DDD0] hover:border-[#9B7040]">
+                  Share
                 </button>
               </div>
             )}

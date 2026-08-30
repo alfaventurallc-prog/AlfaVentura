@@ -82,12 +82,20 @@ const ProductDetailPage = async ({ params }: { params: Promise<{ id: string }> }
               </p>
             )}
             {isVisualizable && (
-              <Link
-                href={`/visualizer-v2?product=${product.id}`}
-                className="inline-block mb-5 px-5 py-2.5 rounded-lg border border-[#9B7040] text-[#9B7040] text-sm font-semibold hover:bg-[#9B7040] hover:text-white transition-colors"
-              >
-                Visualize in Your Space
-              </Link>
+              <div className="flex flex-wrap gap-3 mb-5">
+                <Link
+                  href={`/visualizer-v2?product=${product.id}`}
+                  className="inline-block px-5 py-2.5 rounded-lg border border-[#9B7040] text-[#9B7040] text-sm font-semibold hover:bg-[#9B7040] hover:text-white transition-colors"
+                >
+                  Visualize in Your Space
+                </Link>
+                <Link
+                  href={`/visualizer-v2?product=${product.id}&mode=image`}
+                  className="inline-block px-5 py-2.5 rounded-lg border border-[#9B7040] text-[#9B7040] text-sm font-semibold hover:bg-[#9B7040] hover:text-white transition-colors"
+                >
+                  View in Your Own Photo
+                </Link>
+              </div>
             )}
             <p className="text-[#6B5E52] text-sm mt-5">
               Want to know more about this product? Click the button below to get in touch with us!
