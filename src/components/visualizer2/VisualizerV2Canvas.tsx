@@ -19,6 +19,7 @@ interface VisualizerV2CanvasProps {
   selectedSurface: string | null;
   onSelectSurface: (id: string) => void;
   cameraControlsRef: RefObject<CameraControlsImpl | null>;
+  canvasRef?: RefObject<HTMLCanvasElement | null>;
 }
 
 const hasWebGL = () => {
@@ -51,6 +52,7 @@ const VisualizerV2Canvas = ({
   selectedSurface,
   onSelectSurface,
   cameraControlsRef,
+  canvasRef,
 }: VisualizerV2CanvasProps) => {
   const [webglOk, setWebglOk] = useState(true);
 
@@ -68,9 +70,10 @@ const VisualizerV2Canvas = ({
 
   return (
     <Canvas
+      ref={canvasRef}
       shadows
       dpr={[1, 2]}
-      gl={{ toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 0.95 }}
+      gl={{ toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 0.95, preserveDrawingBuffer: true }}
       camera={{ position: room.camera.position, fov: 45 }}
     >
       <ambientLight intensity={0.45} />

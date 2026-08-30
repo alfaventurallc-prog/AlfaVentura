@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { CameraControls as CameraControlsImpl } from "@react-three/drei";
+import * as THREE from "three";
 import { toast } from "sonner";
 import VisualizerV2Canvas from "./VisualizerV2Canvas";
 import VisualizerV2Controls from "./VisualizerV2Controls";
@@ -11,10 +12,14 @@ import ProductPanel from "./ProductPanel";
 import MaterialConfigPanel from "./MaterialConfigPanel";
 import FabricationPanel from "./FabricationPanel";
 import ProductSummary from "./ProductSummary";
+import DesignToolbar from "./DesignToolbar";
+import DesignSummaryPanel from "./DesignSummaryPanel";
 import { DEMO_PRODUCTS } from "@/lib/visualizer2/demoProducts";
 import { isProductCompatible, validateProduct, type Product } from "@/lib/visualizer2/product";
 import { DEFAULT_SURFACE_CONFIG, DEFAULT_FABRICATION_CONFIG, type SurfaceMaterialConfig, type CountertopFabricationConfig } from "@/lib/visualizer2/layout";
 import { ROOMS, getRoom } from "@/lib/visualizer2/rooms";
+import { serializeDesign, deserializeDesign, buildDesignSummary, type Design, type DesignCameraState } from "@/lib/visualizer2/design";
+import { AutosaveStore, DesignRepository } from "@/lib/visualizer2/designRepository";
 
 interface VisualizerV2ShellProps {
   /** Real Alfa Ventura quartz products (source: "alfa"), fetched server-side
@@ -47,9 +52,12 @@ const VisualizerV2Shell = ({ alfaProducts, deepLinkProductId }: VisualizerV2Shel
   const [designState, setDesignState] = useState<DesignState>({});
   const [fabricationState, setFabricationState] = useState<FabricationState>({});
   const [roomLoading, setRoomLoading] = useState(false);
+  const [currentDesign, setCurrentDesign] = useState<Design | null>(null);
+  const [savedSnapshot, setSavedSnapshot] = useState<string | null>(null);
 
   const cameraControlsRef = useRef<CameraControlsImpl | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
   const activeRoom = getRoom(activeRoomId);
   // Demo data is trusted, but still validated defensively -- a malformed
@@ -124,6 +132,70 @@ const VisualizerV2Shell = ({ alfaProducts, deepLinkProductId }: VisualizerV2Shel
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deepLinkProductId, deepLinkHandled]);
 
+  const applyDeserialized = (parsed: NonNullable<ReturnType<typeof deserializeDesign>>, restoreCamera: boolean) => {
+    setActiveRoomId(parsed.design.activeRoomId);
+    setDesignState(parsed.designState);
+    setFabricationState(parsed.fabricationState);
+    setCurrentDesign(parsed.design);
+    setSavedSnapshot(JSON.stringify(parsed.design));
+    setSelectedSurface(null);
+    parsed.warnings.forEach((w) => toast.error(w));
+    if (restoreCamera && parsed.design.camera) {
+      const [px, py, pz] = parsed.design.camera.position;
+      const [tx, ty, tz] = parsed.design.camera.target;
+      // Runs after the room-switch's own default-camera effect settles.
+      setTimeout(() => cameraControlsRef.current?.setLookAt(px, py, pz, tx, ty, tz, true), 80);
+    }
+  };
+
+  // Shared-design link (/visualizer-v2?d=<encoded>) takes priority over
+  // everything else -- it's a complete design, not just one product.
+  // Otherwise, restore the last in-progress session from the autosave slot
+  // so a reload doesn't lose unsaved work.
+  const [sharedLinkHandled, setSharedLinkHandled] = useState(false);
+  useEffect(() => {
+    if (sharedLinkHandled) return;
+    setSharedLinkHandled(true);
+    const encoded = new URLSearchParams(window.location.search).get("d");
+    if (encoded) {
+      const raw = DesignRepository.decodeShared(encoded);
+      const parsed = raw ? deserializeDesign(raw, products) : null;
+      if (parsed) {
+        applyDeserialized(parsed, true);
+        toast.success(`Loaded "${parsed.design.name}" from a shared link.`);
+        setDeepLinkHandled(true); // a shared design supersedes ?product=
+        return;
+      }
+      toast.error("That share link looks invalid or corrupted.");
+    }
+    if (!deepLinkProductId) {
+      const auto = AutosaveStore.read();
+      if (auto) {
+        const parsed = deserializeDesign(auto, products);
+        if (parsed) applyDeserialized(parsed, true);
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sharedLinkHandled]);
+
+  // Debounced autosave of the complete (all-rooms) state, so an accidental
+  // reload never loses in-progress work -- separate from the named "My
+  // Designs" saves the user explicitly creates.
+  useEffect(() => {
+    const t = setTimeout(() => {
+      const design = serializeDesign({
+        id: currentDesign?.id ?? "autosave",
+        name: currentDesign?.name ?? "Untitled Design",
+        createdAt: currentDesign?.createdAt,
+        activeRoomId,
+        designState,
+        fabricationState,
+      });
+      AutosaveStore.write(design);
+    }, 800);
+    return () => clearTimeout(t);
+  }, [designState, fabricationState, activeRoomId, currentDesign]);
+
   const patchSurfaceConfig = (surfaceId: string, patch: Partial<SurfaceMaterialConfig>) => {
     setDesignState((prev) => ({
       ...prev,
@@ -181,9 +253,119 @@ const VisualizerV2Shell = ({ alfaProducts, deepLinkProductId }: VisualizerV2Shel
     toast.success(`${activeRoom.name} materials reset to default.`);
   };
 
+  const captureCameraState = (): DesignCameraState | undefined => {
+    const cc = cameraControlsRef.current;
+    if (!cc) return undefined;
+    const pos = new THREE.Vector3();
+    const target = new THREE.Vector3();
+    cc.getPosition(pos);
+    cc.getTarget(target);
+    return { position: [pos.x, pos.y, pos.z], target: [target.x, target.y, target.z] };
+  };
+
+  const buildDesign = (overrides?: Partial<Pick<Design, "id" | "name" | "createdAt" | "previewDataUrl">>): Design =>
+    serializeDesign({
+      id: overrides?.id ?? currentDesign?.id ?? "untitled",
+      name: overrides?.name ?? currentDesign?.name ?? "Untitled Design",
+      createdAt: overrides?.createdAt ?? currentDesign?.createdAt,
+      activeRoomId,
+      designState,
+      fabricationState,
+      camera: captureCameraState(),
+      previewDataUrl: overrides?.previewDataUrl ?? currentDesign?.previewDataUrl,
+    });
+
+  const isDirty = savedSnapshot !== null && savedSnapshot !== JSON.stringify(buildDesign({ id: currentDesign?.id, name: currentDesign?.name }));
+
+  const handleNewDesign = () => {
+    if (isDirty && !window.confirm("You have unsaved changes. Start a new design anyway?")) return;
+    setActiveRoomId(ROOMS[0].id);
+    setSelectedSurface(null);
+    setDesignState({});
+    setFabricationState({});
+    setCurrentDesign(null);
+    setSavedSnapshot(null);
+    AutosaveStore.clear();
+    toast.success("Started a new design.");
+  };
+
+  const handleSaveDesign = (design: Design) => {
+    setCurrentDesign(design);
+    setSavedSnapshot(JSON.stringify(design));
+  };
+
+  const handleOpenDesignFromToolbar = (design: Design) => {
+    const parsed = deserializeDesign(design, products);
+    if (!parsed) {
+      toast.error("Couldn't open that design.");
+      return;
+    }
+    applyDeserialized(parsed, true);
+  };
+
+  const handleImportDesign = (raw: unknown) => {
+    const parsed = deserializeDesign(raw, products);
+    if (!parsed) {
+      toast.error("That file isn't a valid design export.");
+      return;
+    }
+    applyDeserialized(parsed, true);
+    setSavedSnapshot(null); // imported designs are treated as unsaved until explicitly saved
+    toast.success(`Imported "${parsed.design.name}".`);
+  };
+
+  const captureThumbnail = (): string | undefined => {
+    const canvas = canvasRef.current;
+    if (!canvas) return undefined;
+    try {
+      const thumb = document.createElement("canvas");
+      const scale = 480 / canvas.width;
+      thumb.width = 480;
+      thumb.height = Math.round(canvas.height * scale);
+      const ctx = thumb.getContext("2d");
+      ctx?.drawImage(canvas, 0, 0, thumb.width, thumb.height);
+      return thumb.toDataURL("image/jpeg", 0.7);
+    } catch {
+      return undefined;
+    }
+  };
+
+  const handleDownload = (format: "png" | "jpg") => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const link = document.createElement("a");
+    link.download = `${(currentDesign?.name ?? "alfa-ventura-design").replace(/\s+/g, "-").toLowerCase()}.${format}`;
+    link.href = canvas.toDataURL(format === "jpg" ? "image/jpeg" : "image/png", 0.92);
+    link.click();
+  };
+
+  const designSummaryRows = buildDesignSummary(activeRoom, surfaceProducts, surfaceConfigs, fabricationConfigs);
+
+  useEffect(() => {
+    if (!isDirty) return;
+    const onBeforeUnload = (e: BeforeUnloadEvent) => {
+      e.preventDefault();
+      e.returnValue = "";
+    };
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [isDirty]);
+
   return (
     <div className="flex flex-col lg:flex-row lg:items-start gap-6 lg:gap-8">
       <div className="flex-1 min-w-0 flex flex-col gap-4">
+        <DesignToolbar
+          currentDesign={currentDesign}
+          isDirty={isDirty}
+          onSave={handleSaveDesign}
+          onNewDesign={handleNewDesign}
+          onOpenDesign={handleOpenDesignFromToolbar}
+          onImportDesign={handleImportDesign}
+          onDownload={handleDownload}
+          buildDesign={buildDesign}
+          captureThumbnail={captureThumbnail}
+        />
+
         <SpaceSelector activeRoomId={activeRoomId} onSelect={handleSelectRoom} />
 
         <div
@@ -198,6 +380,7 @@ const VisualizerV2Shell = ({ alfaProducts, deepLinkProductId }: VisualizerV2Shel
             selectedSurface={selectedSurface}
             onSelectSurface={setSelectedSurface}
             cameraControlsRef={cameraControlsRef}
+            canvasRef={canvasRef}
           />
           <VisualizerV2Controls cameraControlsRef={cameraControlsRef} fullscreenTargetRef={containerRef} />
           {roomLoading && (
@@ -244,7 +427,9 @@ const VisualizerV2Shell = ({ alfaProducts, deepLinkProductId }: VisualizerV2Shel
         </div>
       </div>
 
-      <div className="lg:w-[340px] lg:shrink-0 lg:pl-6 lg:border-l lg:border-[#E8DDD0]">
+      <div className="lg:w-[340px] lg:shrink-0 lg:pl-6 lg:border-l lg:border-[#E8DDD0] space-y-4">
+        <DesignSummaryPanel roomName={activeRoom.name} rows={designSummaryRows} />
+
         {activeProduct && activeConfig && activeSurfaceDef && (
           <ProductSummary surfaceLabel={activeSurfaceDef.label} product={activeProduct} config={activeConfig} />
         )}
