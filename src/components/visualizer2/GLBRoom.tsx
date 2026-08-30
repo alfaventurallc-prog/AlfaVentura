@@ -6,13 +6,17 @@ import * as THREE from "three";
 import RoomSurface from "./RoomSurface";
 import type { RoomDef } from "@/lib/visualizer2/rooms";
 import type { Product } from "@/lib/visualizer2/product";
-import type { SurfaceMaterialConfig } from "@/lib/visualizer2/layout";
+import type { SurfaceMaterialConfig, CountertopFabricationConfig } from "@/lib/visualizer2/layout";
 import { DEFAULT_SURFACE_CONFIG } from "@/lib/visualizer2/layout";
 
 interface GLBRoomProps {
   room: RoomDef;
   surfaceProducts: Record<string, Product | null>;
   surfaceConfigs: Record<string, SurfaceMaterialConfig>;
+  /** Not yet applied for GLB rooms (Step 5's countertop slab geometry is
+   * procedural-only for now) -- accepted here just to keep the same props
+   * shape as ProceduralRoom via RoomRenderer's shared spread. */
+  fabricationConfigs?: Record<string, CountertopFabricationConfig>;
   selectedSurface: string | null;
   onSelectSurface: (id: string) => void;
 }

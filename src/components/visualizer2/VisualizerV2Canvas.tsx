@@ -9,12 +9,13 @@ import RoomRenderer from "./RoomRenderer";
 import VisualizerErrorBoundary from "../visualizer/VisualizerErrorBoundary";
 import type { RoomDef } from "@/lib/visualizer2/rooms";
 import type { Product } from "@/lib/visualizer2/product";
-import type { SurfaceMaterialConfig } from "@/lib/visualizer2/layout";
+import type { SurfaceMaterialConfig, CountertopFabricationConfig } from "@/lib/visualizer2/layout";
 
 interface VisualizerV2CanvasProps {
   room: RoomDef;
   surfaceProducts: Record<string, Product | null>;
   surfaceConfigs: Record<string, SurfaceMaterialConfig>;
+  fabricationConfigs: Record<string, CountertopFabricationConfig>;
   selectedSurface: string | null;
   onSelectSurface: (id: string) => void;
   cameraControlsRef: RefObject<CameraControlsImpl | null>;
@@ -42,7 +43,15 @@ const RoomCameraDriver = ({ room, cameraControlsRef }: { room: RoomDef; cameraCo
   return null;
 };
 
-const VisualizerV2Canvas = ({ room, surfaceProducts, surfaceConfigs, selectedSurface, onSelectSurface, cameraControlsRef }: VisualizerV2CanvasProps) => {
+const VisualizerV2Canvas = ({
+  room,
+  surfaceProducts,
+  surfaceConfigs,
+  fabricationConfigs,
+  selectedSurface,
+  onSelectSurface,
+  cameraControlsRef,
+}: VisualizerV2CanvasProps) => {
   const [webglOk, setWebglOk] = useState(true);
 
   useEffect(() => {
@@ -84,6 +93,7 @@ const VisualizerV2Canvas = ({ room, surfaceProducts, surfaceConfigs, selectedSur
             room={room}
             surfaceProducts={surfaceProducts}
             surfaceConfigs={surfaceConfigs}
+            fabricationConfigs={fabricationConfigs}
             selectedSurface={selectedSurface}
             onSelectSurface={onSelectSurface}
           />

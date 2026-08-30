@@ -9,9 +9,10 @@ import SpaceSelector from "./SpaceSelector";
 import SurfaceTabs from "./SurfaceTabs";
 import ProductPanel from "./ProductPanel";
 import MaterialConfigPanel from "./MaterialConfigPanel";
+import FabricationPanel from "./FabricationPanel";
 import { DEMO_PRODUCTS } from "@/lib/visualizer2/demoProducts";
 import type { Product } from "@/lib/visualizer2/product";
-import { DEFAULT_SURFACE_CONFIG, type SurfaceMaterialConfig } from "@/lib/visualizer2/layout";
+import { DEFAULT_SURFACE_CONFIG, DEFAULT_FABRICATION_CONFIG, type SurfaceMaterialConfig, type CountertopFabricationConfig } from "@/lib/visualizer2/layout";
 import { ROOMS, getRoom } from "@/lib/visualizer2/rooms";
 
 interface VisualizerV2ShellProps {
@@ -25,8 +26,10 @@ interface VisualizerV2ShellProps {
  * slice of this object the rest of the UI reads -- no other room's data
  * is ever touched. */
 type DesignState = Record<string, Record<string, SurfaceMaterialConfig>>;
+type FabricationState = Record<string, Record<string, CountertopFabricationConfig>>;
 
 const VERTICAL_TYPES = new Set(["wall", "backsplash"]);
+const FABRICATED_TYPES = new Set(["countertop", "island"]);
 
 /**
  * Step 4: adds multi-space/room switching on top of Step 1-3. Product data
@@ -38,6 +41,7 @@ const VisualizerV2Shell = ({ alfaProducts }: VisualizerV2ShellProps) => {
   const [activeRoomId, setActiveRoomId] = useState(ROOMS[0].id);
   const [selectedSurface, setSelectedSurface] = useState<string | null>(null);
   const [designState, setDesignState] = useState<DesignState>({});
+  const [fabricationState, setFabricationState] = useState<FabricationState>({});
   const [roomLoading, setRoomLoading] = useState(false);
 
   const cameraControlsRef = useRef<CameraControlsImpl | null>(null);
@@ -50,16 +54,23 @@ const VisualizerV2Shell = ({ alfaProducts }: VisualizerV2ShellProps) => {
   const roomConfigs = designState[activeRoomId] ?? {};
   const getConfig = (surfaceId: string): SurfaceMaterialConfig => roomConfigs[surfaceId] ?? DEFAULT_SURFACE_CONFIG;
 
+  const roomFabrication = fabricationState[activeRoomId] ?? {};
+  const getFabrication = (surfaceId: string): CountertopFabricationConfig => roomFabrication[surfaceId] ?? DEFAULT_FABRICATION_CONFIG;
+
   const surfaceProducts: Record<string, Product | null> = {};
   const surfaceConfigs: Record<string, SurfaceMaterialConfig> = {};
+  const fabricationConfigs: Record<string, CountertopFabricationConfig> = {};
   for (const s of activeRoom.surfaces) {
     surfaceConfigs[s.id] = getConfig(s.id);
     surfaceProducts[s.id] = productById(surfaceConfigs[s.id].productId);
+    fabricationConfigs[s.id] = getFabrication(s.id);
   }
 
   const activeProduct = selectedSurface ? surfaceProducts[selectedSurface] ?? null : null;
   const activeConfig = selectedSurface ? surfaceConfigs[selectedSurface] : null;
+  const activeFabrication = selectedSurface ? fabricationConfigs[selectedSurface] : null;
   const activeSurfaceDef = selectedSurface ? activeRoom.surfaces.find((s) => s.id === selectedSurface) : null;
+  const isFabricatedSurface = !!activeSurfaceDef && FABRICATED_TYPES.has(activeSurfaceDef.type);
 
   const handleSelectRoom = (roomId: string) => {
     if (roomId === activeRoomId) return;
@@ -111,14 +122,26 @@ const VisualizerV2Shell = ({ alfaProducts }: VisualizerV2ShellProps) => {
     patchSurfaceConfig(selectedSurface, patch);
   };
 
+  const patchFabrication = (surfaceId: string, patch: Partial<CountertopFabricationConfig>) => {
+    setFabricationState((prev) => ({
+      ...prev,
+      [activeRoomId]: {
+        ...prev[activeRoomId],
+        [surfaceId]: { ...(prev[activeRoomId]?.[surfaceId] ?? DEFAULT_FABRICATION_CONFIG), ...patch },
+      },
+    }));
+  };
+
   const handleResetSurface = () => {
     if (!selectedSurface) return;
     patchSurfaceConfig(selectedSurface, { ...DEFAULT_SURFACE_CONFIG });
+    patchFabrication(selectedSurface, { ...DEFAULT_FABRICATION_CONFIG });
     toast.success(`${activeSurfaceDef?.label ?? "Surface"} reset to default.`);
   };
 
   const handleResetRoomMaterials = () => {
     setDesignState((prev) => ({ ...prev, [activeRoomId]: {} }));
+    setFabricationState((prev) => ({ ...prev, [activeRoomId]: {} }));
     toast.success(`${activeRoom.name} materials reset to default.`);
   };
 
@@ -135,6 +158,7 @@ const VisualizerV2Shell = ({ alfaProducts }: VisualizerV2ShellProps) => {
             room={activeRoom}
             surfaceProducts={surfaceProducts}
             surfaceConfigs={surfaceConfigs}
+            fabricationConfigs={fabricationConfigs}
             selectedSurface={selectedSurface}
             onSelectSurface={setSelectedSurface}
             cameraControlsRef={cameraControlsRef}
@@ -199,6 +223,14 @@ const VisualizerV2Shell = ({ alfaProducts }: VisualizerV2ShellProps) => {
             isVerticalSurface={VERTICAL_TYPES.has(activeSurfaceDef.type)}
             onChange={handleConfigChange}
             onReset={handleResetSurface}
+          />
+        )}
+
+        {activeProduct && activeFabrication && isFabricatedSurface && (
+          <FabricationPanel
+            product={activeProduct}
+            config={activeFabrication}
+            onChange={(patch) => selectedSurface && patchFabrication(selectedSurface, patch)}
           />
         )}
       </div>

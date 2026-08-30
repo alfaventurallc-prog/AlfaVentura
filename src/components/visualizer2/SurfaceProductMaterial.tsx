@@ -14,6 +14,11 @@ interface SurfaceProductMaterialProps {
   config: SurfaceMaterialConfig;
   surfaceMm: { width: number; height: number };
   highlighted: boolean;
+  /** Step 5 bookmatch: mirror the pattern horizontally/vertically -- used
+   * to render the second half of a bookmatched pair so it reads as the
+   * same slab opened like a book, not a duplicate. */
+  mirrorX?: boolean;
+  mirrorY?: boolean;
 }
 
 /** Cheap string hash -> deterministic seed for the ashlar/herringbone RNG,
@@ -42,11 +47,15 @@ const finishTexture = (
   texture: THREE.Texture,
   repeat: [number, number],
   offset: [number, number],
-  rotationDeg: number
+  rotationDeg: number,
+  mirrorX?: boolean,
+  mirrorY?: boolean
 ) => {
   texture.wrapS = THREE.RepeatWrapping;
   texture.wrapT = THREE.RepeatWrapping;
-  texture.repeat.set(repeat[0], repeat[1]);
+  const rx = mirrorX ? -repeat[0] : repeat[0];
+  const ry = mirrorY ? -repeat[1] : repeat[1];
+  texture.repeat.set(rx, ry);
   texture.offset.set(offset[0], offset[1]);
   texture.center.set(0.5, 0.5);
   texture.rotation = THREE.MathUtils.degToRad(rotationDeg);
@@ -55,7 +64,7 @@ const finishTexture = (
 };
 
 /** Demo material (procedural pattern/color) in tile or slab mode. */
-const DemoSurfaceMaterial = ({ product, config, surfaceMm, highlighted }: SurfaceProductMaterialProps) => {
+const DemoSurfaceMaterial = ({ product, config, surfaceMm, highlighted, mirrorX, mirrorY }: SurfaceProductMaterialProps) => {
   const roughness = FINISH_ROUGHNESS[product.finish];
   const descriptor = product.descriptor!;
 
@@ -95,7 +104,7 @@ const DemoSurfaceMaterial = ({ product, config, surfaceMm, highlighted }: Surfac
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [product.id, JSON.stringify(config), surfaceMm.width, surfaceMm.height]);
 
-  finishTexture(texture, repeat, offset, rotationDeg);
+  finishTexture(texture, repeat, offset, rotationDeg, mirrorX, mirrorY);
 
   return <meshStandardMaterial map={texture} roughness={roughness} metalness={0} {...highlightProps(highlighted)} />;
 };
@@ -103,7 +112,7 @@ const DemoSurfaceMaterial = ({ product, config, surfaceMm, highlighted }: Surfac
 /** Real Alfa Ventura product (source: "alfa") in tile or slab mode. Tile
  * mode uses the photo's average color as the tile fill (see the file-level
  * note) rather than compositing the full photo into every tile cell. */
-const AlfaSurfaceMaterial = ({ product, config, surfaceMm, highlighted }: SurfaceProductMaterialProps) => {
+const AlfaSurfaceMaterial = ({ product, config, surfaceMm, highlighted, mirrorX, mirrorY }: SurfaceProductMaterialProps) => {
   const roughness = FINISH_ROUGHNESS[product.finish];
   const rawTexture = useTexture(product.imageUrl!);
 
@@ -152,7 +161,7 @@ const AlfaSurfaceMaterial = ({ product, config, surfaceMm, highlighted }: Surfac
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rawTexture, product.id, JSON.stringify(config), surfaceMm.width, surfaceMm.height]);
 
-  finishTexture(texture, repeat, offset, rotationDeg);
+  finishTexture(texture, repeat, offset, rotationDeg, mirrorX, mirrorY);
 
   return <meshStandardMaterial map={texture} roughness={roughness} metalness={0} {...highlightProps(highlighted)} />;
 };

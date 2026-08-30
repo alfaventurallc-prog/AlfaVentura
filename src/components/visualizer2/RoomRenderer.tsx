@@ -4,12 +4,13 @@ import ProceduralRoom from "./ProceduralRoom";
 import GLBRoom from "./GLBRoom";
 import type { RoomDef } from "@/lib/visualizer2/rooms";
 import type { Product } from "@/lib/visualizer2/product";
-import type { SurfaceMaterialConfig } from "@/lib/visualizer2/layout";
+import type { SurfaceMaterialConfig, CountertopFabricationConfig } from "@/lib/visualizer2/layout";
 
 interface RoomRendererProps {
   room: RoomDef;
   surfaceProducts: Record<string, Product | null>;
   surfaceConfigs: Record<string, SurfaceMaterialConfig>;
+  fabricationConfigs: Record<string, CountertopFabricationConfig>;
   selectedSurface: string | null;
   onSelectSurface: (id: string) => void;
 }

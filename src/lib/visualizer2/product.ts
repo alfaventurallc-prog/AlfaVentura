@@ -1,5 +1,7 @@
 import type { ProceduralDescriptor } from "@/three/proceduralPattern";
-import type { MaterialMode, SizeOption } from "./layout";
+import type { MaterialMode, SizeOption, EdgeProfile } from "./layout";
+
+export type MaterialType = "tile" | "slab" | "quartz" | "porcelain" | "marble" | "granite" | "stone";
 
 export type Finish = "Polished" | "Honed" | "Matte" | "Concrete";
 
@@ -35,6 +37,14 @@ export interface Product {
    * the currently selected product+mode. */
   sizes: SizeOption[];
   availableModes: MaterialMode[];
+  /** Step 5: countertop/slab fabrication capabilities -- the UI only shows
+   * options a given product actually supports. */
+  materialType: MaterialType;
+  applicationTypes: string[];
+  availableThicknesses: number[];
+  availableEdgeProfiles: EdgeProfile[];
+  supportsBookmatch: boolean;
+  supportsWaterfall: boolean;
 }
 
 export const PRODUCT_CATEGORIES = ["Quartz", "Marble", "Stone", "Concrete", "Terrazzo", "Wood", "Solid Color"] as const;

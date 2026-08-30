@@ -22,6 +22,12 @@ const toAlfaProduct = (p: { id: string; title: string; images: string[] }): Prod
   ],
   source: "alfa",
   imageUrl: p.images[0],
+  materialType: "quartz",
+  applicationTypes: ["floor", "wall", "backsplash", "countertop", "island"],
+  availableThicknesses: [12, 20, 30],
+  availableEdgeProfiles: ["square", "eased", "beveled", "bullnose"],
+  supportsBookmatch: true,
+  supportsWaterfall: true,
 });
 
 export default async function VisualizerV2Page() {

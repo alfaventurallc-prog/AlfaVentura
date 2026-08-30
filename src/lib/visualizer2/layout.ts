@@ -21,7 +21,7 @@ export const TILE_LAYOUTS: { id: LayoutPattern; label: string }[] = [
 
 export type Alignment = "center" | "left" | "right" | "top" | "bottom";
 
-export type VeinOrientation = "horizontal" | "vertical";
+export type VeinOrientation = "auto" | "horizontal" | "vertical";
 
 export interface SizeOption {
   id: string;
@@ -60,8 +60,61 @@ export const DEFAULT_SURFACE_CONFIG: SurfaceMaterialConfig = {
   groutWidthMm: 2,
   groutColor: "#D8D5CF",
   alignment: "center",
-  veinOrientation: "horizontal",
+  veinOrientation: "auto",
 };
+
+// ---------------------------------------------------------------------
+// Step 5: countertop/slab fabrication -- a second, independent config
+// that only applies to surfaceType "countertop"/"island". Kept separate
+// from SurfaceMaterialConfig (which every surface has) since fabrication
+// concepts like overhang/waterfall/bookmatch are meaningless for a floor
+// or wall.
+// ---------------------------------------------------------------------
+
+export type EdgeProfile = "square" | "eased" | "beveled" | "bullnose";
+export const EDGE_PROFILE_OPTIONS: EdgeProfile[] = ["square", "eased", "beveled", "bullnose"];
+
+export type WaterfallSide = "none" | "left" | "right" | "both";
+export type SeamMode = "auto" | "visible" | "hidden";
+export type BookmatchType = "standard" | "mirrored";
+export type BookmatchDirection = "left-right" | "top-bottom";
+
+export interface CutoutDef {
+  id: string;
+  type: "sink" | "cooktop" | "faucet";
+  /** Position/size as a percentage of the countertop's own footprint, so
+   * it stays correctly placed regardless of countertop dimensions. */
+  xPct: number;
+  yPct: number;
+  widthPct: number;
+  depthPct: number;
+}
+
+export interface CountertopFabricationConfig {
+  thicknessMm: number;
+  edgeProfile: EdgeProfile;
+  overhangMm: number;
+  waterfall: WaterfallSide;
+  seams: SeamMode;
+  bookmatch: boolean;
+  bookmatchType: BookmatchType;
+  bookmatchDirection: BookmatchDirection;
+  cutouts: CutoutDef[];
+}
+
+export const DEFAULT_FABRICATION_CONFIG: CountertopFabricationConfig = {
+  thicknessMm: 20,
+  edgeProfile: "square",
+  overhangMm: 20,
+  waterfall: "none",
+  seams: "auto",
+  bookmatch: false,
+  bookmatchType: "standard",
+  bookmatchDirection: "left-right",
+  cutouts: [],
+};
+
+export const THICKNESS_MM_OPTIONS = [12, 20, 30];
 
 export const GROUT_PRESETS = [
   { name: "White", color: "#EDE9E0" },

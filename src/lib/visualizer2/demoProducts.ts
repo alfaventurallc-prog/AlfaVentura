@@ -1,4 +1,21 @@
-import type { Product } from "./product";
+import type { MaterialType, Product } from "./product";
+import type { EdgeProfile } from "./layout";
+
+type RawDemoProduct = Omit<Product, "materialType" | "applicationTypes" | "availableThicknesses" | "availableEdgeProfiles" | "supportsBookmatch" | "supportsWaterfall">;
+
+/** Step 5 fabrication capabilities, derived from category -- Marble/Solid
+ * Color get full slab fabrication (thickness/edge/waterfall/bookmatch),
+ * tile-only categories get the basics that still make sense on a tile
+ * countertop (thickness/edge), no bookmatch/waterfall (those are a slab
+ * concept). */
+const FABRICATION_BY_CATEGORY: Record<string, { materialType: MaterialType; availableThicknesses: number[]; availableEdgeProfiles: EdgeProfile[]; supportsBookmatch: boolean; supportsWaterfall: boolean }> = {
+  Marble: { materialType: "marble", availableThicknesses: [20, 30], availableEdgeProfiles: ["square", "eased", "beveled", "bullnose"], supportsBookmatch: true, supportsWaterfall: true },
+  Stone: { materialType: "stone", availableThicknesses: [12, 20], availableEdgeProfiles: ["square", "eased"], supportsBookmatch: false, supportsWaterfall: false },
+  Concrete: { materialType: "stone", availableThicknesses: [20, 30], availableEdgeProfiles: ["square", "eased"], supportsBookmatch: false, supportsWaterfall: true },
+  Terrazzo: { materialType: "stone", availableThicknesses: [20, 30], availableEdgeProfiles: ["square", "eased", "bullnose"], supportsBookmatch: false, supportsWaterfall: true },
+  Wood: { materialType: "tile", availableThicknesses: [12, 20], availableEdgeProfiles: ["square", "eased"], supportsBookmatch: false, supportsWaterfall: false },
+  "Solid Color": { materialType: "quartz", availableThicknesses: [12, 20, 30], availableEdgeProfiles: ["square", "eased", "beveled", "bullnose"], supportsBookmatch: true, supportsWaterfall: true },
+};
 
 /**
  * Demo materials for the categories that have no real Alfa Ventura product
@@ -9,7 +26,7 @@ import type { Product } from "./product";
  * with real Alfa Ventura product data as those categories become
  * available; nothing else in the Visualizer needs to change.
  */
-export const DEMO_PRODUCTS: Product[] = [
+const RAW_DEMO_PRODUCTS: RawDemoProduct[] = [
   {
     id: "demo-marble-bianco",
     name: "Bianco Marble",
@@ -146,3 +163,9 @@ export const DEMO_PRODUCTS: Product[] = [
     descriptor: { pattern: "solid", baseColor: "#2A241E", seed: 2 },
   },
 ];
+
+export const DEMO_PRODUCTS: Product[] = RAW_DEMO_PRODUCTS.map((p) => ({
+  ...p,
+  applicationTypes: ["floor", "wall", "backsplash", "countertop", "island"],
+  ...(FABRICATION_BY_CATEGORY[p.category] ?? FABRICATION_BY_CATEGORY.Stone),
+}));
