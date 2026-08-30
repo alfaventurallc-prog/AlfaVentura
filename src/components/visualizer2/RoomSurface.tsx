@@ -3,21 +3,23 @@
 import { Suspense, useState } from "react";
 import type { ThreeEvent } from "@react-three/fiber";
 import SurfaceProductMaterial from "./SurfaceProductMaterial";
-import type { SurfaceId, SurfaceMaterial } from "@/lib/visualizer2/surfaces";
 import type { Product } from "@/lib/visualizer2/product";
 import type { SurfaceMaterialConfig } from "@/lib/visualizer2/layout";
 
 interface RoomSurfaceProps {
-  id: SurfaceId;
+  /** App-level surface id, unique within the active room (e.g. "floor",
+   * "countertop") -- different rooms can have entirely different surface
+   * sets, so this is a plain string, not a fixed enum. */
+  id: string;
   position: [number, number, number];
   rotation: [number, number, number];
   args: [number, number];
-  material: SurfaceMaterial;
+  material: { color: string; roughness: number };
   product: Product | null;
   config: SurfaceMaterialConfig;
   surfaceMm: { width: number; height: number };
   selected: boolean;
-  onSelect: (id: SurfaceId) => void;
+  onSelect: (id: string) => void;
 }
 
 /**

@@ -5,17 +5,18 @@ import { Canvas } from "@react-three/fiber";
 import { CameraControls, Environment } from "@react-three/drei";
 import type { CameraControls as CameraControlsImpl } from "@react-three/drei";
 import * as THREE from "three";
-import Room from "./Room";
-import type { SurfaceId, SurfaceMaterials } from "@/lib/visualizer2/surfaces";
+import RoomRenderer from "./RoomRenderer";
+import VisualizerErrorBoundary from "../visualizer/VisualizerErrorBoundary";
+import type { RoomDef } from "@/lib/visualizer2/rooms";
 import type { Product } from "@/lib/visualizer2/product";
 import type { SurfaceMaterialConfig } from "@/lib/visualizer2/layout";
 
 interface VisualizerV2CanvasProps {
-  materials: SurfaceMaterials;
-  surfaceProducts: Record<SurfaceId, Product | null>;
-  surfaceConfigs: Record<SurfaceId, SurfaceMaterialConfig>;
-  selectedSurface: SurfaceId | null;
-  onSelectSurface: (id: SurfaceId) => void;
+  room: RoomDef;
+  surfaceProducts: Record<string, Product | null>;
+  surfaceConfigs: Record<string, SurfaceMaterialConfig>;
+  selectedSurface: string | null;
+  onSelectSurface: (id: string) => void;
   cameraControlsRef: RefObject<CameraControlsImpl | null>;
 }
 
@@ -28,16 +29,20 @@ const hasWebGL = () => {
   }
 };
 
-const HERO_CAMERA_POSITION: [number, number, number] = [4.6, 2.2, 5.4];
+/** Moves the camera to the active room's preset whenever the room changes
+ * -- the Canvas's own `camera` prop only sets the very first mount's
+ * position, not a live switch between rooms. */
+const RoomCameraDriver = ({ room, cameraControlsRef }: { room: RoomDef; cameraControlsRef: RefObject<CameraControlsImpl | null> }) => {
+  useEffect(() => {
+    const [px, py, pz] = room.camera.position;
+    const [tx, ty, tz] = room.camera.target;
+    cameraControlsRef.current?.setLookAt(px, py, pz, tx, ty, tz, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [room.id]);
+  return null;
+};
 
-const VisualizerV2Canvas = ({
-  materials,
-  surfaceProducts,
-  surfaceConfigs,
-  selectedSurface,
-  onSelectSurface,
-  cameraControlsRef,
-}: VisualizerV2CanvasProps) => {
+const VisualizerV2Canvas = ({ room, surfaceProducts, surfaceConfigs, selectedSurface, onSelectSurface, cameraControlsRef }: VisualizerV2CanvasProps) => {
   const [webglOk, setWebglOk] = useState(true);
 
   useEffect(() => {
@@ -57,7 +62,7 @@ const VisualizerV2Canvas = ({
       shadows
       dpr={[1, 2]}
       gl={{ toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: 0.95 }}
-      camera={{ position: HERO_CAMERA_POSITION, fov: 45 }}
+      camera={{ position: room.camera.position, fov: 45 }}
     >
       <ambientLight intensity={0.45} />
       <directionalLight
@@ -74,18 +79,21 @@ const VisualizerV2Canvas = ({
       />
       <directionalLight position={[-3, 3, -2]} intensity={0.3} />
       <Suspense fallback={null}>
-        <Room
-          materials={materials}
-          surfaceProducts={surfaceProducts}
-          surfaceConfigs={surfaceConfigs}
-          selectedSurface={selectedSurface}
-          onSelectSurface={onSelectSurface}
-        />
+        <VisualizerErrorBoundary>
+          <RoomRenderer
+            room={room}
+            surfaceProducts={surfaceProducts}
+            surfaceConfigs={surfaceConfigs}
+            selectedSurface={selectedSurface}
+            onSelectSurface={onSelectSurface}
+          />
+        </VisualizerErrorBoundary>
         <Environment preset="apartment" environmentIntensity={0.3} />
       </Suspense>
       {/* minDistance/maxDistance keep the camera from clipping into a wall or
           the floor; maxPolarAngle keeps it from dipping below floor level. */}
-      <CameraControls ref={cameraControlsRef} minDistance={1.5} maxDistance={9} minPolarAngle={0.2} maxPolarAngle={Math.PI / 2.1} />
+      <CameraControls ref={cameraControlsRef} minDistance={1} maxDistance={10} minPolarAngle={0.2} maxPolarAngle={Math.PI / 2.1} />
+      <RoomCameraDriver room={room} cameraControlsRef={cameraControlsRef} />
     </Canvas>
   );
 };

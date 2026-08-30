@@ -1,18 +1,18 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { CameraControls as CameraControlsImpl } from "@react-three/drei";
 import { toast } from "sonner";
 import VisualizerV2Canvas from "./VisualizerV2Canvas";
 import VisualizerV2Controls from "./VisualizerV2Controls";
+import SpaceSelector from "./SpaceSelector";
 import SurfaceTabs from "./SurfaceTabs";
 import ProductPanel from "./ProductPanel";
 import MaterialConfigPanel from "./MaterialConfigPanel";
-import VisualizerErrorBoundary from "../visualizer/VisualizerErrorBoundary";
-import { DEFAULT_SURFACE_MATERIALS, SURFACE_IDS, SURFACE_LABELS, type SurfaceId } from "@/lib/visualizer2/surfaces";
 import { DEMO_PRODUCTS } from "@/lib/visualizer2/demoProducts";
 import type { Product } from "@/lib/visualizer2/product";
 import { DEFAULT_SURFACE_CONFIG, type SurfaceMaterialConfig } from "@/lib/visualizer2/layout";
+import { ROOMS, getRoom } from "@/lib/visualizer2/rooms";
 
 interface VisualizerV2ShellProps {
   /** Real Alfa Ventura quartz products (source: "alfa"), fetched server-side
@@ -20,47 +20,71 @@ interface VisualizerV2ShellProps {
   alfaProducts: Product[];
 }
 
-const emptyConfigs = (): Record<SurfaceId, SurfaceMaterialConfig> => ({
-  floor: { ...DEFAULT_SURFACE_CONFIG },
-  backWall: { ...DEFAULT_SURFACE_CONFIG },
-  leftWall: { ...DEFAULT_SURFACE_CONFIG },
-  rightWall: { ...DEFAULT_SURFACE_CONFIG },
-});
+/** roomId -> surfaceId -> config. Kept as one flat object rather than
+ * nested per-room state hooks so switching rooms is just changing which
+ * slice of this object the rest of the UI reads -- no other room's data
+ * is ever touched. */
+type DesignState = Record<string, Record<string, SurfaceMaterialConfig>>;
 
-const VERTICAL_SURFACES: SurfaceId[] = ["backWall", "leftWall", "rightWall"];
+const VERTICAL_TYPES = new Set(["wall", "backsplash"]);
 
 /**
- * Step 3 extends Step 2's centralized state: each surface now stores a full
- * SurfaceMaterialConfig (product + mode/size/layout/rotation/scale/offset/
- * grout/alignment/vein), not just a product id. Product data (product.ts),
- * per-surface install configuration (this state), 3D rendering
- * (SurfaceProductMaterial), and UI controls (MaterialConfigPanel) are kept
- * as separate concerns on purpose.
+ * Step 4: adds multi-space/room switching on top of Step 1-3. Product data
+ * (product.ts), room data (rooms.ts), per-room-per-surface install
+ * configuration (designState below), 3D rendering (RoomRenderer), and UI
+ * controls all stay separate concerns, matching the earlier steps.
  */
 const VisualizerV2Shell = ({ alfaProducts }: VisualizerV2ShellProps) => {
-  const [selectedSurface, setSelectedSurface] = useState<SurfaceId | null>(null);
-  const [surfaceConfigs, setSurfaceConfigs] = useState<Record<SurfaceId, SurfaceMaterialConfig>>(emptyConfigs());
+  const [activeRoomId, setActiveRoomId] = useState(ROOMS[0].id);
+  const [selectedSurface, setSelectedSurface] = useState<string | null>(null);
+  const [designState, setDesignState] = useState<DesignState>({});
+  const [roomLoading, setRoomLoading] = useState(false);
 
   const cameraControlsRef = useRef<CameraControlsImpl | null>(null);
   const containerRef = useRef<HTMLDivElement | null>(null);
 
+  const activeRoom = getRoom(activeRoomId);
   const products = [...alfaProducts, ...DEMO_PRODUCTS];
   const productById = (id: string | null) => (id ? products.find((p) => p.id === id) ?? null : null);
 
-  const surfaceProducts: Record<SurfaceId, Product | null> = {
-    floor: productById(surfaceConfigs.floor.productId),
-    backWall: productById(surfaceConfigs.backWall.productId),
-    leftWall: productById(surfaceConfigs.leftWall.productId),
-    rightWall: productById(surfaceConfigs.rightWall.productId),
+  const roomConfigs = designState[activeRoomId] ?? {};
+  const getConfig = (surfaceId: string): SurfaceMaterialConfig => roomConfigs[surfaceId] ?? DEFAULT_SURFACE_CONFIG;
+
+  const surfaceProducts: Record<string, Product | null> = {};
+  const surfaceConfigs: Record<string, SurfaceMaterialConfig> = {};
+  for (const s of activeRoom.surfaces) {
+    surfaceConfigs[s.id] = getConfig(s.id);
+    surfaceProducts[s.id] = productById(surfaceConfigs[s.id].productId);
+  }
+
+  const activeProduct = selectedSurface ? surfaceProducts[selectedSurface] ?? null : null;
+  const activeConfig = selectedSurface ? surfaceConfigs[selectedSurface] : null;
+  const activeSurfaceDef = selectedSurface ? activeRoom.surfaces.find((s) => s.id === selectedSurface) : null;
+
+  const handleSelectRoom = (roomId: string) => {
+    if (roomId === activeRoomId) return;
+    setRoomLoading(true);
+    setActiveRoomId(roomId);
+    setSelectedSurface(null);
   };
 
-  const activeProduct = selectedSurface ? surfaceProducts[selectedSurface] : null;
-  const activeConfig = selectedSurface ? surfaceConfigs[selectedSurface] : null;
+  // Brief "loading" state on room switch -- procedural rooms have nothing
+  // real to await, but this is the same seam a future GLB load's actual
+  // Suspense/loading signal would plug into.
+  useEffect(() => {
+    if (!roomLoading) return;
+    const t = setTimeout(() => setRoomLoading(false), 350);
+    return () => clearTimeout(t);
+  }, [roomLoading]);
 
-  const handleSelectSurface = (id: SurfaceId) => setSelectedSurface(id);
-
-  const patchSurfaceConfig = (id: SurfaceId, patch: Partial<SurfaceMaterialConfig>) => {
-    setSurfaceConfigs((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }));
+  const patchSurfaceConfig = (surfaceId: string, patch: Partial<SurfaceMaterialConfig>) => {
+    setDesignState((prev) => ({
+      ...prev,
+      [activeRoomId]: {
+        ...prev[activeRoomId],
+        [surfaceId]: { ...(prev[activeRoomId]?.[surfaceId] ?? DEFAULT_SURFACE_CONFIG), ...patch },
+      },
+    }));
   };
 
   const handleSelectProduct = (product: Product) => {
@@ -70,19 +94,15 @@ const VisualizerV2Shell = ({ alfaProducts }: VisualizerV2ShellProps) => {
     }
     const mode = product.availableModes[0];
     const firstSize = product.sizes.find((s) => s.mode === mode) ?? null;
-    patchSurfaceConfig(selectedSurface, {
-      productId: product.id,
-      mode,
-      sizeId: firstSize?.id ?? null,
-    });
+    patchSurfaceConfig(selectedSurface, { productId: product.id, mode, sizeId: firstSize?.id ?? null });
     toast(`Loading ${product.name}...`, { duration: 1200 });
   };
 
   const handleConfigChange = (patch: Partial<SurfaceMaterialConfig>) => {
     if (!selectedSurface) return;
-    // Changing mode invalidates the previous sizeId if it belonged to the other mode.
     if (patch.mode && activeProduct) {
-      const stillValid = activeProduct.sizes.some((s) => s.id === surfaceConfigs[selectedSurface].sizeId && s.mode === patch.mode);
+      const current = getConfig(selectedSurface);
+      const stillValid = activeProduct.sizes.some((s) => s.id === current.sizeId && s.mode === patch.mode);
       if (!stillValid) {
         const fallback = activeProduct.sizes.find((s) => s.mode === patch.mode);
         patch = { ...patch, sizeId: fallback?.id ?? null };
@@ -94,58 +114,71 @@ const VisualizerV2Shell = ({ alfaProducts }: VisualizerV2ShellProps) => {
   const handleResetSurface = () => {
     if (!selectedSurface) return;
     patchSurfaceConfig(selectedSurface, { ...DEFAULT_SURFACE_CONFIG });
-    toast.success(`${SURFACE_LABELS[selectedSurface]} reset to default.`);
+    toast.success(`${activeSurfaceDef?.label ?? "Surface"} reset to default.`);
   };
 
-  const handleResetAllMaterials = () => {
-    setSurfaceConfigs(emptyConfigs());
-    toast.success("Materials reset to default.");
+  const handleResetRoomMaterials = () => {
+    setDesignState((prev) => ({ ...prev, [activeRoomId]: {} }));
+    toast.success(`${activeRoom.name} materials reset to default.`);
   };
 
   return (
     <div className="flex flex-col lg:flex-row lg:items-start gap-6 lg:gap-8">
       <div className="flex-1 min-w-0 flex flex-col gap-4">
+        <SpaceSelector activeRoomId={activeRoomId} onSelect={handleSelectRoom} />
+
         <div
           ref={containerRef}
           className="relative w-full h-[64vh] min-h-[440px] max-h-[680px] rounded-2xl overflow-hidden bg-[#EDE6DA] border border-[#E8DDD0]"
         >
-          <VisualizerErrorBoundary>
-            <VisualizerV2Canvas
-              materials={DEFAULT_SURFACE_MATERIALS}
-              surfaceProducts={surfaceProducts}
-              surfaceConfigs={surfaceConfigs}
-              selectedSurface={selectedSurface}
-              onSelectSurface={handleSelectSurface}
-              cameraControlsRef={cameraControlsRef}
-            />
-          </VisualizerErrorBoundary>
+          <VisualizerV2Canvas
+            room={activeRoom}
+            surfaceProducts={surfaceProducts}
+            surfaceConfigs={surfaceConfigs}
+            selectedSurface={selectedSurface}
+            onSelectSurface={setSelectedSurface}
+            cameraControlsRef={cameraControlsRef}
+          />
           <VisualizerV2Controls cameraControlsRef={cameraControlsRef} fullscreenTargetRef={containerRef} />
+          {roomLoading && (
+            <div className="absolute inset-0 bg-[#EDE6DA]/90 flex items-center justify-center">
+              <p className="text-sm font-semibold text-[#44403C]">Loading {activeRoom.name}...</p>
+            </div>
+          )}
         </div>
 
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div className="flex items-center gap-2 text-sm">
-            <span className="font-bold uppercase tracking-wide text-xs text-[#78716C]">Selected Surface</span>
-            <span className="font-semibold text-[#1C1917]">
-              {selectedSurface ? SURFACE_LABELS[selectedSurface] : "None — click a surface"}
+            <span className="font-bold uppercase tracking-wide text-xs text-[#78716C]">
+              {activeRoom.name} / Selected Surface
             </span>
+            <span className="font-semibold text-[#1C1917]">{activeSurfaceDef?.label ?? "None — click a surface"}</span>
           </div>
           <button
             type="button"
-            onClick={handleResetAllMaterials}
+            onClick={handleResetRoomMaterials}
             className="px-3 py-2 rounded-lg text-xs font-semibold border border-[#E8DDD0] text-[#44403C] hover:border-[#9B7040] transition-colors"
           >
             Reset Materials
           </button>
         </div>
 
-        <SurfaceTabs selectedSurface={selectedSurface} onSelect={handleSelectSurface} />
+        <SurfaceTabs
+          surfaces={activeRoom.surfaces.map((s) => ({ id: s.id, label: s.label }))}
+          selectedSurface={selectedSurface}
+          onSelect={setSelectedSurface}
+        />
 
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-          {SURFACE_IDS.map((id) => (
-            <div key={id} className="px-3 py-2 rounded-lg bg-[#F5F1EA] border border-[#E8DDD0]">
-              <p className="font-bold uppercase tracking-wide text-[#78716C]">{SURFACE_LABELS[id]}</p>
-              <p className="text-[#1C1917] truncate">{surfaceProducts[id]?.name ?? "Default"}</p>
-              {surfaceProducts[id] && <p className="text-[#78716C] truncate">{surfaceConfigs[id].mode} · {surfaceConfigs[id].layout}</p>}
+          {activeRoom.surfaces.map((s) => (
+            <div key={s.id} className="px-3 py-2 rounded-lg bg-[#F5F1EA] border border-[#E8DDD0]">
+              <p className="font-bold uppercase tracking-wide text-[#78716C]">{s.label}</p>
+              <p className="text-[#1C1917] truncate">{surfaceProducts[s.id]?.name ?? "Default"}</p>
+              {surfaceProducts[s.id] && (
+                <p className="text-[#78716C] truncate">
+                  {surfaceConfigs[s.id].mode} · {surfaceConfigs[s.id].layout}
+                </p>
+              )}
             </div>
           ))}
         </div>
@@ -154,16 +187,16 @@ const VisualizerV2Shell = ({ alfaProducts }: VisualizerV2ShellProps) => {
       <div className="lg:w-[340px] lg:shrink-0 lg:pl-6 lg:border-l lg:border-[#E8DDD0]">
         <ProductPanel
           products={products}
-          selectedSurfaceLabel={selectedSurface ? SURFACE_LABELS[selectedSurface] : null}
+          selectedSurfaceLabel={activeSurfaceDef?.label ?? null}
           activeProduct={activeProduct}
           onSelectProduct={handleSelectProduct}
         />
 
-        {activeProduct && activeConfig && (
+        {activeProduct && activeConfig && activeSurfaceDef && (
           <MaterialConfigPanel
             product={activeProduct}
             config={activeConfig}
-            isVerticalSurface={!!selectedSurface && VERTICAL_SURFACES.includes(selectedSurface)}
+            isVerticalSurface={VERTICAL_TYPES.has(activeSurfaceDef.type)}
             onChange={handleConfigChange}
             onReset={handleResetSurface}
           />
