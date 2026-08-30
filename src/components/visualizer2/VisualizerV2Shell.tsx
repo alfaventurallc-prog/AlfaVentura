@@ -14,6 +14,7 @@ import FabricationPanel from "./FabricationPanel";
 import ProductSummary from "./ProductSummary";
 import DesignToolbar from "./DesignToolbar";
 import DesignSummaryPanel from "./DesignSummaryPanel";
+import ImageVisualizerShell from "./image/ImageVisualizerShell";
 import { DEMO_PRODUCTS } from "@/lib/visualizer2/demoProducts";
 import { isProductCompatible, validateProduct, type Product } from "@/lib/visualizer2/product";
 import { DEFAULT_SURFACE_CONFIG, DEFAULT_FABRICATION_CONFIG, type SurfaceMaterialConfig, type CountertopFabricationConfig } from "@/lib/visualizer2/layout";
@@ -47,6 +48,7 @@ const FABRICATED_TYPES = new Set(["countertop", "island"]);
  * controls all stay separate concerns, matching the earlier steps.
  */
 const VisualizerV2Shell = ({ alfaProducts, deepLinkProductId }: VisualizerV2ShellProps) => {
+  const [mode, setMode] = useState<"3d" | "image">("3d");
   const [activeRoomId, setActiveRoomId] = useState(ROOMS[0].id);
   const [selectedSurface, setSelectedSurface] = useState<string | null>(null);
   const [designState, setDesignState] = useState<DesignState>({});
@@ -352,6 +354,25 @@ const VisualizerV2Shell = ({ alfaProducts, deepLinkProductId }: VisualizerV2Shel
   }, [isDirty]);
 
   return (
+    <div className="flex flex-col gap-5">
+      <div className="flex gap-1.5">
+        {(["3d", "image"] as const).map((m) => (
+          <button
+            key={m}
+            type="button"
+            onClick={() => setMode(m)}
+            className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wide transition-colors ${
+              mode === m ? "bg-[#1C1917] text-white" : "bg-[#F5F1EA] text-[#78716C] hover:bg-[#EDE6DA]"
+            }`}
+          >
+            {m === "3d" ? "3D Visualizer" : "Image Visualizer"}
+          </button>
+        ))}
+      </div>
+
+      {mode === "image" && <ImageVisualizerShell products={products} deepLinkProductId={deepLinkProductId} />}
+
+      {mode === "3d" && (
     <div className="flex flex-col lg:flex-row lg:items-start gap-6 lg:gap-8">
       <div className="flex-1 min-w-0 flex flex-col gap-4">
         <DesignToolbar
@@ -460,6 +481,8 @@ const VisualizerV2Shell = ({ alfaProducts, deepLinkProductId }: VisualizerV2Shel
           />
         )}
       </div>
+    </div>
+      )}
     </div>
   );
 };
