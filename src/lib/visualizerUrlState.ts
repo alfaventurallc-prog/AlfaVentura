@@ -19,6 +19,9 @@ export interface KitchenConfig {
   /** Which of the selected product's real photos (images[]) to use as the
    * 3D texture -- some products have a better-suited second shot. */
   photoIndex: number;
+  /** MSI-style "Use countertop for backsplash" -- when on, picking a new
+   * countertop also applies it to the backsplash. */
+  syncBacksplash: boolean;
 }
 
 export const encodeConfigToParams = (config: KitchenConfig): URLSearchParams => {
@@ -34,6 +37,7 @@ export const encodeConfigToParams = (config: KitchenConfig): URLSearchParams => 
   if (config.veinRotation !== 0) params.set("vein", String(config.veinRotation));
   if (config.edgeProfile !== "square") params.set("edge", config.edgeProfile);
   if (config.photoIndex !== 0) params.set("photo", String(config.photoIndex));
+  if (config.syncBacksplash) params.set("syncBacksplash", "1");
   return params;
 };
 
@@ -56,5 +60,6 @@ export const decodeConfigFromParams = (params: URLSearchParams): Partial<Kitchen
     ...(vein === "90" ? { veinRotation: 90 as const } : {}),
     ...(EDGE_PROFILES.includes(edge as EdgeProfile) ? { edgeProfile: edge as EdgeProfile } : {}),
     ...(Number.isInteger(photo) && photo >= 0 ? { photoIndex: photo } : {}),
+    syncBacksplash: params.get("syncBacksplash") === "1",
   };
 };

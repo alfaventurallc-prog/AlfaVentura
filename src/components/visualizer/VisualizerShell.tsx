@@ -48,6 +48,7 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
     veinRotation: 0,
     edgeProfile: "square",
     photoIndex: 0,
+    syncBacksplash: false,
   });
   const [activeCategory, setActiveCategory] = useState<MaterialCategory>("countertop");
   const [lightingMode, setLightingMode] = useState<"day" | "evening">("day");
@@ -128,8 +129,18 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
       ...prev,
       cabinetId: category === "cabinet" ? id : prev.cabinetId,
       countertopId: category === "countertop" ? id : prev.countertopId,
-      backsplashId: category === "backsplash" ? id : prev.backsplashId,
+      // MSI-style "use countertop for backsplash": while on, selecting a
+      // countertop also carries it over to the backsplash automatically.
+      backsplashId: category === "backsplash" ? id : category === "countertop" && prev.syncBacksplash ? id : prev.backsplashId,
       floorId: category === "floor" ? id : prev.floorId,
+    }));
+  };
+
+  const handleToggleSyncBacksplash = () => {
+    setConfig((prev) => ({
+      ...prev,
+      syncBacksplash: !prev.syncBacksplash,
+      backsplashId: !prev.syncBacksplash ? prev.countertopId : prev.backsplashId,
     }));
   };
 
@@ -373,6 +384,16 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
                 </div>
               </div>
             )}
+
+            <label className="flex items-center gap-2 text-xs font-semibold text-[#44403C] cursor-pointer w-fit">
+              <input
+                type="checkbox"
+                checked={config.syncBacksplash}
+                onChange={handleToggleSyncBacksplash}
+                className="w-4 h-4 accent-[#9B7040]"
+              />
+              Use countertop for backsplash
+            </label>
 
             <div>
               <span className="text-xs font-bold uppercase tracking-wide text-[#78716C] block mb-2">Application</span>
