@@ -185,11 +185,12 @@ const WallRun = ({
           {doorXs.map((x, i) => (
             <CabinetDoor key={i} x={x} z={z - 0.67} width={doorWidth} y={1.15} height={0.45} color={cabinetColor === DOOR_COLOR ? "#2A241E" : DOOR_COLOR} />
           ))}
-          {/* Backsplash now spans the full countertop-to-upper-cabinet height
-              (0.09 to 0.875) -- it used to stop well short (0.64), leaving a
-              visible 0.235-unit gap under the upper cabinets that doesn't
-              exist in a real kitchen. */}
-          <MaterialSurface product={backsplashProduct} args={[width + 0.16, 0.785, 0.05]} position={[centerX, 0.4825, z - 0.325]} heroFace="front" />
+          {/* Backsplash spans the full countertop-to-upper-cabinet height
+              (0.09 to 0.875) and its depth now extends back to z-0.4 to
+              physically touch the upper cabinet's front face (also z-0.4) --
+              it previously stopped 0.05 units short in depth, leaving a gap
+              you could see through to the wall behind (the bright seam). */}
+          <MaterialSurface product={backsplashProduct} args={[width + 0.16, 0.785, 0.1]} position={[centerX, 0.4825, z - 0.35]} heroFace="front" />
           <UnderCabinetLight x={centerX} z={z - 0.42} width={width} y={0.865} />
         </>
       )}
