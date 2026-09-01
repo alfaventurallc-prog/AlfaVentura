@@ -361,11 +361,15 @@ const KitchenScene = ({
           veinRotation={veinRotation}
           edgeProfile={edgeProfile}
         />
-        {/* perpendicular return along the left wall, forming the L. Positioned
-            so its countertop footprint sits just short of the main run's
-            countertop edge -- the two used to overlap in 3D, which z-fought
-            and looked like a broken, messy seam at the inside corner. */}
-        <group position={[-2.27, 0, -0.15]} rotation={[0, Math.PI / 2, 0]}>
+        {/* perpendicular return along the left wall, forming the L. x is
+            tuned so its countertop's inner edge lands exactly at x=-1.88,
+            flush with the main run's countertop edge -- it was previously
+            offset to -2.27 to dodge a z-fighting overlap, but that
+            overcorrected and left a visible 0.04-unit gap at the inside
+            corner. A real L-shape countertop is one continuous slab with
+            no gap, so the edges now touch exactly instead of overlapping
+            or gapping. */}
+        <group position={[-2.23, 0, -0.15]} rotation={[0, Math.PI / 2, 0]}>
           <WallRun
             width={1.7}
             centerX={0}
