@@ -98,8 +98,8 @@ const SinkFaucet = ({ x, z }: { x: number; z: number }) => (
 
 /** Small warm LED line under the upper cabinets -- reads as ambient task
  * lighting over the counter, a strong "this is a real kitchen" cue. */
-const UnderCabinetLight = ({ x, z, width }: { x: number; z: number; width: number }) => (
-  <mesh position={[x, 0.86, z]}>
+const UnderCabinetLight = ({ x, z, width, y = 0.86 }: { x: number; z: number; width: number; y?: number }) => (
+  <mesh position={[x, y, z]}>
     <boxGeometry args={[width - 0.1, 0.015, 0.02]} />
     <meshStandardMaterial color="#FFE9C2" emissive="#FFD9A0" emissiveIntensity={1.4} roughness={0.5} toneMapped={false} />
   </mesh>
@@ -185,8 +185,12 @@ const WallRun = ({
           {doorXs.map((x, i) => (
             <CabinetDoor key={i} x={x} z={z - 0.67} width={doorWidth} y={1.15} height={0.45} color={cabinetColor === DOOR_COLOR ? "#2A241E" : DOOR_COLOR} />
           ))}
-          <MaterialSurface product={backsplashProduct} args={[width + 0.16, 0.55, 0.05]} position={[centerX, 0.365, z - 0.325]} heroFace="front" />
-          <UnderCabinetLight x={centerX} z={z - 0.42} width={width} />
+          {/* Backsplash now spans the full countertop-to-upper-cabinet height
+              (0.09 to 0.875) -- it used to stop well short (0.64), leaving a
+              visible 0.235-unit gap under the upper cabinets that doesn't
+              exist in a real kitchen. */}
+          <MaterialSurface product={backsplashProduct} args={[width + 0.16, 0.785, 0.05]} position={[centerX, 0.4825, z - 0.325]} heroFace="front" />
+          <UnderCabinetLight x={centerX} z={z - 0.42} width={width} y={0.865} />
         </>
       )}
 
