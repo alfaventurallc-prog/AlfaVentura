@@ -383,6 +383,20 @@ const KitchenScene = ({
             veinRotation={veinRotation}
             edgeProfile={edgeProfile}
           />
+          {/* The return leg's cabinet (depth 0.62) and countertop (depth 0.7)
+              both stopped well short of the side wall (x=-2.7), exposing a
+              wedge of bare wall/floor at the back corner. These fillers
+              extend the cabinet and countertop the remaining distance so
+              both sit flush against the wall, matching a real fitted
+              L-shape kitchen. */}
+          <SolidBox args={[1.7, 0.85, 0.16]} position={[0, -0.425, -0.39]} color={cabinetColor} roughness={0.55} />
+          <MaterialSurface
+            product={countertopProduct}
+            args={[1.86, 0.09 * thicknessScale(thicknessMm), 0.12]}
+            position={[0, 0.09 - (0.09 * thicknessScale(thicknessMm)) / 2, -0.41]}
+            heroFace="top"
+            veinRotationDeg={veinRotation}
+          />
         </group>
       </>
     )}
