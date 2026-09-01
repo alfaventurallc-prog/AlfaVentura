@@ -201,6 +201,128 @@ const WallRun = ({
   );
 };
 
+/** Cabinet door for a run that faces +X into the room (the L-shape's
+ * perpendicular return leg) -- CabinetDoor above only faces +Z, so this is
+ * its 90-degree-rotated counterpart: the "width" runs along Z instead of X. */
+const ReturnLegDoor = ({
+  x,
+  z,
+  width,
+  y = -0.425,
+  height = 0.72,
+  color = DOOR_COLOR,
+}: {
+  x: number;
+  z: number;
+  width: number;
+  y?: number;
+  height?: number;
+  color?: string;
+}) => (
+  <group>
+    <SolidBox args={[0.035, height, width]} position={[x, y, z]} color={color} roughness={0.4} />
+    <SolidBox args={[0.012, 0.012, width - 0.06]} position={[x + 0.03, y + height / 2 - 0.05, z]} color={HANDLE_COLOR} roughness={0.3} />
+  </group>
+);
+
+/**
+ * The L-shape's perpendicular second run, built directly in world
+ * coordinates (no rotated group) so it can be derived from -- and always
+ * stays flush with -- the main run and the side wall, instead of relying on
+ * hand-tuned offsets that drift out of sync (the recurring source of gaps
+ * and overlaps in earlier iterations).
+ *
+ * Geometrically this is a proper T-join, not an overlap: the return leg's
+ * countertop/cabinet occupy X in [sideWallX, mainLeftEdge] -- a strip that
+ * is fully outside the main run's own X range [mainLeftEdge, mainRightEdge]
+ * -- so the two meet exactly at the shared plane x = mainLeftEdge with zero
+ * gap and zero z-fighting, while the base cabinet's back face sits flush at
+ * x = sideWallX with zero gap against the side wall.
+ */
+const ReturnLeg = ({
+  sideWallX,
+  mainLeftEdge,
+  mainBackZ,
+  length,
+  cabinetColor,
+  countertopProduct,
+  backsplashProduct,
+  withUpper = true,
+  thicknessMm = 20,
+  veinRotation = 0,
+}: {
+  sideWallX: number;
+  mainLeftEdge: number;
+  mainBackZ: number;
+  length: number;
+  cabinetColor: string;
+  countertopProduct: VisualizerProduct | null;
+  backsplashProduct: VisualizerProduct | null;
+  withUpper?: boolean;
+  thicknessMm?: ThicknessMm;
+  veinRotation?: 0 | 90;
+}) => {
+  const topY = 0.09;
+  const slabHeight = topY * thicknessScale(thicknessMm);
+
+  const ctDepth = mainLeftEdge - sideWallX;
+  const ctCenterX = (sideWallX + mainLeftEdge) / 2;
+  const ctFrontZ = mainBackZ + length;
+  const ctCenterZ = (mainBackZ + ctFrontZ) / 2;
+
+  // Base cabinet: back face flush against the side wall (no gap), front
+  // face recessed 0.08 under the countertop overhang -- the same margin
+  // the countertop already overhangs the main run's cabinets by.
+  const cabDepth = ctDepth - 0.08;
+  const cabFrontX = mainLeftEdge - 0.08;
+  const cabCenterX = cabFrontX - cabDepth / 2;
+  const cabLength = length - 0.16;
+  const cabCenterZ = ctCenterZ;
+
+  const doorCount = Math.max(2, Math.round(cabLength / 0.95));
+  const doorWidth = cabLength / doorCount - 0.1;
+  const doorZs = Array.from({ length: doorCount }, (_, i) => cabCenterZ - cabLength / 2 + cabLength / doorCount * (i + 0.5));
+
+  // Upper cabinet + backsplash, mounted flush against the side wall the
+  // same way the base cabinet is -- both continue the main run's wall
+  // treatment around the corner instead of stopping at the main run.
+  const upperDepth = 0.3;
+  const upperCenterX = sideWallX + upperDepth / 2;
+  const upperFrontX = sideWallX + upperDepth;
+  const bsThickness = 0.1;
+  const bsCenterX = sideWallX + bsThickness / 2;
+
+  return (
+    <group>
+      <SolidBox args={[cabDepth, 0.85, cabLength]} position={[cabCenterX, -0.425, cabCenterZ]} color={cabinetColor} roughness={0.55} />
+      {doorZs.map((dz, i) => (
+        <ReturnLegDoor key={i} x={cabFrontX - 0.03} z={dz} width={doorWidth} color={cabinetColor === DOOR_COLOR ? "#2A241E" : DOOR_COLOR} />
+      ))}
+      <MaterialSurface
+        product={countertopProduct}
+        args={[ctDepth, slabHeight, length]}
+        position={[ctCenterX, topY - slabHeight / 2, ctCenterZ]}
+        heroFace="top"
+        veinRotationDeg={veinRotation}
+      />
+
+      {withUpper && (
+        <>
+          <SolidBox args={[upperDepth, 0.55, cabLength]} position={[upperCenterX, 1.15, cabCenterZ]} color={cabinetColor} roughness={0.55} />
+          {doorZs.map((dz, i) => (
+            <ReturnLegDoor key={i} x={upperFrontX - 0.03} z={dz} width={doorWidth} y={1.15} height={0.45} color={cabinetColor === DOOR_COLOR ? "#2A241E" : DOOR_COLOR} />
+          ))}
+          <MaterialSurface product={backsplashProduct} args={[bsThickness, 0.785, cabLength]} position={[bsCenterX, 0.4825, cabCenterZ]} heroFace="sideEnd" />
+          <mesh position={[upperFrontX - 0.02, 0.865, cabCenterZ]}>
+            <boxGeometry args={[0.02, 0.015, cabLength - 0.1]} />
+            <meshStandardMaterial color="#FFE9C2" emissive="#FFD9A0" emissiveIntensity={1.4} roughness={0.5} toneMapped={false} />
+          </mesh>
+        </>
+      )}
+    </group>
+  );
+};
+
 const PendantLight = ({ x, z }: { x: number; z: number }) => (
   <group position={[x, 0, z]}>
     <mesh position={[0, 1.55, 0]}>
@@ -361,43 +483,22 @@ const KitchenScene = ({
           veinRotation={veinRotation}
           edgeProfile={edgeProfile}
         />
-        {/* perpendicular return along the left wall, forming the L. x is
-            tuned so its countertop's inner edge lands exactly at x=-1.88,
-            flush with the main run's countertop edge -- it was previously
-            offset to -2.27 to dodge a z-fighting overlap, but that
-            overcorrected and left a visible 0.04-unit gap at the inside
-            corner. A real L-shape countertop is one continuous slab with
-            no gap, so the edges now touch exactly instead of overlapping
-            or gapping. */}
-        <group position={[-2.23, 0, -0.15]} rotation={[0, Math.PI / 2, 0]}>
-          <WallRun
-            width={1.7}
-            centerX={0}
-            z={0}
-            cabinetColor={cabinetColor}
-            countertopProduct={countertopProduct}
-            backsplashProduct={backsplashProduct}
-            withUpper={false}
-            withSink={false}
-            thicknessMm={thicknessMm}
-            veinRotation={veinRotation}
-            edgeProfile={edgeProfile}
-          />
-          {/* The return leg's cabinet (depth 0.62) and countertop (depth 0.7)
-              both stopped well short of the side wall (x=-2.7), exposing a
-              wedge of bare wall/floor at the back corner. These fillers
-              extend the cabinet and countertop the remaining distance so
-              both sit flush against the wall, matching a real fitted
-              L-shape kitchen. */}
-          <SolidBox args={[1.7, 0.85, 0.16]} position={[0, -0.425, -0.39]} color={cabinetColor} roughness={0.55} />
-          <MaterialSurface
-            product={countertopProduct}
-            args={[1.86, 0.09 * thicknessScale(thicknessMm), 0.12]}
-            position={[0, 0.09 - (0.09 * thicknessScale(thicknessMm)) / 2, -0.41]}
-            heroFace="top"
-            veinRotationDeg={veinRotation}
-          />
-        </group>
+        {/* Perpendicular return leg, built as a proper T-join off the main
+            run's own left edge and the side wall (see ReturnLeg) instead of
+            a rotated copy of WallRun with hand-tuned offsets -- that
+            approach kept drifting out of sync and leaving gaps at either
+            the inside corner or the side wall. */}
+        <ReturnLeg
+          sideWallX={-2.7}
+          mainLeftEdge={0.1 - (3.8 + 0.16) / 2}
+          mainBackZ={-1.05 - 0.35}
+          length={2.0}
+          cabinetColor={cabinetColor}
+          countertopProduct={countertopProduct}
+          backsplashProduct={backsplashProduct}
+          thicknessMm={thicknessMm}
+          veinRotation={veinRotation}
+        />
       </>
     )}
 
