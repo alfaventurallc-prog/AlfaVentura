@@ -499,6 +499,16 @@ const KitchenScene = ({
           thicknessMm={thicknessMm}
           veinRotation={veinRotation}
         />
+        {/* Corner filler for the upper cabinets: the main run's upper
+            cabinet only spans its own width (down to x=-1.8) and the
+            return leg's only spans its own length (back to z=-1.32), so the
+            wall-and-ceiling rectangle behind the inside corner between them
+            was left bare -- visible as a plain, unclad wall panel from a
+            side angle. This block occupies exactly that rectangle, flush
+            against the side wall and sharing the main run's own upper
+            cabinet depth/height, so it reads as one continuous run turning
+            the corner. */}
+        <SolidBox args={[0.9, 0.55, 0.43]} position={[-2.25, 1.15, -1.535]} color={cabinetColor} roughness={0.55} />
       </>
     )}
 
