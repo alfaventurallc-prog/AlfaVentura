@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { MaterialSurface, SolidBox } from "../MaterialSurface";
-import { BackWall, Floor, SideWall, Window } from "./roomParts";
+import { Floor, SideWall } from "./roomParts";
 import type { LayoutId, ThicknessMm, EdgeProfile } from "@/data/kitchenCatalog";
 import { thicknessScale } from "@/data/kitchenCatalog";
 import type { WaterfallOption } from "@/lib/visualizerUrlState";
@@ -9,6 +9,20 @@ import type { VisualizerProduct } from "../../../../types";
 const WALL_COLOR = "#EFEAE0";
 const DOOR_COLOR = "#3C332B";
 const HANDLE_COLOR = "#9C9691";
+
+/** Darken a "#rrggbb" hex color by the given factor (0-1, lower = darker) --
+ * used to shade a cabinet door's recessed center panel a touch darker than
+ * its frame, the shadow line that makes it read as a real shaker-style
+ * door instead of a single flat block of color. */
+const darken = (hex: string, factor: number): string => {
+  const n = parseInt(hex.slice(1), 16);
+  const clamp = (v: number) => Math.max(0, Math.min(255, Math.round(v)));
+  const r = clamp(((n >> 16) & 0xff) * factor);
+  const g = clamp(((n >> 8) & 0xff) * factor);
+  const b = clamp((n & 0xff) * factor);
+  const toHex = (v: number) => v.toString(16).padStart(2, "0");
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+};
 
 interface KitchenSceneProps {
   layout: LayoutId;
@@ -54,6 +68,9 @@ const CabinetDoor = ({
 }) => (
   <group>
     <SolidBox args={[width, height, 0.035]} position={[x, y, z]} color={color} roughness={0.4} />
+    {/* recessed center panel -- a shaker-style groove line so the door
+        reads as a real panel instead of one flat block of color. */}
+    <SolidBox args={[width - 0.09, height - 0.14, 0.012]} position={[x, y, z - 0.006]} color={darken(color, 0.82)} roughness={0.5} />
     <SolidBox args={[width - 0.06, 0.012, 0.012]} position={[x, y + height / 2 - 0.05, z + 0.03]} color={HANDLE_COLOR} roughness={0.3} />
   </group>
 );
@@ -224,6 +241,7 @@ const ReturnLegDoor = ({
 }) => (
   <group>
     <SolidBox args={[0.035, height, width]} position={[x, y, z]} color={color} roughness={0.4} />
+    <SolidBox args={[0.012, height - 0.14, width - 0.09]} position={[x - 0.006, y, z]} color={darken(color, 0.82)} roughness={0.5} />
     <SolidBox args={[0.012, 0.012, width - 0.06]} position={[x + 0.03, y + height / 2 - 0.05, z]} color={HANDLE_COLOR} roughness={0.3} />
   </group>
 );
@@ -440,9 +458,7 @@ const KitchenScene = ({
 }: KitchenSceneProps) => (
   <group scale={[mirrored ? -1 : 1, 1, 1]}>
     <Floor color={floorColor} roughness={floorRoughness} />
-    <BackWall color={WALL_COLOR} />
     <SideWall color={WALL_COLOR} x={-2.7} />
-    <Window x={-2.68} z={0.6} />
     {/* free-standing fridge along the side wall, clear of the island/L-shape
         return leg footprint and positioned so it actually sits inside the
         default camera frame (the earlier spot past the main run's right end

@@ -1,15 +1,73 @@
+import { useEffect, useMemo } from "react";
+import * as THREE from "three";
+
 const DEFAULT_FLOOR_COLOR = "#DDD3C4";
 
-export const Floor = ({ color = DEFAULT_FLOOR_COLOR, roughness = 0.95 }: { color?: string; roughness?: number }) => (
-  // Matches the cabinet/appliance bottom convention used throughout
-  // KitchenScene (base boxes bottom out at y=-0.85) -- it used to sit 0.21
-  // lower than that, leaving every cabinet/fridge visibly floating above
-  // the floor instead of resting on it.
-  <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.85, 0]} receiveShadow>
-    <planeGeometry args={[12, 12]} />
-    <meshStandardMaterial color={color} roughness={roughness} />
-  </mesh>
-);
+/** Bakes plank grooves into a canvas texture instead of a flat color --
+ * a solid-color plane reads as a colored slab rather than a floor, since
+ * there's nothing to show it's made of individual boards. */
+const usePlankTexture = (color: string) => {
+  const texture = useMemo(() => {
+    if (typeof document === "undefined") return null;
+    const canvas = document.createElement("canvas");
+    canvas.width = 512;
+    canvas.height = 512;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.fillStyle = color;
+    ctx.fillRect(0, 0, 512, 512);
+    // vertical plank seams
+    const plankWidth = 64;
+    ctx.strokeStyle = "rgba(0,0,0,0.14)";
+    ctx.lineWidth = 2;
+    for (let x = plankWidth; x < 512; x += plankWidth) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, 512);
+      ctx.stroke();
+    }
+    // staggered end-joints, offset every other row so it reads as real boards
+    ctx.strokeStyle = "rgba(0,0,0,0.07)";
+    const rowHeight = 128;
+    for (let row = 0, y = 0; y < 512; y += rowHeight, row++) {
+      const offset = row % 2 === 0 ? 0 : plankWidth / 2;
+      for (let x = offset; x < 512; x += plankWidth) {
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+        ctx.lineTo(x + plankWidth, y);
+        ctx.stroke();
+      }
+    }
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(6, 6);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.needsUpdate = true;
+    return tex;
+  }, [color]);
+
+  useEffect(() => () => texture?.dispose(), [texture]);
+
+  return texture;
+};
+
+export const Floor = ({ color = DEFAULT_FLOOR_COLOR, roughness = 0.95 }: { color?: string; roughness?: number }) => {
+  const plankTexture = usePlankTexture(color);
+  return (
+    // Matches the cabinet/appliance bottom convention used throughout
+    // KitchenScene (base boxes bottom out at y=-0.85) -- it used to sit
+    // 0.21 lower than that, leaving every cabinet/fridge visibly floating
+    // above the floor instead of resting on it.
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.85, 0]} receiveShadow>
+      <planeGeometry args={[12, 12]} />
+      {plankTexture ? (
+        <meshStandardMaterial map={plankTexture} roughness={roughness} />
+      ) : (
+        <meshStandardMaterial color={color} roughness={roughness} />
+      )}
+    </mesh>
+  );
+};
 
 export const BackWall = ({ color }: { color: string }) => (
   <mesh position={[0, 0.9, -1.75]}>
