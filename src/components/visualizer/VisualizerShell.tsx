@@ -208,49 +208,51 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
   return (
     <div className="flex flex-col lg:flex-row lg:items-start gap-6 lg:gap-8">
       <div className="flex-1 min-w-0 flex flex-col gap-5">
-        <div className="flex gap-1.5">
-          {(["3d", "image"] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => setMode(m)}
-              className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wide transition-colors ${
-                mode === m ? "bg-[#1C1917] text-white" : "bg-[#F5F1EA] text-[#78716C] hover:bg-[#EDE6DA]"
-              }`}
-            >
-              {m === "3d" ? "3D Visualizer" : "Image Visualizer"}
-            </button>
-          ))}
-        </div>
-
-        {mode === "3d" && (
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-bold uppercase tracking-wide text-[#78716C]">Space</span>
-            <div className="flex gap-1.5 flex-wrap">
+        <div className="flex items-center justify-between gap-3 flex-wrap">
+          <div className="inline-flex gap-1 p-1 rounded-full bg-[#F0E8DB] shadow-inner-glow">
+            {(["3d", "image"] as const).map((m) => (
               <button
+                key={m}
                 type="button"
-                className="px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide bg-[#1C1917] text-white"
+                onClick={() => setMode(m)}
+                className={`px-4 py-2 rounded-full text-xs font-bold uppercase tracking-wide transition-all duration-200 ${
+                  mode === m ? "bg-[#1C1917] text-white shadow-premium" : "text-[#8A7B68] hover:text-[#1C1917]"
+                }`}
               >
-                Kitchen
+                {m === "3d" ? "3D Visualizer" : "Image Visualizer"}
               </button>
-              {["Bathroom", "Living", "Commercial"].map((space) => (
-                <button
-                  key={space}
-                  type="button"
-                  disabled
-                  title="Coming soon"
-                  className="px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide bg-[#F5F1EA] text-[#C4BCAF] cursor-not-allowed"
-                >
-                  {space}
-                </button>
-              ))}
-            </div>
+            ))}
           </div>
-        )}
+
+          {mode === "3d" && (
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-xs font-bold uppercase tracking-wide text-[#A8987F]">Space</span>
+              <div className="flex gap-1.5 flex-wrap">
+                <button
+                  type="button"
+                  className="px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide bg-[#9B7040] text-white shadow-premium"
+                >
+                  Kitchen
+                </button>
+                {["Bathroom", "Living", "Commercial"].map((space) => (
+                  <button
+                    key={space}
+                    type="button"
+                    disabled
+                    title="Coming soon"
+                    className="px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide bg-[#F5F1EA] text-[#C4BCAF] cursor-not-allowed"
+                  >
+                    {space}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
 
         <div
           ref={canvasContainerRef}
-          className="relative w-full h-[64vh] min-h-[440px] max-h-[680px] rounded-2xl overflow-hidden bg-[#EDE6DA] border border-[#E8DDD0]"
+          className="relative w-full h-[64vh] min-h-[440px] max-h-[680px] rounded-2xl overflow-hidden bg-[#EDE6DA] border border-[#F0E8DB] shadow-premium-lg"
         >
           {mode === "3d" ? (
             <>
@@ -291,17 +293,18 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
               onToggleMirror={() => setConfig((prev) => ({ ...prev, mirrored: !prev.mirrored }))}
             />
 
+          <div className="bg-white rounded-2xl shadow-premium border border-[#F0E8DB] p-5 space-y-4">
             {(countertopProduct?.images.length ?? 0) > 1 && (
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-bold uppercase tracking-wide text-[#78716C]">Texture Photo</span>
+                <span className="text-xs font-bold uppercase tracking-wide text-[#A8987F]">Texture Photo</span>
                 <div className="flex gap-1.5">
                   {countertopProduct!.images.map((_, i) => (
                     <button
                       key={i}
                       type="button"
                       onClick={() => setConfig((prev) => ({ ...prev, photoIndex: i }))}
-                      className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-colors ${
-                        config.photoIndex === i ? "bg-[#1C1917] text-white" : "bg-[#F5F1EA] text-[#78716C] hover:bg-[#EDE6DA]"
+                      className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-all duration-200 ${
+                        config.photoIndex === i ? "bg-[#1C1917] text-white shadow-premium-hover" : "bg-[#F5F1EA] text-[#78716C] shadow-premium hover:bg-white hover:text-[#1C1917]"
                       }`}
                     >
                       Photo {i + 1}
@@ -312,15 +315,15 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
             )}
 
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-bold uppercase tracking-wide text-[#78716C]">Thickness</span>
+              <span className="text-xs font-bold uppercase tracking-wide text-[#A8987F]">Thickness</span>
               <div className="flex gap-1.5">
                 {THICKNESS_OPTIONS.map((mm) => (
                   <button
                     key={mm}
                     type="button"
                     onClick={() => setConfig((prev) => ({ ...prev, thicknessMm: mm as ThicknessMm }))}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-colors ${
-                      config.thicknessMm === mm ? "bg-[#1C1917] text-white" : "bg-[#F5F1EA] text-[#78716C] hover:bg-[#EDE6DA]"
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-all duration-200 ${
+                      config.thicknessMm === mm ? "bg-[#1C1917] text-white shadow-premium-hover" : "bg-[#F5F1EA] text-[#78716C] shadow-premium hover:bg-white hover:text-[#1C1917]"
                     }`}
                   >
                     {mm}mm
@@ -330,15 +333,15 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-bold uppercase tracking-wide text-[#78716C]">Vein Direction</span>
+              <span className="text-xs font-bold uppercase tracking-wide text-[#A8987F]">Vein Direction</span>
               <div className="flex gap-1.5">
                 {([0, 90] as const).map((deg) => (
                   <button
                     key={deg}
                     type="button"
                     onClick={() => setConfig((prev) => ({ ...prev, veinRotation: deg }))}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-colors ${
-                      config.veinRotation === deg ? "bg-[#1C1917] text-white" : "bg-[#F5F1EA] text-[#78716C] hover:bg-[#EDE6DA]"
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-all duration-200 ${
+                      config.veinRotation === deg ? "bg-[#1C1917] text-white shadow-premium-hover" : "bg-[#F5F1EA] text-[#78716C] shadow-premium hover:bg-white hover:text-[#1C1917]"
                     }`}
                   >
                     {deg === 0 ? "Horizontal" : "Vertical"}
@@ -348,15 +351,15 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
             </div>
 
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-bold uppercase tracking-wide text-[#78716C]">Edge Profile</span>
+              <span className="text-xs font-bold uppercase tracking-wide text-[#A8987F]">Edge Profile</span>
               <div className="flex gap-1.5">
                 {EDGE_PROFILES.map((profile: EdgeProfile) => (
                   <button
                     key={profile}
                     type="button"
                     onClick={() => setConfig((prev) => ({ ...prev, edgeProfile: profile }))}
-                    className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-colors ${
-                      config.edgeProfile === profile ? "bg-[#1C1917] text-white" : "bg-[#F5F1EA] text-[#78716C] hover:bg-[#EDE6DA]"
+                    className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-all duration-200 ${
+                      config.edgeProfile === profile ? "bg-[#1C1917] text-white shadow-premium-hover" : "bg-[#F5F1EA] text-[#78716C] shadow-premium hover:bg-white hover:text-[#1C1917]"
                     }`}
                   >
                     {profile}
@@ -374,8 +377,8 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
                       key={option}
                       type="button"
                       onClick={() => setConfig((prev) => ({ ...prev, waterfall: option }))}
-                      className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-colors ${
-                        config.waterfall === option ? "bg-[#1C1917] text-white" : "bg-[#F5F1EA] text-[#78716C] hover:bg-[#EDE6DA]"
+                      className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-all duration-200 ${
+                        config.waterfall === option ? "bg-[#1C1917] text-white shadow-premium-hover" : "bg-[#F5F1EA] text-[#78716C] shadow-premium hover:bg-white hover:text-[#1C1917]"
                       }`}
                     >
                       {option}
@@ -390,21 +393,22 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
                 type="checkbox"
                 checked={config.syncBacksplash}
                 onChange={handleToggleSyncBacksplash}
-                className="w-4 h-4 accent-[#9B7040]"
+                className="w-4 h-4 accent-[#9B7040] rounded"
               />
               Use countertop for backsplash
             </label>
+          </div>
 
-            <div>
-              <span className="text-xs font-bold uppercase tracking-wide text-[#78716C] block mb-2">Application</span>
+          <div className="bg-white rounded-2xl shadow-premium border border-[#F0E8DB] p-5">
+              <span className="text-xs font-bold uppercase tracking-wide text-[#A8987F] block mb-2">Application</span>
               <div className="flex gap-1.5 mb-3 overflow-x-auto">
                 {(Object.keys(MATERIAL_CATEGORY_LABELS) as MaterialCategory[]).map((cat) => (
                   <button
                     key={cat}
                     type="button"
                     onClick={() => setActiveCategory(cat)}
-                    className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide shrink-0 transition-colors ${
-                      activeCategory === cat ? "bg-[#1C1917] text-white" : "bg-[#F5F1EA] text-[#78716C] hover:bg-[#EDE6DA]"
+                    className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide shrink-0 transition-all duration-200 ${
+                      activeCategory === cat ? "bg-[#1C1917] text-white shadow-premium-hover" : "bg-[#F5F1EA] text-[#78716C] shadow-premium hover:bg-white hover:text-[#1C1917]"
                     }`}
                   >
                     {MATERIAL_CATEGORY_LABELS[cat]}
@@ -432,21 +436,21 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
         )}
 
         {mode === "image" && (
-          <div>
-            <span className="text-xs font-bold uppercase tracking-wide text-[#78716C] block mb-2">Select Surface</span>
+          <div className="bg-white rounded-2xl shadow-premium border border-[#F0E8DB] p-5">
+            <span className="text-xs font-bold uppercase tracking-wide text-[#A8987F] block mb-2">Select Surface</span>
             <input
               type="text"
               value={surfaceSearch}
               onChange={(e) => setSurfaceSearch(e.target.value)}
               placeholder="Search surfaces..."
-              className="w-full mb-3 px-3 py-2 rounded-lg border border-[#E8DDD0] text-sm text-[#1C1917] placeholder:text-[#A8A29E] focus:outline-none focus:border-[#9B7040]"
+              className="w-full mb-3 px-3 py-2.5 rounded-lg border border-[#E8DDD0] text-sm text-[#1C1917] placeholder:text-[#A8A29E] transition-colors duration-200 focus:outline-none focus:border-[#9B7040] focus:ring-2 focus:ring-[#9B7040]/15"
             />
             <div className="flex items-center gap-2">
               <button
                 type="button"
                 onClick={() => surfaceCarouselRef.current?.scrollBy({ left: -300, behavior: "smooth" })}
                 aria-label="Scroll surfaces left"
-                className="shrink-0 w-8 h-8 rounded-full border border-[#E8DDD0] text-[#44403C] hover:border-[#9B7040] transition-colors flex items-center justify-center"
+                className="shrink-0 w-8 h-8 rounded-full border border-[#E8DDD0] shadow-premium text-[#44403C] hover:border-[#9B7040] hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center"
               >
                 ←
               </button>
@@ -475,7 +479,7 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
                 type="button"
                 onClick={() => surfaceCarouselRef.current?.scrollBy({ left: 300, behavior: "smooth" })}
                 aria-label="Scroll surfaces right"
-                className="shrink-0 w-8 h-8 rounded-full border border-[#E8DDD0] text-[#44403C] hover:border-[#9B7040] transition-colors flex items-center justify-center"
+                className="shrink-0 w-8 h-8 rounded-full border border-[#E8DDD0] shadow-premium text-[#44403C] hover:border-[#9B7040] hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center"
               >
                 →
               </button>
@@ -484,21 +488,21 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
         )}
       </div>
 
-      <div className="lg:w-[320px] lg:shrink-0 lg:pl-6 lg:border-l lg:border-[#E8DDD0] space-y-6">
+      <div className="lg:w-[320px] lg:shrink-0 lg:pl-6 lg:border-l lg:border-[#F0E8DB] space-y-5">
         <ProductInfoPanel product={countertopProduct} />
 
-        <div className="flex flex-wrap gap-2">
+        <div className="bg-white rounded-2xl shadow-premium border border-[#F0E8DB] p-4 flex flex-wrap gap-2">
           <button
             type="button"
             onClick={() => setFavoritesOpen(true)}
-            className="px-3 py-2 rounded-lg text-xs font-semibold border border-[#E8DDD0] text-[#44403C] hover:border-[#9B7040] transition-colors"
+            className="px-3 py-2 rounded-lg text-xs font-semibold border border-[#E8DDD0] text-[#44403C] hover:border-[#9B7040] hover:bg-[#FDFAF7] hover:-translate-y-0.5 transition-all duration-200"
           >
             ♥ My Selections ({favorites.length})
           </button>
           <button
             type="button"
             onClick={handleSaveDesign}
-            className="px-3 py-2 rounded-lg text-xs font-semibold border border-[#E8DDD0] text-[#44403C] hover:border-[#9B7040] transition-colors"
+            className="px-3 py-2 rounded-lg text-xs font-semibold border border-[#E8DDD0] text-[#44403C] hover:border-[#9B7040] hover:bg-[#FDFAF7] hover:-translate-y-0.5 transition-all duration-200"
           >
             Save Design
           </button>
@@ -506,7 +510,7 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
             <button
               type="button"
               onClick={handleLoadSavedDesign}
-              className="px-3 py-2 rounded-lg text-xs font-semibold border border-[#E8DDD0] text-[#44403C] hover:border-[#9B7040] transition-colors"
+              className="px-3 py-2 rounded-lg text-xs font-semibold border border-[#E8DDD0] text-[#44403C] hover:border-[#9B7040] hover:bg-[#FDFAF7] hover:-translate-y-0.5 transition-all duration-200"
             >
               Load Saved
             </button>
@@ -514,14 +518,14 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
           <button
             type="button"
             onClick={handleShare}
-            className="px-3 py-2 rounded-lg text-xs font-semibold border border-[#E8DDD0] text-[#44403C] hover:border-[#9B7040] transition-colors"
+            className="px-3 py-2 rounded-lg text-xs font-semibold border border-[#E8DDD0] text-[#44403C] hover:border-[#9B7040] hover:bg-[#FDFAF7] hover:-translate-y-0.5 transition-all duration-200"
           >
             Share Look
           </button>
           <button
             type="button"
             onClick={handleDownload}
-            className="px-3 py-2 rounded-lg text-xs font-semibold border border-[#E8DDD0] text-[#44403C] hover:border-[#9B7040] transition-colors"
+            className="px-3 py-2 rounded-lg text-xs font-semibold border border-[#E8DDD0] text-[#44403C] hover:border-[#9B7040] hover:bg-[#FDFAF7] hover:-translate-y-0.5 transition-all duration-200"
           >
             Download
           </button>

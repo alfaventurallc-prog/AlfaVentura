@@ -41,7 +41,11 @@ const ProductInfoPanel = ({ product }: ProductInfoPanelProps) => {
   });
 
   if (!product) {
-    return <div className="text-sm text-[#78716C]">Select a quartz design below to see it applied in the kitchen.</div>;
+    return (
+      <div className="bg-white rounded-2xl shadow-premium border border-[#F0E8DB] p-5">
+        <p className="text-sm text-[#78716C]">Select a quartz design below to see it applied in the kitchen.</p>
+      </div>
+    );
   }
 
   const message = `Interested in ${product.name} for a kitchen countertop, island and backsplash.`;
@@ -71,18 +75,24 @@ const ProductInfoPanel = ({ product }: ProductInfoPanelProps) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="bg-white rounded-2xl shadow-premium border border-[#F0E8DB] p-5 space-y-6">
       <div>
-        <p className="text-xs font-bold tracking-[0.15em] uppercase text-[#78716C] mb-2">Selected Quartz</p>
-        <h3 className="text-xl font-bold text-[#1C1917]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+        <p className="text-xs font-bold tracking-[0.15em] uppercase text-[#9B7040] mb-2">Selected Quartz</p>
+        <h3 className="text-xl font-bold text-[#1C1917] leading-snug" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
           {product.name}
         </h3>
-        <p className="text-sm text-[#78716C] mt-1">{product.categoryName} · Polished</p>
+        <p className="text-sm text-[#78716C] mt-1.5 flex items-center gap-1.5">
+          {product.categoryName}
+          <span className="w-1 h-1 rounded-full bg-[#D6CBBA]" />
+          Polished
+        </p>
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogTrigger asChild>
-          <Button className="w-full bg-[#9B7040] hover:bg-[#7A5520] text-white">Request a Quote</Button>
+          <Button className="w-full bg-[#9B7040] hover:bg-[#7A5520] text-white shadow-premium hover:shadow-premium-hover transition-all duration-200">
+            Request a Quote
+          </Button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-[425px]">
           <Form {...form}>
@@ -127,7 +137,7 @@ const ProductInfoPanel = ({ product }: ProductInfoPanelProps) => {
                     Cancel
                   </Button>
                 </DialogClose>
-                <Button type="submit" disabled={isSubmitting} className="bg-[#9B7040] hover:bg-[#7A5520] text-white">
+                <Button type="submit" disabled={isSubmitting} className="bg-[#9B7040] hover:bg-[#7A5520] text-white transition-colors duration-200">
                   {isSubmitting ? "Submitting..." : "Submit"}
                 </Button>
               </DialogFooter>

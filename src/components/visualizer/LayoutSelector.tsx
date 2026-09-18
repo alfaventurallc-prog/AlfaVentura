@@ -19,10 +19,10 @@ const LayoutSelector = ({ activeLayout, mirrored, onSelectLayout, onToggleMirror
           onClick={() => onSelectLayout(layout.id)}
           aria-pressed={activeLayout === layout.id}
           title={layout.description}
-          className={`px-4 py-2 rounded-full text-sm font-semibold border transition-colors ${
+          className={`px-4 py-2 rounded-full text-sm font-semibold border transition-all duration-200 ${
             activeLayout === layout.id
-              ? "bg-[#9B7040] text-white border-[#9B7040]"
-              : "bg-white text-[#57534E] border-[#E8DDD0] hover:border-[#9B7040]"
+              ? "bg-[#9B7040] text-white border-[#9B7040] shadow-premium-hover"
+              : "bg-white text-[#57534E] border-[#E8DDD0] shadow-premium hover:border-[#C9A96E] hover:-translate-y-0.5"
           }`}
         >
           {layout.name}
@@ -32,7 +32,7 @@ const LayoutSelector = ({ activeLayout, mirrored, onSelectLayout, onToggleMirror
     <button
       type="button"
       onClick={onToggleMirror}
-      className="px-4 py-2 rounded-full text-sm font-semibold border border-[#E8DDD0] text-[#57534E] hover:border-[#9B7040] transition-colors"
+      className="px-4 py-2 rounded-full text-sm font-semibold border border-[#E8DDD0] bg-white text-[#57534E] shadow-premium hover:border-[#C9A96E] hover:-translate-y-0.5 transition-all duration-200"
     >
       Swap Left / Right {mirrored ? "↺" : "↻"}
     </button>

@@ -25,6 +25,7 @@ module.exports = {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'fade-in': 'fadeIn 0.5s ease-out',
+				shimmer: 'shimmer 1.8s ease-in-out infinite',
 			},
 			keyframes: {
 				scroll: {
@@ -38,6 +39,10 @@ module.exports = {
 				fadeIn: {
 					from: { opacity: '0' },
 					to: { opacity: '1' }
+				},
+				shimmer: {
+					'0%': { backgroundPosition: '-400px 0' },
+					'100%': { backgroundPosition: '400px 0' }
 				},
 				slideup: {
 					from: {
@@ -196,6 +201,14 @@ module.exports = {
 				lg: 'var(--radius)',
 				md: 'calc(var(--radius) - 2px)',
 				sm: 'calc(var(--radius) - 4px)'
+			},
+			boxShadow: {
+				// Premium, soft elevation shadows used across the visualizer
+				// panels/cards -- replaces flat 1px borders as the primary depth cue.
+				premium: '0 1px 2px rgba(28,25,23,0.04), 0 8px 24px -8px rgba(28,25,23,0.08)',
+				'premium-lg': '0 4px 8px rgba(28,25,23,0.04), 0 24px 48px -16px rgba(28,25,23,0.14)',
+				'premium-hover': '0 2px 4px rgba(28,25,23,0.06), 0 16px 32px -12px rgba(155,112,64,0.22)',
+				'inner-glow': 'inset 0 1px 0 rgba(255,255,255,0.6)'
 			}
 		}
 	},

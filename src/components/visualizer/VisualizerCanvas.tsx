@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState, type RefObject } from "react";
 import { Canvas } from "@react-three/fiber";
-import { CameraControls, Environment, type CameraControls as CameraControlsImpl } from "@react-three/drei";
+import { CameraControls, Environment, Html, type CameraControls as CameraControlsImpl } from "@react-three/drei";
 import * as THREE from "three";
 import KitchenScene from "./scenes/KitchenScene";
 import VisualizerErrorBoundary from "./VisualizerErrorBoundary";
@@ -27,6 +27,23 @@ interface VisualizerCanvasProps {
   cameraControlsRef: RefObject<CameraControlsImpl | null>;
   canvasRef?: RefObject<HTMLCanvasElement | null>;
 }
+
+/** Shown behind the canvas while the scene's textures/environment load --
+ * previously Suspense fell back to `null`, so the panel just went blank for
+ * a moment on first load or a material swap, reading as a stall/bug rather
+ * than progress. */
+const CanvasLoadingSkeleton = () => (
+  <div className="absolute inset-0 flex items-center justify-center bg-[#EDE6DA]">
+    <div
+      className="absolute inset-0 bg-[linear-gradient(110deg,#EDE6DA_8%,#F5EFE4_18%,#EDE6DA_33%)] bg-[length:800px_100%] animate-shimmer"
+      aria-hidden
+    />
+    <div className="relative flex flex-col items-center gap-2 text-[#9B7040]">
+      <div className="w-8 h-8 rounded-full border-2 border-[#9B7040]/25 border-t-[#9B7040] animate-spin" />
+      <span className="text-xs font-semibold uppercase tracking-wide text-[#8A7B68]">Loading design…</span>
+    </div>
+  </div>
+);
 
 const hasWebGL = () => {
   try {
@@ -95,7 +112,7 @@ const VisualizerCanvas = ({
         />
         {/* soft fill from the opposite side so shadows don't go pure black */}
         <directionalLight position={[-3, 2, -2]} intensity={isDay ? 0.25 : 0.1} />
-        <Suspense fallback={null}>
+        <Suspense fallback={<Html fullscreen><CanvasLoadingSkeleton /></Html>}>
           <KitchenScene
             layout={layout}
             mirrored={mirrored}

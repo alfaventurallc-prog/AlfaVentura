@@ -11,9 +11,9 @@ interface SceneControlsProps {
 }
 
 const btnClass =
-  "w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold border border-white/20 bg-white/80 backdrop-blur-sm text-[#44403C] hover:bg-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9B7040]";
+  "w-8 h-8 flex items-center justify-center rounded-full text-sm font-bold border border-white/40 bg-white/85 backdrop-blur-sm text-[#44403C] shadow-premium hover:bg-white hover:-translate-y-0.5 hover:shadow-premium-hover transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9B7040]";
 const pillClass =
-  "px-3 py-1.5 rounded-full text-xs font-semibold border border-white/20 bg-white/80 backdrop-blur-sm text-[#44403C] hover:bg-white transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9B7040]";
+  "px-3 py-1.5 rounded-full text-xs font-semibold border border-white/40 bg-white/85 backdrop-blur-sm text-[#44403C] shadow-premium hover:bg-white hover:-translate-y-0.5 hover:shadow-premium-hover transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#9B7040]";
 
 const SceneControls = ({ cameraControlsRef, fullscreenTargetRef, lightingMode, onLightingChange }: SceneControlsProps) => {
   const reset = () => cameraControlsRef.current?.reset(true);
