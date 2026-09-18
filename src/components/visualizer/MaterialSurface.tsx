@@ -16,6 +16,22 @@ const DEFAULT_COLOR = "#EDE8DD";
 const EDGE_COLOR = "#E9E4D8";
 const HIGHLIGHT_COLOR = "#C9A96E";
 
+/** World-space XZ bounding box of an entire multi-segment countertop run
+ * (e.g. the L-shape's main run + return leg together). When passed to a
+ * "top" face, that face's crop is computed as its own sub-window of ONE
+ * shared crop of the photo across the whole box, instead of each segment
+ * independently cover-fitting the photo to just its own dimensions -- so
+ * the veining/pattern actually flows continuously across the seam between
+ * two separate meshes instead of each one showing an unrelated crop of
+ * the same photo (which reads as two different slabs even when the
+ * geometry itself touches with zero gap). */
+export interface WorldTopUV {
+  minX: number;
+  maxX: number;
+  minZ: number;
+  maxZ: number;
+}
+
 interface FaceProps {
   args: Vec3;
   position: Vec3;
@@ -24,6 +40,8 @@ interface FaceProps {
   heroFace?: HeroFace;
   /** Rotates the slab's vein/pattern in-plane (0 = as photographed, 90 = turned a quarter-turn) -- a texture transform, not a fake per-product attribute. */
   veinRotationDeg?: number;
+  /** See WorldTopUV. Only meaningful for heroFace="top". */
+  worldTopUV?: WorldTopUV;
 }
 
 const NeutralFace = ({ args, position, highlighted }: FaceProps) => (
@@ -70,6 +88,46 @@ const fitTextureToFace = (tex: THREE.Texture, faceWidth: number, faceHeight: num
   tex.needsUpdate = true;
 };
 
+/** Same cover-fit-crop idea as fitTextureToFace, but computed against a
+ * shared world-space bounding box (see WorldTopUV) instead of this one
+ * face's own dimensions -- first works out the single crop the whole box
+ * would get, then carves out just this face's own sub-rectangle of that
+ * crop based on where it sits (in world X/Z) inside the box. Two faces
+ * that together tile the box (e.g. the L-shape's two countertop meshes)
+ * end up sampling adjoining, correctly-oriented slices of the exact same
+ * crop, so the pattern reads as continuous across the seam between them. */
+const fitTextureToSharedBox = (tex: THREE.Texture, position: Vec3, args: Vec3, box: WorldTopUV, imageAspect: number) => {
+  const boxWidth = box.maxX - box.minX;
+  const boxHeight = box.maxZ - box.minZ;
+  const boxAspect = boxWidth / boxHeight;
+
+  let repeat0X = 1;
+  let repeat0Y = 1;
+  let offset0X = 0;
+  let offset0Y = 0;
+  if (imageAspect > boxAspect) {
+    repeat0X = boxAspect / imageAspect;
+    offset0X = (1 - repeat0X) / 2;
+  } else {
+    repeat0Y = imageAspect / boxAspect;
+    offset0Y = (1 - repeat0Y) / 2;
+  }
+
+  const faceMinX = position[0] - args[0] / 2;
+  const faceMinZ = position[2] - args[2] / 2;
+  const fracXStart = (faceMinX - box.minX) / boxWidth;
+  const fracXSpan = args[0] / boxWidth;
+  const fracZStart = (faceMinZ - box.minZ) / boxHeight;
+  const fracZSpan = args[2] / boxHeight;
+
+  tex.wrapS = THREE.ClampToEdgeWrapping;
+  tex.wrapT = THREE.ClampToEdgeWrapping;
+  tex.repeat.set(repeat0X * fracXSpan, repeat0Y * fracZSpan);
+  tex.offset.set(offset0X + repeat0X * fracXStart, offset0Y + repeat0Y * fracZStart);
+  tex.center.set(0.5, 0.5);
+  tex.needsUpdate = true;
+};
+
 /** Darken a "#rrggbb" hex color by the given factor (0-1, lower = darker). */
 const shade = (hex: string, factor: number): string => {
   const n = parseInt(hex.slice(1), 16);
@@ -88,6 +146,7 @@ const TexturedFace = ({
   highlighted,
   heroFace = "top",
   veinRotationDeg = 0,
+  worldTopUV,
 }: FaceProps & { product: VisualizerProduct }) => {
   const texture = useTexture(product.image);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -110,7 +169,17 @@ const TexturedFace = ({
   const faceWidth = rotated ? rawFaceHeight : rawFaceWidth;
   const faceHeight = rotated ? rawFaceWidth : rawFaceHeight;
   if (img?.width && img?.height) {
-    fitTextureToFace(texture, faceWidth, faceHeight, imageAspect);
+    // worldTopUV (e.g. the L-shape's main run + return leg) makes this
+    // face sample its own sub-window of one shared crop across the whole
+    // multi-segment run, instead of independently cover-fitting the photo
+    // to just this face -- otherwise two segments that touch with zero
+    // geometric gap still show unrelated crops of the veining, reading as
+    // two different slabs rather than one continuous surface.
+    if (heroFace === "top" && worldTopUV && !rotated) {
+      fitTextureToSharedBox(texture, position, args, worldTopUV, imageAspect);
+    } else {
+      fitTextureToFace(texture, faceWidth, faceHeight, imageAspect);
+    }
   } else {
     texture.wrapS = THREE.ClampToEdgeWrapping;
     texture.wrapT = THREE.ClampToEdgeWrapping;
@@ -269,6 +338,7 @@ export const MaterialSurface = ({
   highlighted,
   heroFace = "top",
   veinRotationDeg = 0,
+  worldTopUV,
 }: FaceProps & { product: VisualizerProduct | null }) => {
   if (!product) {
     return <NeutralFace args={args} position={position} highlighted={highlighted} />;
@@ -283,6 +353,7 @@ export const MaterialSurface = ({
         highlighted={highlighted}
         heroFace={heroFace}
         veinRotationDeg={veinRotationDeg}
+        worldTopUV={worldTopUV}
       />
     </Suspense>
   );

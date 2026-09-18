@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { MaterialSurface, SolidBox } from "../MaterialSurface";
+import { MaterialSurface, SolidBox, type WorldTopUV } from "../MaterialSurface";
 import { BackWall, Ceiling, Floor, SideWall, useWoodGrainTexture } from "./roomParts";
 import type { LayoutId, ThicknessMm, EdgeProfile } from "@/data/kitchenCatalog";
 import { thicknessScale } from "@/data/kitchenCatalog";
@@ -9,6 +9,31 @@ import type { VisualizerProduct } from "../../../../types";
 const WALL_COLOR = "#EFEAE0";
 const DOOR_COLOR = "#3C332B";
 const HANDLE_COLOR = "#9C9691";
+
+// L-shape main-run/return-leg dimensions, shared between the JSX call
+// sites below and LSHAPE_TOP_UV so the two can't drift out of sync with
+// each other the way hand-duplicated literals have in past iterations.
+const LSHAPE_MAIN_WIDTH = 3.8;
+const LSHAPE_MAIN_CENTER_X = 0.1;
+const LSHAPE_MAIN_Z = -1.05;
+const LSHAPE_SIDE_WALL_X = -2.7;
+const LSHAPE_RETURN_LENGTH = 2.0;
+const LSHAPE_MAIN_LEFT_EDGE = LSHAPE_MAIN_CENTER_X - (LSHAPE_MAIN_WIDTH + 0.16) / 2;
+const LSHAPE_MAIN_BACK_Z = LSHAPE_MAIN_Z - 0.35;
+
+// Bounding box (world X/Z) covering the L-shape's whole countertop
+// footprint -- the union rectangle of the main run's countertop
+// [LSHAPE_MAIN_LEFT_EDGE, mainRightEdge] x [mainBackZ, mainFrontZ] and the
+// return leg's [sideWallX, mainLeftEdge] x [mainBackZ, mainBackZ+length].
+// Passed to both WallRun and ReturnLeg as worldTopUV so their countertops
+// sample one continuous crop of the photo instead of two independently-
+// fit crops that happen to touch at the same edge.
+const LSHAPE_TOP_UV: WorldTopUV = {
+  minX: LSHAPE_SIDE_WALL_X,
+  maxX: LSHAPE_MAIN_CENTER_X + (LSHAPE_MAIN_WIDTH + 0.16) / 2,
+  minZ: LSHAPE_MAIN_BACK_Z,
+  maxZ: LSHAPE_MAIN_BACK_Z + LSHAPE_RETURN_LENGTH,
+};
 
 /** Darken a "#rrggbb" hex color by the given factor (0-1, lower = darker) --
  * used to shade a cabinet door's recessed center panel a touch darker than
@@ -148,6 +173,7 @@ const WallRun = ({
   thicknessMm = 20,
   veinRotation = 0,
   edgeProfile = "square",
+  worldTopUV,
 }: {
   width: number;
   centerX: number;
@@ -161,6 +187,7 @@ const WallRun = ({
   thicknessMm?: ThicknessMm;
   veinRotation?: 0 | 90;
   edgeProfile?: EdgeProfile;
+  worldTopUV?: WorldTopUV;
 }) => {
   const doorCount = Math.max(2, Math.round(width / 0.95));
   const doorWidth = width / doorCount - 0.1;
@@ -182,6 +209,7 @@ const WallRun = ({
         position={[centerX, topY - slabHeight / 2, z]}
         heroFace="top"
         veinRotationDeg={veinRotation}
+        worldTopUV={worldTopUV}
       />
       {edgeProfile === "beveled" && <BevelEdge length={width + 0.16} centerX={centerX} topY={topY} frontZ={z + 0.35} />}
 
@@ -261,6 +289,7 @@ const ReturnLeg = ({
   withUpper = true,
   thicknessMm = 20,
   veinRotation = 0,
+  worldTopUV,
 }: {
   sideWallX: number;
   mainLeftEdge: number;
@@ -273,6 +302,7 @@ const ReturnLeg = ({
   withUpper?: boolean;
   thicknessMm?: ThicknessMm;
   veinRotation?: 0 | 90;
+  worldTopUV?: WorldTopUV;
 }) => {
   const topY = 0.09;
   const slabHeight = topY * thicknessScale(thicknessMm);
@@ -327,6 +357,7 @@ const ReturnLeg = ({
         position={[ctCenterX, topY - slabHeight / 2 - Y_EPS, ctCenterZ]}
         heroFace="top"
         veinRotationDeg={veinRotation}
+        worldTopUV={worldTopUV}
       />
 
       {withUpper && (
@@ -517,10 +548,16 @@ const KitchenScene = ({
 
       {layout === "lshape" && (
         <>
+          {/* Shared world-space bounding box covering BOTH the main run's
+              and the return leg's countertop footprint -- passed to both so
+              they sample adjoining sub-windows of one crop of the photo
+              instead of each independently cover-fitting to just its own
+              dimensions, which is what made two touching, gap-free meshes
+              still visually read as two different slabs at the seam. */}
           <WallRun
-            width={3.8}
-            centerX={0.1}
-            z={-1.05}
+            width={LSHAPE_MAIN_WIDTH}
+            centerX={LSHAPE_MAIN_CENTER_X}
+            z={LSHAPE_MAIN_Z}
             cabinetColor={cabinetColor}
             cabinetTexture={cabinetTexture}
             countertopProduct={countertopProduct}
@@ -528,6 +565,7 @@ const KitchenScene = ({
             thicknessMm={thicknessMm}
             veinRotation={veinRotation}
             edgeProfile={edgeProfile}
+            worldTopUV={LSHAPE_TOP_UV}
           />
           {/* Perpendicular return leg, built as a proper T-join off the main
               run's own left edge and the side wall (see ReturnLeg) instead of
@@ -535,16 +573,17 @@ const KitchenScene = ({
               approach kept drifting out of sync and leaving gaps at either
               the inside corner or the side wall. */}
           <ReturnLeg
-            sideWallX={-2.7}
-            mainLeftEdge={0.1 - (3.8 + 0.16) / 2}
-            mainBackZ={-1.05 - 0.35}
-            length={2.0}
+            sideWallX={LSHAPE_SIDE_WALL_X}
+            mainLeftEdge={LSHAPE_MAIN_LEFT_EDGE}
+            mainBackZ={LSHAPE_MAIN_BACK_Z}
+            length={LSHAPE_RETURN_LENGTH}
             cabinetColor={cabinetColor}
             cabinetTexture={cabinetTexture}
             countertopProduct={countertopProduct}
             backsplashProduct={backsplashProduct}
             thicknessMm={thicknessMm}
             veinRotation={veinRotation}
+            worldTopUV={LSHAPE_TOP_UV}
           />
           {/* Corner filler for the upper cabinets: the main run's upper
               cabinet only spans its own width (down to x=-1.8) and the
