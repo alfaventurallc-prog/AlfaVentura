@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { MaterialSurface, SolidBox } from "../MaterialSurface";
-import { BackWall, Ceiling, Floor, SideWall, Window, useWoodGrainTexture } from "./roomParts";
+import { BackWall, Ceiling, Floor, SideWall, useWoodGrainTexture } from "./roomParts";
 import type { LayoutId, ThicknessMm, EdgeProfile } from "@/data/kitchenCatalog";
 import { thicknessScale } from "@/data/kitchenCatalog";
 import type { WaterfallOption } from "@/lib/visualizerUrlState";
@@ -82,30 +82,6 @@ const CabinetDoor = ({
     </mesh>
   </group>
 );
-
-/** Stainless-steel, French-door style fridge -- a tall body plus a thin
- * centre seam and two vertical bar handles so it clearly reads as a fridge
- * rather than a plain box. */
-const Fridge = ({ x, z, facing = 0 }: { x: number; z: number; facing?: number }) => {
-  const width = 0.9;
-  const depth = 0.72;
-  const height = 1.95;
-  const bodyY = -0.85 + height / 2;
-  const topY = -0.85 + height;
-
-  return (
-    <group position={[x, 0, z]} rotation={[0, facing, 0]}>
-      <SolidBox args={[width, height, depth]} position={[0, bodyY, 0]} color="#C7CBCE" roughness={0.35} metalness={0.55} />
-      {/* seam between the two French doors */}
-      <SolidBox args={[0.01, height - 0.06, 0.01]} position={[0, bodyY, depth / 2 + 0.005]} color="#8E9296" roughness={0.4} metalness={0.4} />
-      {/* door handles */}
-      <SolidBox args={[0.02, height * 0.55, 0.03]} position={[-width * 0.14, bodyY + 0.05, depth / 2 + 0.02]} color="#5B5F63" roughness={0.25} metalness={0.6} />
-      <SolidBox args={[0.02, height * 0.55, 0.03]} position={[width * 0.14, bodyY + 0.05, depth / 2 + 0.02]} color="#5B5F63" roughness={0.25} metalness={0.6} />
-      {/* slim top trim so it reads as built-in rather than a floating box */}
-      <SolidBox args={[width + 0.02, 0.02, depth + 0.02]} position={[0, topY - 0.01, 0]} color="#B3B7BA" roughness={0.3} metalness={0.5} />
-    </group>
-  );
-};
 
 const SinkFaucet = ({ x, z }: { x: number; z: number }) => (
   <>
@@ -498,22 +474,9 @@ const KitchenScene = ({
           planes to fight over. */}
       <SolidBox args={[0.08, 3.05, 0.08]} position={[-2.7, 0.675, -1.75]} color={WALL_COLOR} roughness={0.92} />
       <Ceiling />
-      {/* Window on the back wall, past the right end of the main run
-          (x=2.0) so it isn't hidden behind the upper cabinets -- a bare
-          wall reads as a stage backdrop rather than a real kitchen.
-          rotationY=0 because BackWall already faces +Z with no rotation
-          (unlike the side wall, which Window's default rotation was built
-          for). z=-1.70 (0.05 proud of the wall at -1.75, was -1.74/0.01)
-          so the glass -- recessed a further 0.02 inside the window group
-          -- still clears the wall instead of clipping into it. */}
-      <Window x={2.6} z={-1.7} y={1.35} rotationY={0} />
-      {/* Fridge along the side wall, pushed flush against it (x=-2.34,
-          depth 0.72 half-width 0.36 from the wall at x=-2.7) -- it was
-          previously 0.19 units short of the wall, reading as a
-          disconnected floating block instead of a built-in appliance.
-          Kept clear of the island/L-shape return leg footprint and inside
-          the default camera frame. */}
-      <Fridge x={-2.34} z={1.35} facing={Math.PI / 2} />
+      {/* Window and fridge removed per feedback -- side wall now renders
+          as a plain solid wall with no opening, and the side-wall floor
+          space that the fridge occupied is left empty. */}
 
       {layout === "island" && (
         <>

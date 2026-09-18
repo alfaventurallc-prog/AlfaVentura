@@ -41,37 +41,28 @@ const NeutralFace = ({ args, position, highlighted }: FaceProps) => (
 /** Box material-array index for each face: [+X, -X, +Y, -Y, +Z, -Z]. */
 const HERO_INDEX: Record<HeroFace, number> = { top: 2, front: 4, side: 1, sideEnd: 0 };
 
-const REPEAT_THRESHOLD = 1.15;
-
-/** Cover-fit (or, past a threshold, natural-scale repeat) a texture against
- * a given face size -- shared by both the hero face and the countertop's
- * front-edge/thickness band so the same slab pattern appears un-stretched
- * on both. Mutates `tex` in place. */
+/** Cover-fit crop a texture against a given face size -- always a single,
+ * uncropped-looking continuous image via ClampToEdgeWrapping, never tiled.
+ * This used to switch to RepeatWrapping (with repeat > 1) once a face's
+ * aspect ratio diverged enough from the photo's own aspect ratio, which
+ * visibly repeated the same image side-by-side -- reading as multiple
+ * separate stretched panels instead of one continuous slab. Now every
+ * face always gets exactly one crop of the photo (repeat pinned to 1,1),
+ * accepting some horizontal/vertical crop on very elongated faces instead
+ * of ever tiling. Mutates `tex` in place. */
 const fitTextureToFace = (tex: THREE.Texture, faceWidth: number, faceHeight: number, imageAspect: number) => {
   const faceAspect = faceWidth / faceHeight;
+  tex.wrapS = THREE.ClampToEdgeWrapping;
+  tex.wrapT = THREE.ClampToEdgeWrapping;
 
-  if (faceAspect / imageAspect > REPEAT_THRESHOLD) {
+  if (imageAspect > faceAspect) {
+    // Photo is wider than the face -- crop its left/right edges, keep full height.
     const repeatX = faceAspect / imageAspect;
-    tex.wrapS = THREE.RepeatWrapping;
-    tex.wrapT = THREE.ClampToEdgeWrapping;
-    tex.repeat.set(repeatX, 1);
-    tex.offset.set(0, 0);
-  } else if (imageAspect / faceAspect > REPEAT_THRESHOLD) {
-    const repeatY = faceAspect / imageAspect;
-    tex.wrapS = THREE.ClampToEdgeWrapping;
-    tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(1, repeatY);
-    tex.offset.set(0, 0);
-  } else if (imageAspect > faceAspect) {
-    const repeatX = faceAspect / imageAspect;
-    tex.wrapS = THREE.ClampToEdgeWrapping;
-    tex.wrapT = THREE.ClampToEdgeWrapping;
     tex.repeat.set(repeatX, 1);
     tex.offset.set((1 - repeatX) / 2, 0);
   } else {
+    // Photo is taller than the face -- crop its top/bottom edges, keep full width.
     const repeatY = imageAspect / faceAspect;
-    tex.wrapS = THREE.ClampToEdgeWrapping;
-    tex.wrapT = THREE.ClampToEdgeWrapping;
     tex.repeat.set(1, repeatY);
     tex.offset.set(0, (1 - repeatY) / 2);
   }
