@@ -24,13 +24,16 @@ interface KitchenSceneProps {
   edgeProfile: EdgeProfile;
 }
 
-/** Visual approximation of a 45-degree chamfer along a slab's front-top
- * corner -- a true bevel needs custom (non-box) geometry, this is a thin
- * diagonal strip that reads as a soft chamfer highlight without one. */
+/** A rounded ("bullnose") front-top edge -- a thin cylinder running along
+ * the counter's front corner reads as an actual round-over under lighting,
+ * unlike the previous flat diagonal strip (which just looked like a bright
+ * white line cutting across the slab). Colored as a soft, muted highlight
+ * rather than white so it blends with any slab tone instead of standing
+ * out as its own separate piece. */
 const BevelEdge = ({ length, centerX, topY, frontZ }: { length: number; centerX: number; topY: number; frontZ: number }) => (
-  <mesh position={[centerX, topY - 0.01, frontZ - 0.01]} rotation={[Math.PI / 4, 0, 0]}>
-    <boxGeometry args={[length, 0.02, 0.02]} />
-    <meshStandardMaterial color="#F3EFE6" roughness={0.2} metalness={0} />
+  <mesh position={[centerX, topY - 0.012, frontZ - 0.012]} rotation={[0, 0, Math.PI / 2]} castShadow receiveShadow>
+    <cylinderGeometry args={[0.014, 0.014, length, 16]} />
+    <meshStandardMaterial color="#CFC6B4" roughness={0.35} metalness={0} />
   </mesh>
 );
 
