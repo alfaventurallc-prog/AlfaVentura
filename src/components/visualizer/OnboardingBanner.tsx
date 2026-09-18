@@ -6,7 +6,7 @@ import { X } from "lucide-react";
 const DISMISS_KEY = "alfa-ventura-visualizer-onboarding-dismissed";
 
 const STEPS = [
-  { n: 1, title: "Upload or Select a Room", desc: "Use the 3D Visualizer, or upload a photo of your own kitchen." },
+  { n: 1, title: "Select a Layout", desc: "Choose Island, L-Shape or Galley to match your kitchen." },
   { n: 2, title: "Choose Your Products", desc: "Pick a countertop, cabinet, backsplash and floor finish." },
   { n: 3, title: "See It Live", desc: "Watch your design update instantly, then save, share or compare it." },
 ];

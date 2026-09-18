@@ -6,7 +6,6 @@ import { toast } from "sonner";
 import { Heart, Save, Share2, Download as DownloadIcon, Columns2, X } from "lucide-react";
 import VisualizerCanvas from "./VisualizerCanvas";
 import ProductImageGallery from "./ProductImageGallery";
-import RoomUploadPanel from "./RoomUploadPanel";
 import OnboardingBanner from "./OnboardingBanner";
 import SceneControls from "./SceneControls";
 import LayoutSelector from "./LayoutSelector";
@@ -58,13 +57,11 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
   const [cabinetColor, setCabinetColor] = useState(DEFAULT_CABINET_COLOR);
   const [favoritesOpen, setFavoritesOpen] = useState(false);
   const [hasSavedDesign, setHasSavedDesign] = useState(false);
-  // Three modes sharing one product/material config above: an interactive
-  // 3D kitchen, a real-photo gallery for the selected product ("Image
+  // Two modes sharing one product/material config above: an interactive 3D
+  // kitchen, and a real-photo gallery for the selected product ("Image
   // Visualizer" -- deliberately just the actual uploaded product photos,
-  // not a fabricated installed-kitchen composite), and "Upload" -- the
-  // user's own room photo with the selected materials shown as sample
-  // swatches over it.
-  const [mode, setMode] = useState<"3d" | "image" | "upload">("3d");
+  // not a fabricated installed-kitchen composite).
+  const [mode, setMode] = useState<"3d" | "image">("3d");
   const [surfaceSearch, setSurfaceSearch] = useState("");
   const surfaceCarouselRef = useRef<HTMLDivElement | null>(null);
 
@@ -206,10 +203,6 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
   const snapshotFloor = snapshot ? FLOOR_FINISHES.find((f) => f.id === snapshot.config.floorId) ?? FLOOR_FINISHES[0] : null;
 
   const handleDownload = async () => {
-    if (mode === "upload") {
-      toast.info("Use the Export button on your uploaded photo to download it with the material swatches.");
-      return;
-    }
     if (mode === "image") {
       if (!countertopProduct) return;
       try {
@@ -241,7 +234,7 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
 
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="inline-flex gap-1 p-1 rounded-full bg-[#F0E8DB] shadow-inner-glow">
-            {(["3d", "image", "upload"] as const).map((m) => (
+            {(["3d", "image"] as const).map((m) => (
               <button
                 key={m}
                 type="button"
@@ -250,7 +243,7 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
                   mode === m ? "bg-[#1C1917] text-white shadow-premium" : "text-[#8A7B68] hover:text-[#1C1917]"
                 }`}
               >
-                {m === "3d" ? "3D Visualizer" : m === "image" ? "Image Visualizer" : "Upload Your Room"}
+                {m === "3d" ? "3D Visualizer" : "Image Visualizer"}
               </button>
             ))}
           </div>
@@ -385,10 +378,8 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
                 />
               </>
             )
-          ) : mode === "image" ? (
-            <ProductImageGallery product={countertopProduct} />
           ) : (
-            <RoomUploadPanel countertopProduct={countertopProduct} backsplashProduct={backsplashProduct} cabinetColor={cabinetColor} />
+            <ProductImageGallery product={countertopProduct} />
           )}
         </div>
 
@@ -576,7 +567,7 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
                     <MaterialCategorySelector
                       items={filtered.map(toSwatch)}
                       activeId={config.countertopId}
-                      onSelect={(id) => setConfig((prev) => ({ ...prev, countertopId: id, backsplashId: id }))}
+                      onSelect={(id) => applySelection("countertop", id)}
                       isFavorite={(id) => isFavorite({ category: "countertop", productId: id })}
                       onToggleFavorite={(id) => toggleFavorite({ category: "countertop", productId: id })}
                     />
