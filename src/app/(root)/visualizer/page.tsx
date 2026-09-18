@@ -29,8 +29,14 @@ export default async function VisualizerPage() {
   const cabinetProducts = withImages.filter((p) => /cabinet/i.test(p.category?.name ?? "")).map(toVisualizerProduct);
   // "Countertop"/"backsplash" both draw from the same real quartz slab
   // catalog -- one stone family used across multiple applications, same as
-  // how the product photos are already organized in the category.
-  const quartzProducts = withImages.filter((p) => /slab|design/i.test(p.category?.name ?? "")).map(toVisualizerProduct);
+  // how the product photos are already organized in the category. This
+  // used to also match any category name containing "design" (e.g. a
+  // lifestyle/inspiration category with staged photos of a finished
+  // kitchen -- bottles, sink, decor and all), which is how a photographic
+  // lifestyle shot ended up stretched across the 3D backsplash instead of
+  // a flat slab texture. Matching "slab" only keeps this to actual
+  // material swatches.
+  const quartzProducts = withImages.filter((p) => /slab/i.test(p.category?.name ?? "")).map(toVisualizerProduct);
 
   return (
     <section className="bg-[#FDFAF7] py-12 md:py-20 px-5 md:px-10 xl:px-16">

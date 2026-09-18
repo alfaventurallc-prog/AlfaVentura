@@ -490,14 +490,23 @@ const KitchenScene = ({
       <Floor color={floorColor} roughness={floorRoughness} />
       <BackWall color={WALL_COLOR} />
       <SideWall color={WALL_COLOR} x={-2.7} />
+      {/* Solid corner post where the back wall and side wall meet (x=-2.7,
+          z=-1.75) -- two infinitely-thin perpendicular planes sharing an
+          edge are prone to z-fighting right at the seam from some angles,
+          which read as a visible gap/crack at the corner. This box just
+          physically fills that corner so there's nothing for the two
+          planes to fight over. */}
+      <SolidBox args={[0.08, 3.05, 0.08]} position={[-2.7, 0.675, -1.75]} color={WALL_COLOR} roughness={0.92} />
       <Ceiling />
       {/* Window on the back wall, past the right end of the main run
           (x=2.0) so it isn't hidden behind the upper cabinets -- a bare
           wall reads as a stage backdrop rather than a real kitchen.
           rotationY=0 because BackWall already faces +Z with no rotation
           (unlike the side wall, which Window's default rotation was built
-          for). */}
-      <Window x={2.6} z={-1.74} y={1.35} rotationY={0} />
+          for). z=-1.70 (0.05 proud of the wall at -1.75, was -1.74/0.01)
+          so the glass -- recessed a further 0.02 inside the window group
+          -- still clears the wall instead of clipping into it. */}
+      <Window x={2.6} z={-1.7} y={1.35} rotationY={0} />
       {/* Fridge along the side wall, pushed flush against it (x=-2.34,
           depth 0.72 half-width 0.36 from the wall at x=-2.7) -- it was
           previously 0.19 units short of the wall, reading as a

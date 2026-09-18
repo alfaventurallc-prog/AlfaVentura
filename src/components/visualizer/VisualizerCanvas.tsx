@@ -120,6 +120,17 @@ const VisualizerCanvas = ({
         {/* rim light from behind/above, separates the counter's silhouette
             from the backdrop -- absent before, which flattened the scene */}
         <directionalLight position={[0, 3.5, -3.5]} intensity={isDay ? 0.22 : 0.3} color={isDay ? "#FFFFFF" : "#FF8A4C"} />
+        {/* <Environment> below sets scene.environment (for reflections)
+            AND, by default, scene.background -- which replaced the visible
+            backdrop with the raw equirectangular HDRI photo. Above the
+            ceiling line that photo's own horizon/warped edge is what
+            rendered as a skewed brown trapezoid with a stray bright strip
+            in it (there is no ceiling-geometry bug -- the ceiling plane
+            itself was fine; this background image was floating above and
+            behind it). Environment's background={false} below keeps the
+            HDRI for lighting/reflections only, and this flat color shows
+            as the visible sky instead. */}
+        <color attach="background" args={[isDay ? "#EAE3D6" : "#2A2018"]} />
         <Suspense fallback={<Html fullscreen><CanvasLoadingSkeleton /></Html>}>
           <KitchenScene
             layout={layout}
@@ -139,7 +150,7 @@ const VisualizerCanvas = ({
               shadow map alone left the underside of the toe-kick reading
               flat and disconnected from the floor. */}
           <ContactShadows position={[0, -0.849, 0]} opacity={isDay ? 0.55 : 0.7} scale={10} blur={2.8} far={1.2} />
-          <Environment preset={isDay ? "apartment" : "sunset"} environmentIntensity={isDay ? 0.35 : 0.3} />
+          <Environment preset={isDay ? "apartment" : "sunset"} environmentIntensity={isDay ? 0.35 : 0.3} background={false} />
         </Suspense>
         <CameraControls
           ref={cameraControlsRef}

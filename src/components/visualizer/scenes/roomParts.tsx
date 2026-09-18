@@ -40,7 +40,7 @@ const usePlankTexture = (color: string) => {
     }
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(6, 6);
+    tex.repeat.set(20, 20);
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.needsUpdate = true;
     return tex;
@@ -136,7 +136,13 @@ export const Floor = ({ color = DEFAULT_FLOOR_COLOR, roughness = 0.95 }: { color
     // 0.21 lower than that, leaving every cabinet/fridge visibly floating
     // above the floor instead of resting on it.
     <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -0.85, 0]} receiveShadow>
-      <planeGeometry args={[12, 12]} />
+      {/* 40x40, not the room's own ~7x5 footprint -- a plane sized to just
+          the room left its far edge only ~6 units out, well within the
+          camera's max dolly distance (9), so the floor's boundary against
+          the sky showed up as a hard horizontal line across the frame.
+          Pushing the edge to +-20 keeps it outside any reachable camera
+          position. */}
+      <planeGeometry args={[40, 40]} />
       {plankTexture ? (
         <meshStandardMaterial map={plankTexture} roughness={roughness} />
       ) : (
@@ -150,9 +156,17 @@ const TRIM_COLOR = "#F7F3EA";
 
 /** A thin baseboard strip along a wall's bottom edge and a crown molding
  * strip along its top -- these two lines are most of what makes a plane
- * read as "a wall in a room" instead of a flat backdrop panel. */
-const WallTrim = ({ width, height, y, z, rotationY = 0 }: { width: number; height: number; y: number; z: number; rotationY?: number }) => (
-  <group position={[0, y, z]} rotation={[0, rotationY, 0]}>
+ * read as "a wall in a room" instead of a flat backdrop panel.
+ *
+ * BUG: this always positioned itself at world x=0 regardless of the
+ * wall's own x -- harmless for BackWall (which is always centered at
+ * x=0), but for SideWall (x=-2.7) it meant the baseboard/crown boxes
+ * rendered as two long strips cutting straight through the middle of the
+ * room at x=0, near the floor and near the ceiling, completely detached
+ * from the actual side wall. That's what showed up as horizontal white
+ * lines slicing across the whole scene. */
+const WallTrim = ({ x = 0, width, height, y, z, rotationY = 0 }: { x?: number; width: number; height: number; y: number; z: number; rotationY?: number }) => (
+  <group position={[x, y, z]} rotation={[0, rotationY, 0]}>
     <mesh position={[0, -height / 2 + 0.06, 0.01]}>
       <boxGeometry args={[width, 0.12, 0.02]} />
       <meshStandardMaterial color={TRIM_COLOR} roughness={0.5} />
@@ -190,7 +204,7 @@ export const SideWall = ({ color, x }: { color: string; x: number }) => {
         <planeGeometry args={[5.3, WALL_HEIGHT]} />
         {wallTexture ? <meshStandardMaterial map={wallTexture} roughness={0.92} /> : <meshStandardMaterial color={color} roughness={0.92} />}
       </mesh>
-      <WallTrim width={5.3} height={WALL_HEIGHT} y={WALL_Y} z={0.4} rotationY={Math.PI / 2} />
+      <WallTrim x={x} width={5.3} height={WALL_HEIGHT} y={WALL_Y} z={0.4} rotationY={Math.PI / 2} />
     </>
   );
 };
@@ -202,35 +216,69 @@ export const Ceiling = ({ color = "#FBF8F2" }: { color?: string }) => (
   // y=2.2 clears the island's pendant lights (top ~1.9) with margin while
   // still keeping a believable ~3m ceiling height above the y=-0.85 floor.
   <mesh rotation={[Math.PI / 2, 0, 0]} position={[0, 2.2, 0]}>
-    <planeGeometry args={[12, 12]} />
+    {/* Same reasoning as Floor's 40x40 -- a plane sized to the room left
+        its edge well within camera range, showing up as a hard line
+        across the frame where the ceiling ended and the sky began. */}
+    <planeGeometry args={[40, 40]} />
     <meshStandardMaterial color={color} roughness={0.95} />
   </mesh>
 );
 
 /**
- * A simple window set into a wall -- a bare wall with nothing on it reads
- * as a stage backdrop rather than a room. Sky-tinted "glass" plane plus a
- * thin frame sitting just proud of the wall face. `rotationY` defaults to
- * facing along the side wall (its original use); pass 0 to mount it on the
- * back wall instead, which already faces +Z with no rotation.
+ * A window set into a wall -- a bare wall with nothing on it reads as a
+ * stage backdrop rather than a room. `rotationY` defaults to facing along
+ * the side wall (its original use); pass 0 to mount it on the back wall
+ * instead, which already faces +Z with no rotation.
+ *
+ * Rebuilt with real box-geometry frame bars and mullions instead of thin
+ * planes offset by ~0.001-0.005 units from the glass -- at that scale the
+ * gap was smaller than the camera's depth-buffer precision at typical
+ * viewing distance, so the frame/mullions were being lost to z-fighting
+ * and only the flat glass pane ever actually rendered. Offsets here are
+ * 0.02-0.05, an order of magnitude larger, so every piece reliably shows.
  */
-export const Window = ({ x, z = 0.5, y = 1.35, rotationY = Math.PI / 2 }: { x: number; z?: number; y?: number; rotationY?: number }) => (
-  <group position={[x, y, z]} rotation={[0, rotationY, 0]}>
-    <mesh>
-      <planeGeometry args={[1.15, 1.0]} />
-      <meshStandardMaterial color="#CFE3EC" roughness={0.15} metalness={0.1} emissive="#DCEEF5" emissiveIntensity={0.25} />
-    </mesh>
-    <mesh position={[0, 0, 0.001]}>
-      <planeGeometry args={[0.04, 1.0]} />
-      <meshStandardMaterial color="#F5F1E8" roughness={0.6} />
-    </mesh>
-    <mesh position={[0, 0, 0.001]}>
-      <planeGeometry args={[1.15, 0.04]} />
-      <meshStandardMaterial color="#F5F1E8" roughness={0.6} />
-    </mesh>
-    <mesh position={[0, 0, -0.005]}>
-      <planeGeometry args={[1.27, 1.12]} />
-      <meshStandardMaterial color="#F5F1E8" roughness={0.6} />
-    </mesh>
-  </group>
-);
+export const Window = ({ x, z = 0.5, y = 1.35, rotationY = Math.PI / 2 }: { x: number; z?: number; y?: number; rotationY?: number }) => {
+  const w = 1.15;
+  const h = 1.0;
+  const bar = 0.1;
+  const frameW = w + bar;
+  const frameH = h + bar;
+  const frameColor = "#F7F3EA";
+
+  return (
+    <group position={[x, y, z]} rotation={[0, rotationY, 0]}>
+      {/* Glass: tinted, semi-transparent, and recessed 0.02 behind the
+          frame/wall face so it reads as an actual pane set into the wall. */}
+      <mesh position={[0, 0, -0.02]}>
+        <planeGeometry args={[w, h]} />
+        <meshStandardMaterial color="#CFE3EC" roughness={0.1} metalness={0.2} transparent opacity={0.45} emissive="#DCEEF5" emissiveIntensity={0.15} />
+      </mesh>
+      {/* Mullions dividing the glass into 4 panes, proud of the glass */}
+      <mesh position={[0, 0, -0.005]} castShadow>
+        <boxGeometry args={[0.035, h, 0.02]} />
+        <meshStandardMaterial color={frameColor} roughness={0.5} />
+      </mesh>
+      <mesh position={[0, 0, -0.005]} castShadow>
+        <boxGeometry args={[w, 0.035, 0.02]} />
+        <meshStandardMaterial color={frameColor} roughness={0.5} />
+      </mesh>
+      {/* Outer frame: 4 bars proud of the wall face, forming a visible border */}
+      <mesh position={[0, h / 2 + bar / 2, 0.02]} castShadow>
+        <boxGeometry args={[frameW, bar, 0.08]} />
+        <meshStandardMaterial color={frameColor} roughness={0.55} />
+      </mesh>
+      <mesh position={[0, -h / 2 - bar / 2, 0.02]} castShadow>
+        <boxGeometry args={[frameW, bar, 0.08]} />
+        <meshStandardMaterial color={frameColor} roughness={0.55} />
+      </mesh>
+      <mesh position={[-w / 2 - bar / 2, 0, 0.02]} castShadow>
+        <boxGeometry args={[bar, frameH, 0.08]} />
+        <meshStandardMaterial color={frameColor} roughness={0.55} />
+      </mesh>
+      <mesh position={[w / 2 + bar / 2, 0, 0.02]} castShadow>
+        <boxGeometry args={[bar, frameH, 0.08]} />
+        <meshStandardMaterial color={frameColor} roughness={0.55} />
+      </mesh>
+    </group>
+  );
+};
