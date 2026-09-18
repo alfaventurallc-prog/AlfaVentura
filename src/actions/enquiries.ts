@@ -14,7 +14,6 @@ export async function getEnquiries(params?: { page?: number; limit?: number; sea
       where.OR = [
         { name: { contains: search, mode: "insensitive" } },
         { email: { contains: search, mode: "insensitive" } },
-        { company: { contains: search, mode: "insensitive" } },
         { message: { contains: search, mode: "insensitive" } },
       ];
     }
