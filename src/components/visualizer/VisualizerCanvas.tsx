@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState, type RefObject } from "react";
 import { Canvas } from "@react-three/fiber";
-import { CameraControls, Environment, Html, type CameraControls as CameraControlsImpl } from "@react-three/drei";
+import { CameraControls, ContactShadows, Environment, Html, type CameraControls as CameraControlsImpl } from "@react-three/drei";
 import * as THREE from "three";
 import KitchenScene from "./scenes/KitchenScene";
 import VisualizerErrorBoundary from "./VisualizerErrorBoundary";
@@ -96,10 +96,16 @@ const VisualizerCanvas = ({
         gl={{ toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: isDay ? 0.95 : 0.7, preserveDrawingBuffer: true }}
         camera={{ position: KITCHEN_CAMERA.hero.slice(0, 3) as [number, number, number], fov: 40 }}
       >
-        <ambientLight intensity={isDay ? 0.4 : 0.22} />
+        {/* 3-point lighting: key (sun through the "window" side), fill
+            (soft opposite-side bounce so shadows don't go pure black), and
+            a subtle rim/back light for edge separation -- tinted cool for
+            Day, warm for Evening so the toggle reads as an actual time-of-
+            day change rather than just a brightness slider. */}
+        <ambientLight intensity={isDay ? 0.4 : 0.22} color={isDay ? "#EAF2FF" : "#3A2C1E"} />
         <directionalLight
           position={[3.5, 5, 3]}
-          intensity={isDay ? 1.3 : 0.6}
+          intensity={isDay ? 1.35 : 0.75}
+          color={isDay ? "#FFFFFF" : "#FFB870"}
           castShadow
           shadow-mapSize={[2048, 2048]}
           shadow-bias={-0.0004}
@@ -110,8 +116,10 @@ const VisualizerCanvas = ({
           shadow-camera-near={0.5}
           shadow-camera-far={12}
         />
-        {/* soft fill from the opposite side so shadows don't go pure black */}
-        <directionalLight position={[-3, 2, -2]} intensity={isDay ? 0.25 : 0.1} />
+        <directionalLight position={[-3, 2, -2]} intensity={isDay ? 0.28 : 0.16} color={isDay ? "#D9E9FF" : "#7A4A2A"} />
+        {/* rim light from behind/above, separates the counter's silhouette
+            from the backdrop -- absent before, which flattened the scene */}
+        <directionalLight position={[0, 3.5, -3.5]} intensity={isDay ? 0.22 : 0.3} color={isDay ? "#FFFFFF" : "#FF8A4C"} />
         <Suspense fallback={<Html fullscreen><CanvasLoadingSkeleton /></Html>}>
           <KitchenScene
             layout={layout}
@@ -126,7 +134,12 @@ const VisualizerCanvas = ({
             veinRotation={veinRotation}
             edgeProfile={edgeProfile}
           />
-          <Environment preset={isDay ? "apartment" : "sunset"} environmentIntensity={isDay ? 0.35 : 0.25} />
+          {/* Soft contact shadow disc under the cabinets/island so they
+              read as resting on the floor instead of floating -- a real
+              shadow map alone left the underside of the toe-kick reading
+              flat and disconnected from the floor. */}
+          <ContactShadows position={[0, -0.849, 0]} opacity={isDay ? 0.45 : 0.6} scale={10} blur={2.2} far={1.2} />
+          <Environment preset={isDay ? "apartment" : "sunset"} environmentIntensity={isDay ? 0.35 : 0.3} />
         </Suspense>
         <CameraControls
           ref={cameraControlsRef}

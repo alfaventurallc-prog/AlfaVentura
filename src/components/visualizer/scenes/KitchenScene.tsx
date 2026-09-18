@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { MaterialSurface, SolidBox } from "../MaterialSurface";
-import { Floor, SideWall } from "./roomParts";
+import { Floor, SideWall, useWoodGrainTexture } from "./roomParts";
 import type { LayoutId, ThicknessMm, EdgeProfile } from "@/data/kitchenCatalog";
 import { thicknessScale } from "@/data/kitchenCatalog";
 import type { WaterfallOption } from "@/lib/visualizerUrlState";
@@ -156,6 +156,7 @@ const WallRun = ({
   centerX,
   z,
   cabinetColor,
+  cabinetTexture,
   countertopProduct,
   backsplashProduct,
   withUpper = true,
@@ -168,6 +169,7 @@ const WallRun = ({
   centerX: number;
   z: number;
   cabinetColor: string;
+  cabinetTexture?: THREE.Texture | null;
   countertopProduct: VisualizerProduct | null;
   backsplashProduct: VisualizerProduct | null;
   withUpper?: boolean;
@@ -186,7 +188,7 @@ const WallRun = ({
 
   return (
     <group>
-      <SolidBox args={[width, 0.85, 0.62]} position={[centerX, -0.425, z]} color={cabinetColor} roughness={0.55} />
+      <SolidBox args={[width, 0.85, 0.62]} position={[centerX, -0.425, z]} color={cabinetColor} roughness={0.55} map={cabinetTexture} />
       {doorXs.map((x, i) => (
         <CabinetDoor key={i} x={x} z={z + 0.31 - 0.03} width={doorWidth} color={cabinetColor === DOOR_COLOR ? "#2A241E" : DOOR_COLOR} />
       ))}
@@ -201,7 +203,7 @@ const WallRun = ({
 
       {withUpper && (
         <>
-          <SolidBox args={[width, 0.55, 0.3]} position={[centerX, 1.15, z - 0.55]} color={cabinetColor} roughness={0.55} />
+          <SolidBox args={[width, 0.55, 0.3]} position={[centerX, 1.15, z - 0.55]} color={cabinetColor} roughness={0.55} map={cabinetTexture} />
           {doorXs.map((x, i) => (
             <CabinetDoor key={i} x={x} z={z - 0.67} width={doorWidth} y={1.15} height={0.45} color={cabinetColor === DOOR_COLOR ? "#2A241E" : DOOR_COLOR} />
           ))}
@@ -266,6 +268,7 @@ const ReturnLeg = ({
   mainBackZ,
   length,
   cabinetColor,
+  cabinetTexture,
   countertopProduct,
   backsplashProduct,
   withUpper = true,
@@ -277,6 +280,7 @@ const ReturnLeg = ({
   mainBackZ: number;
   length: number;
   cabinetColor: string;
+  cabinetTexture?: THREE.Texture | null;
   countertopProduct: VisualizerProduct | null;
   backsplashProduct: VisualizerProduct | null;
   withUpper?: boolean;
@@ -315,7 +319,7 @@ const ReturnLeg = ({
 
   return (
     <group>
-      <SolidBox args={[cabDepth, 0.85, cabLength]} position={[cabCenterX, -0.425, cabCenterZ]} color={cabinetColor} roughness={0.55} />
+      <SolidBox args={[cabDepth, 0.85, cabLength]} position={[cabCenterX, -0.425, cabCenterZ]} color={cabinetColor} roughness={0.55} map={cabinetTexture} />
       {doorZs.map((dz, i) => (
         <ReturnLegDoor key={i} x={cabFrontX - 0.03} z={dz} width={doorWidth} color={cabinetColor === DOOR_COLOR ? "#2A241E" : DOOR_COLOR} />
       ))}
@@ -329,7 +333,7 @@ const ReturnLeg = ({
 
       {withUpper && (
         <>
-          <SolidBox args={[upperDepth, 0.55, cabLength]} position={[upperCenterX, 1.15, cabCenterZ]} color={cabinetColor} roughness={0.55} />
+          <SolidBox args={[upperDepth, 0.55, cabLength]} position={[upperCenterX, 1.15, cabCenterZ]} color={cabinetColor} roughness={0.55} map={cabinetTexture} />
           {doorZs.map((dz, i) => (
             <ReturnLegDoor key={i} x={upperFrontX - 0.03} z={dz} width={doorWidth} y={1.15} height={0.45} color={cabinetColor === DOOR_COLOR ? "#2A241E" : DOOR_COLOR} />
           ))}
@@ -363,6 +367,7 @@ const PendantLight = ({ x, z }: { x: number; z: number }) => (
 
 const Island = ({
   cabinetColor,
+  cabinetTexture,
   countertopProduct,
   waterfall,
   thicknessMm = 20,
@@ -370,6 +375,7 @@ const Island = ({
   edgeProfile = "square",
 }: {
   cabinetColor: string;
+  cabinetTexture?: THREE.Texture | null;
   countertopProduct: VisualizerProduct | null;
   waterfall: WaterfallOption;
   thicknessMm?: ThicknessMm;
@@ -387,7 +393,7 @@ const Island = ({
 
   return (
     <group>
-      <SolidBox args={[1.7, 0.85, 0.85]} position={[-0.1, -0.425, 0.55]} color={cabinetColor} roughness={0.55} />
+      <SolidBox args={[1.7, 0.85, 0.85]} position={[-0.1, -0.425, 0.55]} color={cabinetColor} roughness={0.55} map={cabinetTexture} />
       <CabinetDoor x={-0.1} z={0.965} width={0.72} color={cabinetColor === DOOR_COLOR ? "#2A241E" : DOOR_COLOR} />
       <MaterialSurface
         product={countertopProduct}
@@ -455,111 +461,126 @@ const KitchenScene = ({
   thicknessMm,
   veinRotation,
   edgeProfile,
-}: KitchenSceneProps) => (
-  <group scale={[mirrored ? -1 : 1, 1, 1]}>
-    <Floor color={floorColor} roughness={floorRoughness} />
-    <SideWall color={WALL_COLOR} x={-2.7} />
-    {/* free-standing fridge along the side wall, clear of the island/L-shape
-        return leg footprint and positioned so it actually sits inside the
-        default camera frame (the earlier spot past the main run's right end
-        was outside the view frustum entirely). */}
-    <Fridge x={-2.15} z={1.35} facing={Math.PI / 2} />
+}: KitchenSceneProps) => {
+  // Generated once per cabinet color and shared by every cabinet body in
+  // the scene (base/upper runs, island, return leg, corner filler) -- a
+  // flat meshStandardMaterial color on a large cabinet face read as
+  // plastic/laminate; this bakes in a faint wood-grain streak pattern so
+  // it reads as a painted/stained wood finish instead.
+  const cabinetTexture = useWoodGrainTexture(cabinetColor);
 
-    {layout === "island" && (
-      <>
-        <WallRun
-          width={3.8}
-          centerX={0.1}
-          z={-1.05}
-          cabinetColor={cabinetColor}
-          countertopProduct={countertopProduct}
-          backsplashProduct={backsplashProduct}
-          thicknessMm={thicknessMm}
-          veinRotation={veinRotation}
-          edgeProfile={edgeProfile}
-        />
-        <Island
-          cabinetColor={cabinetColor}
-          countertopProduct={countertopProduct}
-          waterfall={waterfall}
-          thicknessMm={thicknessMm}
-          veinRotation={veinRotation}
-          edgeProfile={edgeProfile}
-        />
-      </>
-    )}
+  return (
+    <group scale={[mirrored ? -1 : 1, 1, 1]}>
+      <Floor color={floorColor} roughness={floorRoughness} />
+      <SideWall color={WALL_COLOR} x={-2.7} />
+      {/* free-standing fridge along the side wall, clear of the island/L-shape
+          return leg footprint and positioned so it actually sits inside the
+          default camera frame (the earlier spot past the main run's right end
+          was outside the view frustum entirely). */}
+      <Fridge x={-2.15} z={1.35} facing={Math.PI / 2} />
 
-    {layout === "lshape" && (
-      <>
-        <WallRun
-          width={3.8}
-          centerX={0.1}
-          z={-1.05}
-          cabinetColor={cabinetColor}
-          countertopProduct={countertopProduct}
-          backsplashProduct={backsplashProduct}
-          thicknessMm={thicknessMm}
-          veinRotation={veinRotation}
-          edgeProfile={edgeProfile}
-        />
-        {/* Perpendicular return leg, built as a proper T-join off the main
-            run's own left edge and the side wall (see ReturnLeg) instead of
-            a rotated copy of WallRun with hand-tuned offsets -- that
-            approach kept drifting out of sync and leaving gaps at either
-            the inside corner or the side wall. */}
-        <ReturnLeg
-          sideWallX={-2.7}
-          mainLeftEdge={0.1 - (3.8 + 0.16) / 2}
-          mainBackZ={-1.05 - 0.35}
-          length={2.0}
-          cabinetColor={cabinetColor}
-          countertopProduct={countertopProduct}
-          backsplashProduct={backsplashProduct}
-          thicknessMm={thicknessMm}
-          veinRotation={veinRotation}
-        />
-        {/* Corner filler for the upper cabinets: the main run's upper
-            cabinet only spans its own width (down to x=-1.8) and the
-            return leg's only spans its own length (back to z=-1.32), so the
-            wall-and-ceiling rectangle behind the inside corner between them
-            was left bare -- visible as a plain, unclad wall panel from a
-            side angle. This block occupies exactly that rectangle, flush
-            against the side wall and sharing the main run's own upper
-            cabinet depth/height, so it reads as one continuous run turning
-            the corner. */}
-        <SolidBox args={[0.9, 0.55, 0.43]} position={[-2.25, 1.15, -1.535]} color={cabinetColor} roughness={0.55} />
-      </>
-    )}
+      {layout === "island" && (
+        <>
+          <WallRun
+            width={3.8}
+            centerX={0.1}
+            z={-1.05}
+            cabinetColor={cabinetColor}
+            cabinetTexture={cabinetTexture}
+            countertopProduct={countertopProduct}
+            backsplashProduct={backsplashProduct}
+            thicknessMm={thicknessMm}
+            veinRotation={veinRotation}
+            edgeProfile={edgeProfile}
+          />
+          <Island
+            cabinetColor={cabinetColor}
+            cabinetTexture={cabinetTexture}
+            countertopProduct={countertopProduct}
+            waterfall={waterfall}
+            thicknessMm={thicknessMm}
+            veinRotation={veinRotation}
+            edgeProfile={edgeProfile}
+          />
+        </>
+      )}
 
-    {layout === "galley" && (
-      <>
-        <WallRun
-          width={3.8}
-          centerX={0.1}
-          z={-1.05}
-          cabinetColor={cabinetColor}
-          countertopProduct={countertopProduct}
-          backsplashProduct={backsplashProduct}
-          thicknessMm={thicknessMm}
-          veinRotation={veinRotation}
-          edgeProfile={edgeProfile}
-        />
-        <WallRun
-          width={3.4}
-          centerX={0.1}
-          z={0.95}
-          cabinetColor={cabinetColor}
-          countertopProduct={countertopProduct}
-          backsplashProduct={null}
-          withUpper={false}
-          withSink={false}
-          thicknessMm={thicknessMm}
-          veinRotation={veinRotation}
-          edgeProfile={edgeProfile}
-        />
-      </>
-    )}
-  </group>
-);
+      {layout === "lshape" && (
+        <>
+          <WallRun
+            width={3.8}
+            centerX={0.1}
+            z={-1.05}
+            cabinetColor={cabinetColor}
+            cabinetTexture={cabinetTexture}
+            countertopProduct={countertopProduct}
+            backsplashProduct={backsplashProduct}
+            thicknessMm={thicknessMm}
+            veinRotation={veinRotation}
+            edgeProfile={edgeProfile}
+          />
+          {/* Perpendicular return leg, built as a proper T-join off the main
+              run's own left edge and the side wall (see ReturnLeg) instead of
+              a rotated copy of WallRun with hand-tuned offsets -- that
+              approach kept drifting out of sync and leaving gaps at either
+              the inside corner or the side wall. */}
+          <ReturnLeg
+            sideWallX={-2.7}
+            mainLeftEdge={0.1 - (3.8 + 0.16) / 2}
+            mainBackZ={-1.05 - 0.35}
+            length={2.0}
+            cabinetColor={cabinetColor}
+            cabinetTexture={cabinetTexture}
+            countertopProduct={countertopProduct}
+            backsplashProduct={backsplashProduct}
+            thicknessMm={thicknessMm}
+            veinRotation={veinRotation}
+          />
+          {/* Corner filler for the upper cabinets: the main run's upper
+              cabinet only spans its own width (down to x=-1.8) and the
+              return leg's only spans its own length (back to z=-1.32), so the
+              wall-and-ceiling rectangle behind the inside corner between them
+              was left bare -- visible as a plain, unclad wall panel from a
+              side angle. This block occupies exactly that rectangle, flush
+              against the side wall and sharing the main run's own upper
+              cabinet depth/height, so it reads as one continuous run turning
+              the corner. */}
+          <SolidBox args={[0.9, 0.55, 0.43]} position={[-2.25, 1.15, -1.535]} color={cabinetColor} roughness={0.55} map={cabinetTexture} />
+        </>
+      )}
+
+      {layout === "galley" && (
+        <>
+          <WallRun
+            width={3.8}
+            centerX={0.1}
+            z={-1.05}
+            cabinetColor={cabinetColor}
+            cabinetTexture={cabinetTexture}
+            countertopProduct={countertopProduct}
+            backsplashProduct={backsplashProduct}
+            thicknessMm={thicknessMm}
+            veinRotation={veinRotation}
+            edgeProfile={edgeProfile}
+          />
+          <WallRun
+            width={3.4}
+            centerX={0.1}
+            z={0.95}
+            cabinetColor={cabinetColor}
+            cabinetTexture={cabinetTexture}
+            countertopProduct={countertopProduct}
+            backsplashProduct={null}
+            withUpper={false}
+            withSink={false}
+            thicknessMm={thicknessMm}
+            veinRotation={veinRotation}
+            edgeProfile={edgeProfile}
+          />
+        </>
+      )}
+    </group>
+  );
+};
 
 export default KitchenScene;

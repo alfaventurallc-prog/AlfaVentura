@@ -51,6 +51,50 @@ const usePlankTexture = (color: string) => {
   return texture;
 };
 
+/** Bakes subtle wood-grain streaks into a canvas texture for cabinet
+ * carcasses -- a flat meshStandardMaterial color on a large cabinet face
+ * reads as plastic/laminate with nothing to catch the eye; a faint grain
+ * pattern (even a procedural one, not a real wood photo) is enough to read
+ * as a painted/stained wood finish instead. */
+export const useWoodGrainTexture = (color: string) => {
+  const texture = useMemo(() => {
+    if (typeof document === "undefined") return null;
+    const canvas = document.createElement("canvas");
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return null;
+    ctx.fillStyle = color;
+    ctx.fillRect(0, 0, 256, 256);
+    for (let i = 0; i < 70; i++) {
+      const x = Math.random() * 256;
+      ctx.strokeStyle = Math.random() > 0.5 ? "rgba(0,0,0,0.05)" : "rgba(255,255,255,0.05)";
+      ctx.lineWidth = 0.5 + Math.random() * 1.4;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.bezierCurveTo(
+        x + Math.random() * 8 - 4,
+        90,
+        x + Math.random() * 8 - 4,
+        180,
+        x + Math.random() * 6 - 3,
+        256
+      );
+      ctx.stroke();
+    }
+    const tex = new THREE.CanvasTexture(canvas);
+    tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+    tex.repeat.set(2, 1.4);
+    tex.colorSpace = THREE.SRGBColorSpace;
+    tex.needsUpdate = true;
+    return tex;
+  }, [color]);
+
+  useEffect(() => () => texture?.dispose(), [texture]);
+
+  return texture;
+};
+
 export const Floor = ({ color = DEFAULT_FLOOR_COLOR, roughness = 0.95 }: { color?: string; roughness?: number }) => {
   const plankTexture = usePlankTexture(color);
   return (

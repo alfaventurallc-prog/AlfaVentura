@@ -223,8 +223,9 @@ const TexturedFace = ({
               map={texture}
               normalMap={normalMap ?? undefined}
               normalScale={normalMap ? new THREE.Vector2(0.45, 0.45) : undefined}
-              roughness={0.22}
+              roughness={0.15}
               metalness={0}
+              envMapIntensity={1.15}
               emissive={highlighted ? HIGHLIGHT_COLOR : "#000000"}
               emissiveIntensity={highlighted ? 0.06 : 0}
             />
@@ -302,9 +303,10 @@ export const SolidBox = ({
   color = "#9B7040",
   roughness = 0.6,
   metalness = 0,
-}: FaceProps & { color?: string; roughness?: number; metalness?: number }) => (
+  map,
+}: FaceProps & { color?: string; roughness?: number; metalness?: number; map?: THREE.Texture | null }) => (
   <mesh position={position} castShadow receiveShadow>
     <boxGeometry args={args} />
-    <meshStandardMaterial color={color} roughness={roughness} metalness={metalness} />
+    <meshStandardMaterial color={map ? "#ffffff" : color} map={map ?? undefined} roughness={roughness} metalness={metalness} />
   </mesh>
 );
