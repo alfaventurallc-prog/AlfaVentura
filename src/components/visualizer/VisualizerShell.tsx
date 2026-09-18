@@ -3,8 +3,11 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { CameraControls as CameraControlsImpl } from "@react-three/drei";
 import { toast } from "sonner";
+import { Heart, Save, Share2, Download as DownloadIcon, Columns2, X } from "lucide-react";
 import VisualizerCanvas from "./VisualizerCanvas";
 import ProductImageGallery from "./ProductImageGallery";
+import RoomUploadPanel from "./RoomUploadPanel";
+import OnboardingBanner from "./OnboardingBanner";
 import SceneControls from "./SceneControls";
 import LayoutSelector from "./LayoutSelector";
 import MaterialCategorySelector, { type SwatchItem } from "./MaterialCategorySelector";
@@ -55,17 +58,26 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
   const [cabinetColor, setCabinetColor] = useState(DEFAULT_CABINET_COLOR);
   const [favoritesOpen, setFavoritesOpen] = useState(false);
   const [hasSavedDesign, setHasSavedDesign] = useState(false);
-  // Two modes sharing one product/material config above: an interactive 3D
-  // kitchen, and a real-photo gallery for the selected product (the "Image
+  // Three modes sharing one product/material config above: an interactive
+  // 3D kitchen, a real-photo gallery for the selected product ("Image
   // Visualizer" -- deliberately just the actual uploaded product photos,
-  // not a fabricated installed-kitchen composite).
-  const [mode, setMode] = useState<"3d" | "image">("3d");
+  // not a fabricated installed-kitchen composite), and "Upload" -- the
+  // user's own room photo with the selected materials shown as sample
+  // swatches over it.
+  const [mode, setMode] = useState<"3d" | "image" | "upload">("3d");
   const [surfaceSearch, setSurfaceSearch] = useState("");
   const surfaceCarouselRef = useRef<HTMLDivElement | null>(null);
 
   const cameraControlsRef = useRef<CameraControlsImpl | null>(null);
+  const compareCameraControlsRef = useRef<CameraControlsImpl | null>(null);
   const canvasContainerRef = useRef<HTMLDivElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
+
+  // "Compare Designs": freezes the current config+cabinet color as a
+  // snapshot, then keeps rendering it side-by-side with the live config
+  // while the user keeps changing materials -- so they can compare the
+  // look they had against whatever they're trying next.
+  const [snapshot, setSnapshot] = useState<{ config: KitchenConfig; cabinetColor: string } | null>(null);
 
   const { favorites, isFavorite, toggleFavorite } = useFavorites();
 
@@ -105,8 +117,8 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
   // product's real photos (images[]) is selected as the texture source,
   // falling back to the first photo if that index doesn't exist for this
   // product (not every product has a second photo).
-  const withTexturePhoto = (p: VisualizerProduct | null): VisualizerProduct | null =>
-    p ? { ...p, image: p.images[config.photoIndex] ?? p.images[0] ?? p.image } : null;
+  const withTexturePhoto = (p: VisualizerProduct | null, photoIndex = config.photoIndex): VisualizerProduct | null =>
+    p ? { ...p, image: p.images[photoIndex] ?? p.images[0] ?? p.image } : null;
   const countertopTextureProduct = withTexturePhoto(countertopProduct);
   const backsplashTextureProduct = withTexturePhoto(backsplashProduct);
 
@@ -180,7 +192,24 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
     }
   };
 
+  const handleToggleCompare = () => {
+    if (snapshot) {
+      setSnapshot(null);
+      return;
+    }
+    setSnapshot({ config, cabinetColor });
+    toast.success("Snapshot A locked in — change materials to compare against it.");
+  };
+
+  const snapshotCountertop = snapshot ? quartzProducts.find((p) => p.id === snapshot.config.countertopId) ?? null : null;
+  const snapshotBacksplash = snapshot ? quartzProducts.find((p) => p.id === snapshot.config.backsplashId) ?? null : null;
+  const snapshotFloor = snapshot ? FLOOR_FINISHES.find((f) => f.id === snapshot.config.floorId) ?? FLOOR_FINISHES[0] : null;
+
   const handleDownload = async () => {
+    if (mode === "upload") {
+      toast.info("Use the Export button on your uploaded photo to download it with the material swatches.");
+      return;
+    }
     if (mode === "image") {
       if (!countertopProduct) return;
       try {
@@ -208,9 +237,11 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
   return (
     <div className="flex flex-col lg:flex-row lg:items-start gap-6 lg:gap-8">
       <div className="flex-1 min-w-0 flex flex-col gap-5">
+        <OnboardingBanner />
+
         <div className="flex items-center justify-between gap-3 flex-wrap">
           <div className="inline-flex gap-1 p-1 rounded-full bg-[#F0E8DB] shadow-inner-glow">
-            {(["3d", "image"] as const).map((m) => (
+            {(["3d", "image", "upload"] as const).map((m) => (
               <button
                 key={m}
                 type="button"
@@ -219,68 +250,145 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
                   mode === m ? "bg-[#1C1917] text-white shadow-premium" : "text-[#8A7B68] hover:text-[#1C1917]"
                 }`}
               >
-                {m === "3d" ? "3D Visualizer" : "Image Visualizer"}
+                {m === "3d" ? "3D Visualizer" : m === "image" ? "Image Visualizer" : "Upload Your Room"}
               </button>
             ))}
           </div>
 
-          {mode === "3d" && (
-            <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-bold uppercase tracking-wide text-[#A8987F]">Space</span>
-              <div className="flex gap-1.5 flex-wrap">
-                <button
-                  type="button"
-                  className="px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide bg-[#9B7040] text-white shadow-premium"
-                >
-                  Kitchen
-                </button>
-                {["Bathroom", "Living", "Commercial"].map((space) => (
+          <div className="flex items-center gap-2 flex-wrap">
+            {mode === "3d" && (
+              <button
+                type="button"
+                onClick={handleToggleCompare}
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-all duration-200 ${
+                  snapshot ? "bg-[#9B7040] text-white shadow-premium-hover" : "bg-[#F5F1EA] text-[#78716C] shadow-premium hover:bg-white hover:text-[#1C1917]"
+                }`}
+              >
+                <Columns2 size={13} /> {snapshot ? "Exit Compare" : "Compare"}
+              </button>
+            )}
+            {mode === "3d" && (
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold uppercase tracking-wide text-[#A8987F]">Space</span>
+                <div className="flex gap-1.5 flex-wrap">
                   <button
-                    key={space}
                     type="button"
-                    disabled
-                    title="Coming soon"
-                    className="px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide bg-[#F5F1EA] text-[#C4BCAF] cursor-not-allowed"
+                    className="px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide bg-[#9B7040] text-white shadow-premium"
                   >
-                    {space}
+                    Kitchen
                   </button>
-                ))}
+                  {["Bathroom", "Living", "Commercial"].map((space) => (
+                    <button
+                      key={space}
+                      type="button"
+                      disabled
+                      title="Coming soon"
+                      className="px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide bg-[#F5F1EA] text-[#C4BCAF] cursor-not-allowed"
+                    >
+                      {space}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
-          )}
+            )}
+          </div>
         </div>
 
         <div
           ref={canvasContainerRef}
-          className="relative w-full h-[64vh] min-h-[440px] max-h-[680px] rounded-2xl overflow-hidden bg-[#EDE6DA] border border-[#F0E8DB] shadow-premium-lg"
+          className={`relative w-full h-[64vh] min-h-[440px] max-h-[680px] rounded-2xl overflow-hidden bg-[#EDE6DA] border border-[#F0E8DB] shadow-premium-lg ${
+            snapshot && mode === "3d" ? "grid grid-cols-1 md:grid-cols-2 gap-[2px] bg-[#F0E8DB]" : ""
+          }`}
         >
           {mode === "3d" ? (
-            <>
-              <VisualizerCanvas
-                layout={config.layout}
-                mirrored={config.mirrored}
-                cabinetColor={cabinetColor}
-                countertopProduct={countertopTextureProduct}
-                backsplashProduct={backsplashTextureProduct}
-                floorColor={floorFinish.color}
-                floorRoughness={floorFinish.roughness}
-                waterfall={config.waterfall}
-                thicknessMm={config.thicknessMm}
-                veinRotation={config.veinRotation}
-                edgeProfile={config.edgeProfile}
-                lightingMode={lightingMode}
-                cameraControlsRef={cameraControlsRef}
-                canvasRef={canvasRef}
-              />
-              <SceneControls
-                cameraControlsRef={cameraControlsRef}
-                fullscreenTargetRef={canvasContainerRef}
-                lightingMode={lightingMode}
-                onLightingChange={setLightingMode}
-              />
-            </>
-          ) : (
+            snapshot ? (
+              <>
+                <div className="relative w-full h-full overflow-hidden">
+                  <VisualizerCanvas
+                    layout={snapshot.config.layout}
+                    mirrored={snapshot.config.mirrored}
+                    cabinetColor={snapshot.cabinetColor}
+                    countertopProduct={withTexturePhoto(snapshotCountertop, snapshot.config.photoIndex)}
+                    backsplashProduct={withTexturePhoto(snapshotBacksplash, snapshot.config.photoIndex)}
+                    floorColor={snapshotFloor!.color}
+                    floorRoughness={snapshotFloor!.roughness}
+                    waterfall={snapshot.config.waterfall}
+                    thicknessMm={snapshot.config.thicknessMm}
+                    veinRotation={snapshot.config.veinRotation}
+                    edgeProfile={snapshot.config.edgeProfile}
+                    lightingMode={lightingMode}
+                    cameraControlsRef={compareCameraControlsRef}
+                  />
+                  <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-black/55 text-white text-[10px] font-bold uppercase tracking-wide">
+                    Design A
+                  </span>
+                  <button
+                    type="button"
+                    onClick={handleToggleCompare}
+                    aria-label="Exit compare"
+                    className="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/45 hover:bg-black/65 text-white flex items-center justify-center transition-colors duration-200"
+                  >
+                    <X size={13} />
+                  </button>
+                </div>
+                <div className="relative w-full h-full overflow-hidden">
+                  <VisualizerCanvas
+                    layout={config.layout}
+                    mirrored={config.mirrored}
+                    cabinetColor={cabinetColor}
+                    countertopProduct={countertopTextureProduct}
+                    backsplashProduct={backsplashTextureProduct}
+                    floorColor={floorFinish.color}
+                    floorRoughness={floorFinish.roughness}
+                    waterfall={config.waterfall}
+                    thicknessMm={config.thicknessMm}
+                    veinRotation={config.veinRotation}
+                    edgeProfile={config.edgeProfile}
+                    lightingMode={lightingMode}
+                    cameraControlsRef={cameraControlsRef}
+                    canvasRef={canvasRef}
+                  />
+                  <span className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-[#9B7040] text-white text-[10px] font-bold uppercase tracking-wide">
+                    Design B (current)
+                  </span>
+                  <SceneControls
+                    cameraControlsRef={cameraControlsRef}
+                    fullscreenTargetRef={canvasContainerRef}
+                    lightingMode={lightingMode}
+                    onLightingChange={setLightingMode}
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <VisualizerCanvas
+                  layout={config.layout}
+                  mirrored={config.mirrored}
+                  cabinetColor={cabinetColor}
+                  countertopProduct={countertopTextureProduct}
+                  backsplashProduct={backsplashTextureProduct}
+                  floorColor={floorFinish.color}
+                  floorRoughness={floorFinish.roughness}
+                  waterfall={config.waterfall}
+                  thicknessMm={config.thicknessMm}
+                  veinRotation={config.veinRotation}
+                  edgeProfile={config.edgeProfile}
+                  lightingMode={lightingMode}
+                  cameraControlsRef={cameraControlsRef}
+                  canvasRef={canvasRef}
+                />
+                <SceneControls
+                  cameraControlsRef={cameraControlsRef}
+                  fullscreenTargetRef={canvasContainerRef}
+                  lightingMode={lightingMode}
+                  onLightingChange={setLightingMode}
+                />
+              </>
+            )
+          ) : mode === "image" ? (
             <ProductImageGallery product={countertopProduct} />
+          ) : (
+            <RoomUploadPanel countertopProduct={countertopProduct} backsplashProduct={backsplashProduct} cabinetColor={cabinetColor} />
           )}
         </div>
 
@@ -491,44 +599,79 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
       <div className="lg:w-[320px] lg:shrink-0 lg:pl-6 lg:border-l lg:border-[#F0E8DB] space-y-5">
         <ProductInfoPanel product={countertopProduct} />
 
-        <div className="bg-white rounded-2xl shadow-premium border border-[#F0E8DB] p-4 flex flex-wrap gap-2">
-          <button
-            type="button"
-            onClick={() => setFavoritesOpen(true)}
-            className="px-3 py-2 rounded-lg text-xs font-semibold border border-[#E8DDD0] text-[#44403C] hover:border-[#9B7040] hover:bg-[#FDFAF7] hover:-translate-y-0.5 transition-all duration-200"
-          >
-            ♥ My Selections ({favorites.length})
-          </button>
-          <button
-            type="button"
-            onClick={handleSaveDesign}
-            className="px-3 py-2 rounded-lg text-xs font-semibold border border-[#E8DDD0] text-[#44403C] hover:border-[#9B7040] hover:bg-[#FDFAF7] hover:-translate-y-0.5 transition-all duration-200"
-          >
-            Save Design
-          </button>
-          {hasSavedDesign && (
+        <div className="bg-white rounded-2xl shadow-premium border border-[#F0E8DB] p-4 space-y-3">
+          <p className="text-xs font-bold uppercase tracking-wide text-[#A8987F]">Actions</p>
+          <div className="grid grid-cols-2 gap-2">
             <button
               type="button"
-              onClick={handleLoadSavedDesign}
-              className="px-3 py-2 rounded-lg text-xs font-semibold border border-[#E8DDD0] text-[#44403C] hover:border-[#9B7040] hover:bg-[#FDFAF7] hover:-translate-y-0.5 transition-all duration-200"
+              onClick={handleSaveDesign}
+              className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold bg-[#9B7040] text-white shadow-premium hover:shadow-premium-hover hover:-translate-y-0.5 transition-all duration-200"
             >
-              Load Saved
+              <Save size={14} /> Save Design
+            </button>
+            <button
+              type="button"
+              onClick={handleShare}
+              className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold border border-[#E8DDD0] text-[#44403C] shadow-premium hover:border-[#9B7040] hover:-translate-y-0.5 transition-all duration-200"
+            >
+              <Share2 size={14} /> Share Look
+            </button>
+            <button
+              type="button"
+              onClick={handleDownload}
+              className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold border border-[#E8DDD0] text-[#44403C] shadow-premium hover:border-[#9B7040] hover:-translate-y-0.5 transition-all duration-200"
+            >
+              <DownloadIcon size={14} /> Download
+            </button>
+            {hasSavedDesign ? (
+              <button
+                type="button"
+                onClick={handleLoadSavedDesign}
+                className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold border border-[#E8DDD0] text-[#44403C] shadow-premium hover:border-[#9B7040] hover:-translate-y-0.5 transition-all duration-200"
+              >
+                Load Saved
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleToggleCompare}
+                className="flex items-center justify-center gap-1.5 px-3 py-2.5 rounded-xl text-xs font-bold border border-[#E8DDD0] text-[#44403C] shadow-premium hover:border-[#9B7040] hover:-translate-y-0.5 transition-all duration-200"
+              >
+                <Columns2 size={14} /> Compare
+              </button>
+            )}
+          </div>
+        </div>
+
+        <div className="bg-white rounded-2xl shadow-premium border border-[#F0E8DB] p-4 space-y-3">
+          <div className="flex items-center justify-between">
+            <p className="text-xs font-bold uppercase tracking-wide text-[#A8987F] flex items-center gap-1.5">
+              <Heart size={13} className={favorites.length > 0 ? "fill-[#9B7040] text-[#9B7040]" : ""} /> My Selections ({favorites.length})
+            </p>
+            {favorites.length > 0 && (
+              <button type="button" onClick={() => setFavoritesOpen(true)} className="text-xs font-semibold text-[#9B7040] hover:underline">
+                View all
+              </button>
+            )}
+          </div>
+          {favorites.length === 0 ? (
+            <p className="text-xs text-[#A8987F]">Tap the ♡ on any material to save it here.</p>
+          ) : (
+            <button type="button" onClick={() => setFavoritesOpen(true)} className="flex gap-2 overflow-x-auto pb-1 w-full text-left">
+              {favorites.slice(0, 6).map((entry) => {
+                const item = catalog[entry.category as MaterialCategory]?.find((i) => i.id === entry.productId);
+                if (!item) return null;
+                return (
+                  <span
+                    key={`${entry.category}:${entry.productId}`}
+                    className="shrink-0 w-11 h-11 rounded-lg border border-[#E8DDD0] bg-cover bg-center shadow-premium"
+                    style={item.thumbnail ? { backgroundImage: `url(${item.thumbnail})` } : { backgroundColor: item.color }}
+                    title={item.name}
+                  />
+                );
+              })}
             </button>
           )}
-          <button
-            type="button"
-            onClick={handleShare}
-            className="px-3 py-2 rounded-lg text-xs font-semibold border border-[#E8DDD0] text-[#44403C] hover:border-[#9B7040] hover:bg-[#FDFAF7] hover:-translate-y-0.5 transition-all duration-200"
-          >
-            Share Look
-          </button>
-          <button
-            type="button"
-            onClick={handleDownload}
-            className="px-3 py-2 rounded-lg text-xs font-semibold border border-[#E8DDD0] text-[#44403C] hover:border-[#9B7040] hover:bg-[#FDFAF7] hover:-translate-y-0.5 transition-all duration-200"
-          >
-            Download
-          </button>
         </div>
       </div>
 
