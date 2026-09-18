@@ -276,9 +276,20 @@ const ReturnLeg = ({
 }) => {
   const topY = 0.09;
   const slabHeight = topY * thicknessScale(thicknessMm);
+  // The main run's countertop and this one meet at the exact same plane
+  // (x = mainLeftEdge) computed the exact same way in both places, so in
+  // principle they touch with zero gap -- but two independently-drawn
+  // meshes sharing a perfectly coincident edge are still prone to a
+  // hairline seam/z-fight at that boundary from GPU floating-point
+  // rounding. OVERLAP nudges this slab 1.5cm further under the main run's
+  // countertop (invisible -- both show the same slab surface there) and
+  // Y_EPS drops it a fraction of a millimeter so the main run's top
+  // consistently wins the depth test in that sliver instead of flickering.
+  const OVERLAP = 0.015;
+  const Y_EPS = 0.0006;
 
-  const ctDepth = mainLeftEdge - sideWallX;
-  const ctCenterX = (sideWallX + mainLeftEdge) / 2;
+  const ctDepth = mainLeftEdge - sideWallX + OVERLAP;
+  const ctCenterX = (sideWallX + (mainLeftEdge + OVERLAP)) / 2;
   const ctFrontZ = mainBackZ + length;
   const ctCenterZ = (mainBackZ + ctFrontZ) / 2;
 
@@ -313,7 +324,7 @@ const ReturnLeg = ({
       <MaterialSurface
         product={countertopProduct}
         args={[ctDepth, slabHeight, length]}
-        position={[ctCenterX, topY - slabHeight / 2, ctCenterZ]}
+        position={[ctCenterX, topY - slabHeight / 2 - Y_EPS, ctCenterZ]}
         heroFace="top"
         veinRotationDeg={veinRotation}
       />
@@ -545,6 +556,17 @@ const KitchenScene = ({
               cabinet depth/height, so it reads as one continuous run turning
               the corner. */}
           <SolidBox args={[0.9, 0.55, 0.43]} position={[-2.25, 1.15, -1.535]} color={cabinetColor} roughness={0.55} map={cabinetTexture} />
+          {/* Corner filler for the backsplash: the main run's backsplash
+              only spans X down to -1.88 (its own countertop's left edge)
+              and the return leg's only spans X from -2.70 to -2.60 (its
+              own thin panel flush against the side wall) -- neither
+              covers the X:[-2.60,-1.88] strip behind the inside corner,
+              which showed up as a gap/white strip of bare wall visible
+              between the two backsplash panels. This block spans the full
+              wall-to-wall corner rectangle (matching the upper-cabinet
+              corner filler's X/Z footprint) at the same backsplash
+              height/thickness as both walls' own panels. */}
+          <MaterialSurface product={backsplashProduct} args={[0.82, 0.785, 0.43]} position={[-2.29, 0.4825, -1.535]} heroFace="sideEnd" />
         </>
       )}
 
