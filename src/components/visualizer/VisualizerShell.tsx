@@ -49,7 +49,6 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
     thicknessMm: 20,
     veinRotation: 0,
     edgeProfile: "square",
-    photoIndex: 0,
     syncBacksplash: false,
   });
   const [activeCategory, setActiveCategory] = useState<MaterialCategory>("countertop");
@@ -110,12 +109,12 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
   const backsplashProduct = quartzProducts.find((p) => p.id === config.backsplashId) ?? null;
   const floorFinish = FLOOR_FINISHES.find((f) => f.id === config.floorId) ?? FLOOR_FINISHES[0];
 
-  // The 3D surfaces texture from `.image` -- swap in whichever of the
-  // product's real photos (images[]) is selected as the texture source,
-  // falling back to the first photo if that index doesn't exist for this
-  // product (not every product has a second photo).
-  const withTexturePhoto = (p: VisualizerProduct | null, photoIndex = config.photoIndex): VisualizerProduct | null =>
-    p ? { ...p, image: p.images[photoIndex] ?? p.images[0] ?? p.image } : null;
+  // The 3D surfaces texture from `.image` -- always uses the product's
+  // second real photo (images[1]) as the texture source, per the removed
+  // "Texture Photo" selector's Photo 2 option, falling back to the first
+  // photo if a product doesn't have a second one.
+  const withTexturePhoto = (p: VisualizerProduct | null): VisualizerProduct | null =>
+    p ? { ...p, image: p.images[1] ?? p.images[0] ?? p.image } : null;
   const countertopTextureProduct = withTexturePhoto(countertopProduct);
   const backsplashTextureProduct = withTexturePhoto(backsplashProduct);
 
@@ -301,8 +300,8 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
                     layout={snapshot.config.layout}
                     mirrored={snapshot.config.mirrored}
                     cabinetColor={snapshot.cabinetColor}
-                    countertopProduct={withTexturePhoto(snapshotCountertop, snapshot.config.photoIndex)}
-                    backsplashProduct={withTexturePhoto(snapshotBacksplash, snapshot.config.photoIndex)}
+                    countertopProduct={withTexturePhoto(snapshotCountertop)}
+                    backsplashProduct={withTexturePhoto(snapshotBacksplash)}
                     floorColor={snapshotFloor!.color}
                     floorRoughness={snapshotFloor!.roughness}
                     waterfall={snapshot.config.waterfall}
@@ -393,26 +392,6 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
             />
 
           <div className="bg-white rounded-2xl shadow-premium border border-[#F0E8DB] p-5 space-y-4">
-            {(countertopProduct?.images.length ?? 0) > 1 && (
-              <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-bold uppercase tracking-wide text-[#A8987F]">Texture Photo</span>
-                <div className="flex gap-1.5">
-                  {countertopProduct!.images.map((_, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => setConfig((prev) => ({ ...prev, photoIndex: i }))}
-                      className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-all duration-200 ${
-                        config.photoIndex === i ? "bg-[#1C1917] text-white shadow-premium-hover" : "bg-[#F5F1EA] text-[#78716C] shadow-premium hover:bg-white hover:text-[#1C1917]"
-                      }`}
-                    >
-                      Photo {i + 1}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
             <div className="flex items-center gap-2 flex-wrap">
               <span className="text-xs font-bold uppercase tracking-wide text-[#A8987F]">Thickness</span>
               <div className="flex gap-1.5">
