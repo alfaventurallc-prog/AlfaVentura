@@ -1,6 +1,6 @@
 import * as THREE from "three";
 import { MaterialSurface, SolidBox } from "../MaterialSurface";
-import { Floor, SideWall, useWoodGrainTexture } from "./roomParts";
+import { BackWall, Ceiling, Floor, SideWall, Window, useWoodGrainTexture } from "./roomParts";
 import type { LayoutId, ThicknessMm, EdgeProfile } from "@/data/kitchenCatalog";
 import { thicknessScale } from "@/data/kitchenCatalog";
 import type { WaterfallOption } from "@/lib/visualizerUrlState";
@@ -69,9 +69,17 @@ const CabinetDoor = ({
   <group>
     <SolidBox args={[width, height, 0.035]} position={[x, y, z]} color={color} roughness={0.4} />
     {/* recessed center panel -- a shaker-style groove line so the door
-        reads as a real panel instead of one flat block of color. */}
-    <SolidBox args={[width - 0.09, height - 0.14, 0.012]} position={[x, y, z - 0.006]} color={darken(color, 0.82)} roughness={0.5} />
-    <SolidBox args={[width - 0.06, 0.012, 0.012]} position={[x, y + height / 2 - 0.05, z + 0.03]} color={HANDLE_COLOR} roughness={0.3} />
+        reads as a real panel instead of one flat block of color. Darkened
+        further (0.82 -> 0.68) so the panel division is actually visible
+        instead of reading as a near-invisible tonal shift. */}
+    <SolidBox args={[width - 0.09, height - 0.14, 0.012]} position={[x, y, z - 0.006]} color={darken(color, 0.68)} roughness={0.5} />
+    {/* cylindrical knob instead of a flat handle bar -- catches a small
+        specular highlight and reads as real hardware rather than a
+        painted-on stripe. */}
+    <mesh position={[x, y + height / 2 - 0.06, z + 0.032]} rotation={[Math.PI / 2, 0, 0]} castShadow>
+      <cylinderGeometry args={[0.011, 0.011, 0.045, 10]} />
+      <meshStandardMaterial color={HANDLE_COLOR} roughness={0.25} metalness={0.6} />
+    </mesh>
   </group>
 );
 
@@ -243,8 +251,11 @@ const ReturnLegDoor = ({
 }) => (
   <group>
     <SolidBox args={[0.035, height, width]} position={[x, y, z]} color={color} roughness={0.4} />
-    <SolidBox args={[0.012, height - 0.14, width - 0.09]} position={[x - 0.006, y, z]} color={darken(color, 0.82)} roughness={0.5} />
-    <SolidBox args={[0.012, 0.012, width - 0.06]} position={[x + 0.03, y + height / 2 - 0.05, z]} color={HANDLE_COLOR} roughness={0.3} />
+    <SolidBox args={[0.012, height - 0.14, width - 0.09]} position={[x - 0.006, y, z]} color={darken(color, 0.68)} roughness={0.5} />
+    <mesh position={[x + 0.032, y + height / 2 - 0.06, z]} rotation={[0, 0, Math.PI / 2]} castShadow>
+      <cylinderGeometry args={[0.011, 0.011, 0.045, 10]} />
+      <meshStandardMaterial color={HANDLE_COLOR} roughness={0.25} metalness={0.6} />
+    </mesh>
   </group>
 );
 
@@ -348,6 +359,11 @@ const ReturnLeg = ({
   );
 };
 
+// Pendant shade radius/bulb size trimmed down (0.13/0.1 -> 0.1/0.075) --
+// at the previous steep top-down camera angle this read as a disc with a
+// thin line through its center, i.e. a clock face rather than a light
+// fixture. Still oversized enough to read correctly from the new
+// eye-level camera.
 const PendantLight = ({ x, z }: { x: number; z: number }) => (
   <group position={[x, 0, z]}>
     <mesh position={[0, 1.55, 0]}>
@@ -355,11 +371,11 @@ const PendantLight = ({ x, z }: { x: number; z: number }) => (
       <meshStandardMaterial color="#2A241E" roughness={0.4} />
     </mesh>
     <mesh position={[0, 1.16, 0]} castShadow>
-      <cylinderGeometry args={[0.1, 0.13, 0.16, 24, 1, true]} />
+      <cylinderGeometry args={[0.075, 0.1, 0.16, 24, 1, true]} />
       <meshStandardMaterial color="#2A241E" roughness={0.35} metalness={0.3} side={THREE.DoubleSide} />
     </mesh>
     <mesh position={[0, 1.09, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-      <circleGeometry args={[0.1, 24]} />
+      <circleGeometry args={[0.075, 24]} />
       <meshStandardMaterial color="#FFE9C2" emissive="#FFD9A0" emissiveIntensity={1.2} toneMapped={false} />
     </mesh>
   </group>
@@ -472,12 +488,23 @@ const KitchenScene = ({
   return (
     <group scale={[mirrored ? -1 : 1, 1, 1]}>
       <Floor color={floorColor} roughness={floorRoughness} />
+      <BackWall color={WALL_COLOR} />
       <SideWall color={WALL_COLOR} x={-2.7} />
-      {/* free-standing fridge along the side wall, clear of the island/L-shape
-          return leg footprint and positioned so it actually sits inside the
-          default camera frame (the earlier spot past the main run's right end
-          was outside the view frustum entirely). */}
-      <Fridge x={-2.15} z={1.35} facing={Math.PI / 2} />
+      <Ceiling />
+      {/* Window on the back wall, past the right end of the main run
+          (x=2.0) so it isn't hidden behind the upper cabinets -- a bare
+          wall reads as a stage backdrop rather than a real kitchen.
+          rotationY=0 because BackWall already faces +Z with no rotation
+          (unlike the side wall, which Window's default rotation was built
+          for). */}
+      <Window x={2.6} z={-1.74} y={1.35} rotationY={0} />
+      {/* Fridge along the side wall, pushed flush against it (x=-2.34,
+          depth 0.72 half-width 0.36 from the wall at x=-2.7) -- it was
+          previously 0.19 units short of the wall, reading as a
+          disconnected floating block instead of a built-in appliance.
+          Kept clear of the island/L-shape return leg footprint and inside
+          the default camera frame. */}
+      <Fridge x={-2.34} z={1.35} facing={Math.PI / 2} />
 
       {layout === "island" && (
         <>

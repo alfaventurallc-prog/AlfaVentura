@@ -138,14 +138,17 @@ const VisualizerCanvas = ({
               read as resting on the floor instead of floating -- a real
               shadow map alone left the underside of the toe-kick reading
               flat and disconnected from the floor. */}
-          <ContactShadows position={[0, -0.849, 0]} opacity={isDay ? 0.45 : 0.6} scale={10} blur={2.2} far={1.2} />
+          <ContactShadows position={[0, -0.849, 0]} opacity={isDay ? 0.55 : 0.7} scale={10} blur={2.8} far={1.2} />
           <Environment preset={isDay ? "apartment" : "sunset"} environmentIntensity={isDay ? 0.35 : 0.3} />
         </Suspense>
         <CameraControls
           ref={cameraControlsRef}
           minDistance={0.9}
           maxDistance={9}
-          minPolarAngle={0.15}
+          // Was 0.15 (~8.6deg from straight down), which let users drag
+          // into a near-top-down "floor plan" view. 0.85 (~49deg) keeps
+          // the scene readable as a room from any angle the user drags to.
+          minPolarAngle={0.85}
           maxPolarAngle={Math.PI / 2.05}
         />
       </Canvas>
