@@ -267,6 +267,7 @@ export async function createProduct(productData: any) {
 
     revalidatePath("/admin/products");
     revalidatePath("/");
+    revalidatePath(`/products/${product.id}`);
 
     return {
       success: true,
@@ -331,6 +332,12 @@ export async function updateProduct(id: string, productData: any) {
 
     revalidatePath("/admin/products");
     revalidatePath("/");
+    // The public product detail page (src/app/(root)/products/[id]/page.tsx)
+    // was never revalidated on edit, so once Next.js cached its rendered
+    // output for a given id -- including, worst case, a cached "Product not
+    // found" from a transient DB hiccup -- it stayed stale forever, no
+    // matter how many times the product was edited afterward.
+    revalidatePath(`/products/${id}`);
 
     return {
       success: true,
@@ -365,6 +372,7 @@ export async function deleteProduct(id: string) {
 
     revalidatePath("/admin/products");
     revalidatePath("/");
+    revalidatePath(`/products/${id}`);
 
     return {
       success: true,
