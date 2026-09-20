@@ -110,11 +110,10 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
   const floorFinish = FLOOR_FINISHES.find((f) => f.id === config.floorId) ?? FLOOR_FINISHES[0];
 
   // The 3D surfaces texture from `.image` -- always uses the product's
-  // second real photo (images[1]) as the texture source, per the removed
-  // "Texture Photo" selector's Photo 2 option, falling back to the first
-  // photo if a product doesn't have a second one.
+  // first real photo (images[0], the main/front-view image) as the
+  // texture source.
   const withTexturePhoto = (p: VisualizerProduct | null): VisualizerProduct | null =>
-    p ? { ...p, image: p.images[1] ?? p.images[0] ?? p.image } : null;
+    p ? { ...p, image: p.images[0] ?? p.image } : null;
   const countertopTextureProduct = withTexturePhoto(countertopProduct);
   const backsplashTextureProduct = withTexturePhoto(backsplashProduct);
 
