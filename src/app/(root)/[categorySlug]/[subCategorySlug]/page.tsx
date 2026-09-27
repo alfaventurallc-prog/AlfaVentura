@@ -1,7 +1,7 @@
 import { getCategoryBySlug } from "@/actions/categories";
 import { ChevronRight, Home, Package } from "lucide-react";
-import Image from "next/image";
 import Link from "next/link";
+import ProductCard from "@/components/ProductCard";
 
 interface CategoryWithSubcategories {
   id: string;
@@ -150,45 +150,7 @@ const ProductsPage = async ({ params }: { params: Promise<{ categorySlug: string
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {allProducts.map((product) => (
-                <div key={product.id} className="group transition-all hover:-translate-y-1">
-                  <Link href={`/products/${product.id}`}>
-                    <div
-                      className={`bg-white relative rounded-xl border overflow-hidden border-[#E8DDD0] hover:shadow-[0_8px_28px_rgba(155,112,64,0.15)] transition-shadow ${
-                        product.isPremium ? "ring-2 ring-[#C9A96E]" : ""
-                      }`}
-                    >
-                      {product.isPremium && (
-                        <div className="absolute top-2 right-2 bg-[#C9A96E] text-white text-xs font-semibold px-2 py-1 rounded-full z-10">
-                          Premium
-                        </div>
-                      )}
-                      {product.images && product.images.length > 0 && (
-                        <div className="relative w-full h-64 overflow-hidden">
-                          <Image
-                            src={product.images[0]}
-                            alt={product.title}
-                            fill
-                            sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
-                            className="object-cover group-hover:scale-[1.04] transition-transform duration-500"
-                          />
-                        </div>
-                      )}
-                      <div className="p-4">
-                        <h3
-                          className="text-base font-semibold text-[#1C1917] mb-1"
-                          style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-                        >
-                          {product.title}
-                        </h3>
-                        {product.description && (
-                          <p className="text-sm text-[#6B5E52] line-clamp-2 whitespace-pre-line">
-                            {product.description}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </Link>
-                </div>
+                <ProductCard key={product.id} product={product} />
               ))}
             </div>
           </div>
