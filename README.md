@@ -50,3 +50,4 @@ The following devDependencies are used for development and build processes:
 - **[postcss](https://postcss.org/)**: ^8.5.3
 - **[tailwindcss](https://tailwindcss.com/)**: ^3.3.5
 - **[typescript](https://www.typescriptlang.org/)**: ^5
+
