@@ -64,6 +64,7 @@ const ShakerDoor = ({
   color,
   map,
   handle = "top",
+  glass = false,
 }: {
   position: [number, number, number];
   rotationY?: number;
@@ -72,6 +73,7 @@ const ShakerDoor = ({
   color: string;
   map?: THREE.Texture | null;
   handle?: "top" | "bottom";
+  glass?: boolean;
 }) => {
   const rail = 0.07;
   const railZ = SLAB / 2 + 0.006;
@@ -83,13 +85,26 @@ const ShakerDoor = ({
       <SolidBox args={[width, rail, 0.012]} position={[0, -height / 2 + rail / 2, railZ]} color={color} map={map} roughness={0.5} />
       <SolidBox args={[rail, height - rail * 2, 0.012]} position={[width / 2 - rail / 2, 0, railZ]} color={color} map={map} roughness={0.5} />
       <SolidBox args={[rail, height - rail * 2, 0.012]} position={[-width / 2 + rail / 2, 0, railZ]} color={color} map={map} roughness={0.5} />
-      <SolidBox
-        args={[width - rail * 2, height - rail * 2, 0.006]}
-        position={[0, 0, SLAB / 2 + 0.003]}
-        color={darken(color, 0.9)}
-        roughness={0.55}
-      />
-      <SolidBox args={[0.16, 0.014, 0.014]} position={[0, handleY, SLAB / 2 + 0.05]} color={HANDLE_COLOR} roughness={0.25} metalness={0.7} />
+      {glass ? (
+        <>
+          <mesh position={[0, 0, 0.0]}>
+            <boxGeometry args={[width - rail * 2, height - rail * 2, SLAB + 0.002]} />
+            <meshStandardMaterial color="#F3E2BF" emissive="#FFCF8A" emissiveIntensity={0.55} roughness={0.4} />
+          </mesh>
+          <mesh position={[0, 0, SLAB / 2 + 0.004]}>
+            <planeGeometry args={[width - rail * 2, height - rail * 2]} />
+            <meshPhysicalMaterial color="#CFE0E4" transparent opacity={0.22} roughness={0.05} metalness={0.1} />
+          </mesh>
+        </>
+      ) : (
+        <SolidBox
+          args={[width - rail * 2, height - rail * 2, 0.006]}
+          position={[0, 0, SLAB / 2 + 0.003]}
+          color={darken(color, 0.9)}
+          roughness={0.55}
+        />
+      )}
+      {!glass && <SolidBox args={[0.16, 0.014, 0.014]} position={[0, handleY, SLAB / 2 + 0.05]} color={HANDLE_COLOR} roughness={0.25} metalness={0.7} />}
       <SolidBox args={[0.012, 0.012, 0.04]} position={[-0.06, handleY, SLAB / 2 + 0.03]} color={HANDLE_COLOR} roughness={0.25} metalness={0.7} />
       <SolidBox args={[0.012, 0.012, 0.04]} position={[0.06, handleY, SLAB / 2 + 0.03]} color={HANDLE_COLOR} roughness={0.25} metalness={0.7} />
     </group>
@@ -113,6 +128,7 @@ const DoorRow = ({
   color,
   map,
   handle = "top",
+  glass = false,
 }: {
   axis: "x" | "z";
   front: number;
@@ -123,6 +139,7 @@ const DoorRow = ({
   color: string;
   map?: THREE.Texture | null;
   handle?: "top" | "bottom";
+  glass?: boolean;
 }) => {
   const length = to - from;
   const count = Math.max(1, Math.round(length / 0.95));
@@ -149,6 +166,7 @@ const DoorRow = ({
             color={color}
             map={map}
             handle={handle}
+            glass={glass}
           />
         );
       })}
@@ -192,19 +210,97 @@ const Microwave = ({ x, z, topY }: { x: number; z: number; topY: number }) => {
   );
 };
 
+/** Stack of drawers (front looks toward +Z) filling from..to along X. */
+const DrawerStack = ({ front, from, to, color, map }: { front: number; from: number; to: number; color: string; map?: THREE.Texture | null }) => {
+  const mid = (from + to) / 2;
+  const w = to - from - 0.016;
+  const hs = [0.21, 0.21, 0.26];
+  let top = -0.025;
+  return (
+    <group>
+      <SolidBox args={[to - from, 0.7, 0.004]} position={[mid, -0.375, front + 0.002]} color={RECESS_COLOR} roughness={0.9} />
+      {hs.map((h, i) => {
+        const y = top - h / 2;
+        top -= h + 0.008;
+        return <ShakerDoor key={i} position={[mid, y - 0.004, front + SLAB / 2]} width={w} height={h - 0.008} color={color} map={map} handle="top" />;
+      })}
+    </group>
+  );
+};
+
+/** Induction cooktop: black glass plate with four zones. */
+const Cooktop = ({ x, z, topY }: { x: number; z: number; topY: number }) => (
+  <group position={[x, topY + 0.006, z]}>
+    <SolidBox args={[0.6, 0.012, 0.5]} position={[0, 0, 0]} color="#0E0F10" roughness={0.1} metalness={0.4} />
+    {[[-0.15, -0.12], [0.15, -0.12], [-0.15, 0.12], [0.15, 0.12]].map(([dx, dz], i) => (
+      <mesh key={i} position={[dx, 0.007, dz]} rotation={[-Math.PI / 2, 0, 0]}>
+        <ringGeometry args={[0.07, 0.078, 32]} />
+        <meshStandardMaterial color="#3A3D40" roughness={0.3} />
+      </mesh>
+    ))}
+  </group>
+);
+
+/** Slim wall-mounted hood between the upper cabinets with warm lights. */
+const RangeHood = ({ x, z }: { x: number; z: number }) => (
+  <group position={[x, 0.79, z]}>
+    <SolidBox args={[0.9, 0.09, 0.5]} position={[0, 0, 0]} color="#2B2D2F" roughness={0.3} metalness={0.7} />
+    <SolidBox args={[0.86, 0.01, 0.46]} position={[0, -0.05, 0]} color="#8E9295" roughness={0.35} metalness={0.8} />
+    <mesh position={[0, -0.056, 0]}>
+      <boxGeometry args={[0.5, 0.004, 0.05]} />
+      <meshStandardMaterial color="#FFE9C2" emissive="#FFD9A0" emissiveIntensity={1.4} toneMapped={false} />
+    </mesh>
+  </group>
+);
+
+/** Small potted plant. */
+const Plant = ({ x, z, topY }: { x: number; z: number; topY: number }) => (
+  <group position={[x, topY, z]}>
+    <mesh position={[0, 0.05, 0]} castShadow>
+      <cylinderGeometry args={[0.06, 0.05, 0.1, 18]} />
+      <meshStandardMaterial color="#2A2B2D" roughness={0.6} />
+    </mesh>
+    {[[0, 0.17, 0, 0.075], [-0.05, 0.14, 0.02, 0.055], [0.05, 0.15, -0.02, 0.06], [0.01, 0.23, 0.01, 0.05]].map(([px, py, pz, r], i) => (
+      <mesh key={i} position={[px, py, pz]} castShadow>
+        <sphereGeometry args={[r, 12, 12]} />
+        <meshStandardMaterial color="#4E7A42" roughness={0.8} />
+      </mesh>
+    ))}
+  </group>
+);
+
+/** Black ceiling track with three spot heads. */
+const TrackLights = () => (
+  <group position={[-0.6, 2.17, -0.2]}>
+    <SolidBox args={[3.6, 0.03, 0.04]} position={[0, 0, 0]} color="#151617" roughness={0.5} />
+    {[-1.3, 0, 1.3].map((px, i) => (
+      <group key={i} position={[px, -0.05, 0]} rotation={[0, 0, 0.35]}>
+        <mesh>
+          <cylinderGeometry args={[0.035, 0.05, 0.11, 16]} />
+          <meshStandardMaterial color="#151617" roughness={0.4} metalness={0.4} />
+        </mesh>
+        <mesh position={[0, -0.057, 0]}>
+          <circleGeometry args={[0.04, 16]} />
+          <meshStandardMaterial color="#FFF1D6" emissive="#FFE6B8" emissiveIntensity={1.6} toneMapped={false} />
+        </mesh>
+      </group>
+    ))}
+  </group>
+);
+
 const SinkFaucet = ({ x, z }: { x: number; z: number }) => (
   <>
     <mesh position={[x, 0.09, z]}>
       <boxGeometry args={[0.55, 0.03, 0.35]} />
-      <meshStandardMaterial color="#B9BCBE" roughness={0.25} metalness={0.6} />
+      <meshStandardMaterial color="#1A1B1D" roughness={0.2} metalness={0.5} />
     </mesh>
     <mesh position={[x, 0.35, z - 0.32]} castShadow>
       <cylinderGeometry args={[0.016, 0.016, 0.32, 12]} />
-      <meshStandardMaterial color={HANDLE_COLOR} roughness={0.2} metalness={0.7} />
+      <meshStandardMaterial color="#141516" roughness={0.2} metalness={0.7} />
     </mesh>
     <mesh position={[x, 0.49, z - 0.22]} rotation={[Math.PI / 2.4, 0, 0]} castShadow>
       <cylinderGeometry args={[0.014, 0.014, 0.18, 12]} />
-      <meshStandardMaterial color={HANDLE_COLOR} roughness={0.2} metalness={0.7} />
+      <meshStandardMaterial color="#141516" roughness={0.2} metalness={0.7} />
     </mesh>
   </>
 );
@@ -301,18 +397,23 @@ const LShapeKitchen = ({
           return leg (x < -2.1) is a blind corner, so no doors there */}
       <DoorRow axis="x" front={-1.15} from={-2.1} to={-1.0} y={-0.375} height={0.7} color={cabinetColor} map={cabinetTexture} />
       <Dishwasher x={-0.7} front={-1.15} y={-0.375} height={0.7} />
-      <DoorRow axis="x" front={-1.15} from={-0.4} to={2.03} y={-0.375} height={0.7} color={cabinetColor} map={cabinetTexture} />
+      <DoorRow axis="x" front={-1.15} from={-0.4} to={0.85} y={-0.375} height={0.7} color={cabinetColor} map={cabinetTexture} />
+      <DrawerStack front={-1.15} from={0.85} to={2.03} color={cabinetColor} map={cabinetTexture} />
+      <Cooktop x={1.44} z={-1.42} topY={topY} />
+      <RangeHood x={1.44} z={-1.5} />
+      <TrackLights />
+      <Plant x={-0.55} z={-1.5} topY={topY} />
       <DoorRow axis="z" front={-2.1} from={-1.15} to={0.55} y={-0.375} height={0.7} color={cabinetColor} map={cabinetTexture} />
       {/* upper doors (these used to be hidden inside the upper cabinet box) */}
       <DoorRow axis="x" front={-1.43} from={-2.38} to={2.03} y={1.15} height={0.51} color={cabinetColor} map={cabinetTexture} handle="bottom" />
-      <DoorRow axis="z" front={-2.38} from={-1.43} to={0.55} y={1.15} height={0.51} color={cabinetColor} map={cabinetTexture} handle="bottom" />
+      <DoorRow axis="z" front={-2.38} from={-1.43} to={0.55} y={1.15} height={0.51} color={cabinetColor} map={cabinetTexture} handle="bottom" glass />
 
       <UnderCabinetLight position={[-0.175, 0.868, -1.4]} args={[4.2, 0.012, 0.02]} />
       <UnderCabinetLight position={[-2.35, 0.868, -0.44]} args={[0.02, 0.012, 1.85]} />
 
       <SinkFaucet x={0.1} z={-1.375} />
       <Microwave x={-2.4} z={-0.15} topY={topY} />
-      <CountertopDecor x={1.45} z={-1.425} topY={topY} />
+      <CountertopDecor x={-1.45} z={-1.425} topY={topY} />
     </group>
   );
 };
