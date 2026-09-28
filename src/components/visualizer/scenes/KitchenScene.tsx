@@ -156,6 +156,42 @@ const DoorRow = ({
   );
 };
 
+const STEEL = "#B7BBBD";
+
+/** Built-in dishwasher: stainless front panel with a control strip and a
+ * long bar handle, centred at `x`, flush with the base-cabinet face `front`. */
+const Dishwasher = ({ x, front, y, height }: { x: number; front: number; y: number; height: number }) => {
+  const w = 0.6;
+  const zf = front + 0.02;
+  return (
+    <group>
+      <SolidBox args={[w + 0.012, height, 0.004]} position={[x, y, front + 0.002]} color={RECESS_COLOR} roughness={0.9} />
+      <SolidBox args={[w, height - 0.01, 0.03]} position={[x, y, front + 0.015]} color={STEEL} roughness={0.28} metalness={0.75} />
+      <SolidBox args={[w - 0.04, 0.06, 0.006]} position={[x, y + height / 2 - 0.075, zf + 0.0]} color="#1B1D1F" roughness={0.3} metalness={0.3} />
+      <SolidBox args={[0.012, 0.012, 0.006]} position={[x + w / 2 - 0.06, y + height / 2 - 0.075, zf + 0.004]} color="#7FE3FF" roughness={0.3} />
+      <SolidBox args={[w - 0.12, 0.016, 0.016]} position={[x, y + height / 2 - 0.16, front + 0.06]} color="#D5D8DA" roughness={0.2} metalness={0.85} />
+      <SolidBox args={[0.014, 0.014, 0.035]} position={[x - (w - 0.16) / 2, y + height / 2 - 0.16, front + 0.042]} color="#D5D8DA" roughness={0.2} metalness={0.85} />
+      <SolidBox args={[0.014, 0.014, 0.035]} position={[x + (w - 0.16) / 2, y + height / 2 - 0.16, front + 0.042]} color="#D5D8DA" roughness={0.2} metalness={0.85} />
+    </group>
+  );
+};
+
+/** Countertop microwave facing +X (for the return leg): steel body, dark
+ * glass door, side control column with a small display. */
+const Microwave = ({ x, z, topY }: { x: number; z: number; topY: number }) => {
+  const d = 0.36, w = 0.5, h = 0.27;
+  const fx = x + d / 2;
+  return (
+    <group position={[0, topY, 0]}>
+      <SolidBox args={[d, h, w]} position={[x, h / 2, z]} color={STEEL} roughness={0.3} metalness={0.7} />
+      <SolidBox args={[0.008, h - 0.05, w * 0.68]} position={[fx + 0.002, h / 2, z + w * 0.12]} color="#15181A" roughness={0.12} metalness={0.4} />
+      <SolidBox args={[0.008, 0.05, w * 0.2]} position={[fx + 0.002, h - 0.07, z - w * 0.32]} color="#101214" roughness={0.3} />
+      <SolidBox args={[0.010, 0.012, 0.05]} position={[fx + 0.003, h - 0.07, z - w * 0.32]} color="#7FE3FF" roughness={0.3} />
+      <SolidBox args={[0.012, 0.08, 0.012]} position={[fx + 0.012, h / 2, z - w * 0.24]} color="#D5D8DA" roughness={0.2} metalness={0.85} />
+    </group>
+  );
+};
+
 const SinkFaucet = ({ x, z }: { x: number; z: number }) => (
   <>
     <mesh position={[x, 0.09, z]}>
@@ -263,7 +299,9 @@ const LShapeKitchen = ({
 
       {/* base doors: main run then return leg; the corner block behind the
           return leg (x < -2.1) is a blind corner, so no doors there */}
-      <DoorRow axis="x" front={-1.15} from={-2.1} to={2.03} y={-0.375} height={0.7} color={cabinetColor} map={cabinetTexture} />
+      <DoorRow axis="x" front={-1.15} from={-2.1} to={-1.0} y={-0.375} height={0.7} color={cabinetColor} map={cabinetTexture} />
+      <Dishwasher x={-0.7} front={-1.15} y={-0.375} height={0.7} />
+      <DoorRow axis="x" front={-1.15} from={-0.4} to={2.03} y={-0.375} height={0.7} color={cabinetColor} map={cabinetTexture} />
       <DoorRow axis="z" front={-2.1} from={-1.15} to={0.55} y={-0.375} height={0.7} color={cabinetColor} map={cabinetTexture} />
       {/* upper doors (these used to be hidden inside the upper cabinet box) */}
       <DoorRow axis="x" front={-1.43} from={-2.38} to={2.03} y={1.15} height={0.51} color={cabinetColor} map={cabinetTexture} handle="bottom" />
@@ -273,6 +311,7 @@ const LShapeKitchen = ({
       <UnderCabinetLight position={[-2.35, 0.868, -0.44]} args={[0.02, 0.012, 1.85]} />
 
       <SinkFaucet x={0.1} z={-1.375} />
+      <Microwave x={-2.4} z={-0.15} topY={topY} />
       <CountertopDecor x={1.45} z={-1.425} topY={topY} />
     </group>
   );
