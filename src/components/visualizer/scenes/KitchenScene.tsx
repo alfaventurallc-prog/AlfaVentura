@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import { MaterialSurface, SolidBox, type WorldTopUV } from "../MaterialSurface";
+import { MaterialSurface, SolidBox, SolidExtrusion, TexturedSlab, useExtrudedFootprint } from "../MaterialSurface";
 import { BackWall, Ceiling, Floor, SideWall, useWoodGrainTexture } from "./roomParts";
 import type { LayoutId, ThicknessMm, EdgeProfile } from "@/data/kitchenCatalog";
 import { thicknessScale } from "@/data/kitchenCatalog";
@@ -7,47 +7,10 @@ import type { WaterfallOption } from "@/lib/visualizerUrlState";
 import type { VisualizerProduct } from "../../../../types";
 
 const WALL_COLOR = "#EFEAE0";
-const DOOR_COLOR = "#3C332B";
 const HANDLE_COLOR = "#9C9691";
+const RECESS_COLOR = "#241C15";
 
-// L-shape main-run/return-leg dimensions, shared between the JSX call
-// sites below and LSHAPE_TOP_UV so the two can't drift out of sync with
-// each other the way hand-duplicated literals have in past iterations.
-const LSHAPE_MAIN_WIDTH = 3.8;
-const LSHAPE_MAIN_CENTER_X = 0.1;
-const LSHAPE_MAIN_Z = -1.05;
-const LSHAPE_SIDE_WALL_X = -2.7;
-const LSHAPE_RETURN_LENGTH = 2.0;
-const LSHAPE_MAIN_LEFT_EDGE = LSHAPE_MAIN_CENTER_X - (LSHAPE_MAIN_WIDTH + 0.16) / 2;
-const LSHAPE_MAIN_BACK_Z = LSHAPE_MAIN_Z - 0.35;
-
-// Bounding box (world X/Z) covering the L-shape's whole countertop
-// footprint -- the union rectangle of the main run's countertop
-// [LSHAPE_MAIN_LEFT_EDGE, mainRightEdge] x [mainBackZ, mainFrontZ] and the
-// return leg's [sideWallX, mainLeftEdge] x [mainBackZ, mainBackZ+length].
-// Passed to both WallRun and ReturnLeg as worldTopUV so their countertops
-// sample one continuous crop of the photo instead of two independently-
-// fit crops that happen to touch at the same edge.
-const LSHAPE_TOP_UV: WorldTopUV = {
-  minX: LSHAPE_SIDE_WALL_X,
-  maxX: LSHAPE_MAIN_CENTER_X + (LSHAPE_MAIN_WIDTH + 0.16) / 2,
-  minZ: LSHAPE_MAIN_BACK_Z,
-  maxZ: LSHAPE_MAIN_BACK_Z + LSHAPE_RETURN_LENGTH,
-};
-
-/** Darken a "#rrggbb" hex color by the given factor (0-1, lower = darker) --
- * used to shade a cabinet door's recessed center panel a touch darker than
- * its frame, the shadow line that makes it read as a real shaker-style
- * door instead of a single flat block of color. */
-const darken = (hex: string, factor: number): string => {
-  const n = parseInt(hex.slice(1), 16);
-  const clamp = (v: number) => Math.max(0, Math.min(255, Math.round(v)));
-  const r = clamp(((n >> 16) & 0xff) * factor);
-  const g = clamp(((n >> 8) & 0xff) * factor);
-  const b = clamp((n & 0xff) * factor);
-  const toHex = (v: number) => v.toString(16).padStart(2, "0");
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-};
+type Pt = [number, number];
 
 interface KitchenSceneProps {
   layout: LayoutId;
@@ -63,50 +26,135 @@ interface KitchenSceneProps {
   edgeProfile: EdgeProfile;
 }
 
+/** Darken a "#rrggbb" hex color by the given factor (0-1, lower = darker). */
+const darken = (hex: string, factor: number): string => {
+  const n = parseInt(hex.slice(1), 16);
+  const clamp = (v: number) => Math.max(0, Math.min(255, Math.round(v)));
+  const r = clamp(((n >> 16) & 0xff) * factor);
+  const g = clamp(((n >> 8) & 0xff) * factor);
+  const b = clamp((n & 0xff) * factor);
+  const toHex = (v: number) => v.toString(16).padStart(2, "0");
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
+};
+
 /** A rounded ("bullnose") front-top edge -- a thin cylinder running along
- * the counter's front corner reads as an actual round-over under lighting,
- * unlike the previous flat diagonal strip (which just looked like a bright
- * white line cutting across the slab). Colored as a soft, muted highlight
- * rather than white so it blends with any slab tone instead of standing
- * out as its own separate piece. */
-const BevelEdge = ({ length, centerX, topY, frontZ }: { length: number; centerX: number; topY: number; frontZ: number }) => (
-  <mesh position={[centerX, topY - 0.012, frontZ - 0.012]} rotation={[0, 0, Math.PI / 2]} castShadow receiveShadow>
+ * the counter's front corner, muted so it blends with any slab tone. */
+const BevelEdge = ({ position, length, axis = "x" }: { position: [number, number, number]; length: number; axis?: "x" | "z" }) => (
+  <mesh position={position} rotation={axis === "x" ? [0, 0, Math.PI / 2] : [Math.PI / 2, 0, 0]} castShadow receiveShadow>
     <cylinderGeometry args={[0.014, 0.014, length, 16]} />
     <meshStandardMaterial color="#CFC6B4" roughness={0.35} metalness={0} />
   </mesh>
 );
 
-const CabinetDoor = ({
-  x,
-  z,
+/**
+ * A shaker-style cabinet door, centred on `position`, facing local +Z
+ * (rotate about Y to face another way). Built as a slab plus four raised
+ * frame rails around a recessed centre panel, with a bar handle on posts.
+ *
+ * The previous doors were sunk ~1cm BEHIND the cabinet body's front face,
+ * so only their knobs poked out and every cabinet read as one plain box.
+ * These sit proud of the face, which is what makes them read as doors.
+ */
+const SLAB = 0.03;
+const ShakerDoor = ({
+  position,
+  rotationY = 0,
   width,
-  y = -0.425,
-  height = 0.72,
-  color = DOOR_COLOR,
+  height,
+  color,
+  map,
+  handle = "top",
 }: {
-  x: number;
-  z: number;
+  position: [number, number, number];
+  rotationY?: number;
   width: number;
-  y?: number;
-  height?: number;
-  color?: string;
-}) => (
-  <group>
-    <SolidBox args={[width, height, 0.035]} position={[x, y, z]} color={color} roughness={0.4} />
-    {/* recessed center panel -- a shaker-style groove line so the door
-        reads as a real panel instead of one flat block of color. Darkened
-        further (0.82 -> 0.68) so the panel division is actually visible
-        instead of reading as a near-invisible tonal shift. */}
-    <SolidBox args={[width - 0.09, height - 0.14, 0.012]} position={[x, y, z - 0.006]} color={darken(color, 0.68)} roughness={0.5} />
-    {/* cylindrical knob instead of a flat handle bar -- catches a small
-        specular highlight and reads as real hardware rather than a
-        painted-on stripe. */}
-    <mesh position={[x, y + height / 2 - 0.06, z + 0.032]} rotation={[Math.PI / 2, 0, 0]} castShadow>
-      <cylinderGeometry args={[0.011, 0.011, 0.045, 10]} />
-      <meshStandardMaterial color={HANDLE_COLOR} roughness={0.25} metalness={0.6} />
-    </mesh>
-  </group>
-);
+  height: number;
+  color: string;
+  map?: THREE.Texture | null;
+  handle?: "top" | "bottom";
+}) => {
+  const rail = 0.07;
+  const railZ = SLAB / 2 + 0.006;
+  const handleY = handle === "top" ? height / 2 - 0.11 : -height / 2 + 0.11;
+  return (
+    <group position={position} rotation={[0, rotationY, 0]}>
+      <SolidBox args={[width, height, SLAB]} position={[0, 0, 0]} color={color} map={map} roughness={0.5} />
+      <SolidBox args={[width, rail, 0.012]} position={[0, height / 2 - rail / 2, railZ]} color={color} map={map} roughness={0.5} />
+      <SolidBox args={[width, rail, 0.012]} position={[0, -height / 2 + rail / 2, railZ]} color={color} map={map} roughness={0.5} />
+      <SolidBox args={[rail, height - rail * 2, 0.012]} position={[width / 2 - rail / 2, 0, railZ]} color={color} map={map} roughness={0.5} />
+      <SolidBox args={[rail, height - rail * 2, 0.012]} position={[-width / 2 + rail / 2, 0, railZ]} color={color} map={map} roughness={0.5} />
+      <SolidBox
+        args={[width - rail * 2, height - rail * 2, 0.006]}
+        position={[0, 0, SLAB / 2 + 0.003]}
+        color={darken(color, 0.9)}
+        roughness={0.55}
+      />
+      <SolidBox args={[0.16, 0.014, 0.014]} position={[0, handleY, SLAB / 2 + 0.05]} color={HANDLE_COLOR} roughness={0.25} metalness={0.7} />
+      <SolidBox args={[0.012, 0.012, 0.04]} position={[-0.06, handleY, SLAB / 2 + 0.03]} color={HANDLE_COLOR} roughness={0.25} metalness={0.7} />
+      <SolidBox args={[0.012, 0.012, 0.04]} position={[0.06, handleY, SLAB / 2 + 0.03]} color={HANDLE_COLOR} roughness={0.25} metalness={0.7} />
+    </group>
+  );
+};
+
+/**
+ * A row of doors across one cabinet face. `axis` "x" = the run goes along
+ * X and the face looks toward +Z; "z" = it goes along Z and looks toward +X.
+ * `front` is the world coordinate of the face itself. A dark strip sits
+ * behind the doors so the small gaps between them read as real reveal lines
+ * instead of vanishing into the same-coloured cabinet body.
+ */
+const DoorRow = ({
+  axis,
+  front,
+  from,
+  to,
+  y,
+  height,
+  color,
+  map,
+  handle = "top",
+}: {
+  axis: "x" | "z";
+  front: number;
+  from: number;
+  to: number;
+  y: number;
+  height: number;
+  color: string;
+  map?: THREE.Texture | null;
+  handle?: "top" | "bottom";
+}) => {
+  const length = to - from;
+  const count = Math.max(1, Math.round(length / 0.95));
+  const doorW = length / count - 0.016;
+  const mid = (from + to) / 2;
+  const alongX = axis === "x";
+  return (
+    <group>
+      <SolidBox
+        args={alongX ? [length, height, 0.004] : [0.004, height, length]}
+        position={alongX ? [mid, y, front + 0.002] : [front + 0.002, y, mid]}
+        color={RECESS_COLOR}
+        roughness={0.9}
+      />
+      {Array.from({ length: count }, (_, i) => {
+        const c = from + (length / count) * (i + 0.5);
+        return (
+          <ShakerDoor
+            key={i}
+            position={alongX ? [c, y, front + SLAB / 2] : [front + SLAB / 2, y, c]}
+            rotationY={alongX ? 0 : Math.PI / 2}
+            width={doorW}
+            height={height}
+            color={color}
+            map={map}
+            handle={handle}
+          />
+        );
+      })}
+    </group>
+  );
+};
 
 const SinkFaucet = ({ x, z }: { x: number; z: number }) => (
   <>
@@ -125,17 +173,15 @@ const SinkFaucet = ({ x, z }: { x: number; z: number }) => (
   </>
 );
 
-/** Small warm LED line under the upper cabinets -- reads as ambient task
- * lighting over the counter, a strong "this is a real kitchen" cue. */
-const UnderCabinetLight = ({ x, z, width, y = 0.86 }: { x: number; z: number; width: number; y?: number }) => (
-  <mesh position={[x, y, z]}>
-    <boxGeometry args={[width - 0.1, 0.015, 0.02]} />
+/** Small warm LED line under the upper cabinets. */
+const UnderCabinetLight = ({ position, args }: { position: [number, number, number]; args: [number, number, number] }) => (
+  <mesh position={position}>
+    <boxGeometry args={args} />
     <meshStandardMaterial color="#FFE9C2" emissive="#FFD9A0" emissiveIntensity={1.4} roughness={0.5} toneMapped={false} />
   </mesh>
 );
 
-/** A bowl of fruit + cutting board resting on a countertop -- small lived-in
- * details that make an empty slab read as a used kitchen counter. */
+/** A bowl of fruit + cutting board resting on a countertop. */
 const CountertopDecor = ({ x, z, topY }: { x: number; z: number; topY: number }) => (
   <group position={[x, topY, z]}>
     <mesh position={[-0.05, 0.015, 0]} castShadow>
@@ -159,7 +205,80 @@ const CountertopDecor = ({ x, z, topY }: { x: number; z: number; topY: number })
   </group>
 );
 
-/** Back-wall run: base cabinets + countertop + upper cabinets + backsplash + sink. */
+/**
+ * The L-shaped kitchen, built as ONE continuous L instead of two straight
+ * runs placed near each other. Countertop, base cabinet carcass, toe-kick,
+ * backsplash and upper cabinets are each a single extruded L polygon, so
+ * every corner is a true 90-degree join with no seam or gap, and the stone
+ * pattern (UVs come from world position) flows around the corner.
+ * Everything sits flush against the back wall (z=-1.75) and side wall
+ * (x=-2.7), with a blind corner cabinet (no doors) where the runs meet.
+ */
+const LSHAPE_CT: Pt[] = [[-2.7, -1.75], [2.08, -1.75], [2.08, -1.1], [-2.05, -1.1], [-2.05, 0.6], [-2.7, 0.6]];
+const LSHAPE_CAB: Pt[] = [[-2.7, -1.75], [2.03, -1.75], [2.03, -1.15], [-2.1, -1.15], [-2.1, 0.55], [-2.7, 0.55]];
+const LSHAPE_TOE: Pt[] = [[-2.7, -1.75], [1.97, -1.75], [1.97, -1.21], [-2.16, -1.21], [-2.16, 0.49], [-2.7, 0.49]];
+const LSHAPE_UPPER: Pt[] = [[-2.7, -1.75], [2.03, -1.75], [2.03, -1.43], [-2.38, -1.43], [-2.38, 0.55], [-2.7, 0.55]];
+const LSHAPE_SPLASH: Pt[] = [[-2.7, -1.75], [2.08, -1.75], [2.08, -1.7], [-2.65, -1.7], [-2.65, 0.6], [-2.7, 0.6]];
+
+const LShapeKitchen = ({
+  cabinetColor,
+  cabinetTexture,
+  countertopProduct,
+  backsplashProduct,
+  thicknessMm,
+  veinRotation,
+  edgeProfile,
+}: {
+  cabinetColor: string;
+  cabinetTexture: THREE.Texture | null;
+  countertopProduct: VisualizerProduct | null;
+  backsplashProduct: VisualizerProduct | null;
+  thicknessMm: ThicknessMm;
+  veinRotation: 0 | 90;
+  edgeProfile: EdgeProfile;
+}) => {
+  const topY = 0.09;
+  const slabHeight = topY * thicknessScale(thicknessMm);
+
+  const counterGeo = useExtrudedFootprint(LSHAPE_CT, topY - slabHeight, slabHeight);
+  const cabinetGeo = useExtrudedFootprint(LSHAPE_CAB, -0.75, 0.75);
+  const toeGeo = useExtrudedFootprint(LSHAPE_TOE, -0.85, 0.1);
+  const upperGeo = useExtrudedFootprint(LSHAPE_UPPER, 0.875, 0.55);
+  const splashGeo = useExtrudedFootprint(LSHAPE_SPLASH, topY, 0.875 - topY);
+
+  return (
+    <group>
+      <SolidExtrusion geometry={toeGeo} color={RECESS_COLOR} roughness={0.9} />
+      <SolidExtrusion geometry={cabinetGeo} color={cabinetColor} map={cabinetTexture} />
+      <TexturedSlab product={countertopProduct} geometry={counterGeo} veinRotationDeg={veinRotation} />
+      <TexturedSlab product={backsplashProduct} geometry={splashGeo} veinRotationDeg={veinRotation} />
+      <SolidExtrusion geometry={upperGeo} color={cabinetColor} map={cabinetTexture} />
+
+      {edgeProfile === "beveled" && (
+        <>
+          <BevelEdge position={[0.015, topY - 0.012, -1.1 - 0.012 + 0.024]} length={4.13} axis="x" />
+          <BevelEdge position={[-2.05 - 0.012 + 0.024, topY - 0.012, -0.25]} length={1.7} axis="z" />
+        </>
+      )}
+
+      {/* base doors: main run then return leg; the corner block behind the
+          return leg (x < -2.1) is a blind corner, so no doors there */}
+      <DoorRow axis="x" front={-1.15} from={-2.1} to={2.03} y={-0.375} height={0.7} color={cabinetColor} map={cabinetTexture} />
+      <DoorRow axis="z" front={-2.1} from={-1.15} to={0.55} y={-0.375} height={0.7} color={cabinetColor} map={cabinetTexture} />
+      {/* upper doors (these used to be hidden inside the upper cabinet box) */}
+      <DoorRow axis="x" front={-1.43} from={-2.38} to={2.03} y={1.15} height={0.51} color={cabinetColor} map={cabinetTexture} handle="bottom" />
+      <DoorRow axis="z" front={-2.38} from={-1.43} to={0.55} y={1.15} height={0.51} color={cabinetColor} map={cabinetTexture} handle="bottom" />
+
+      <UnderCabinetLight position={[-0.175, 0.868, -1.4]} args={[4.2, 0.012, 0.02]} />
+      <UnderCabinetLight position={[-2.35, 0.868, -0.44]} args={[0.02, 0.012, 1.85]} />
+
+      <SinkFaucet x={0.1} z={-1.375} />
+      <CountertopDecor x={1.45} z={-1.425} topY={topY} />
+    </group>
+  );
+};
+
+/** Straight run along the back wall (used by the island and galley layouts). */
 const WallRun = ({
   width,
   centerX,
@@ -173,7 +292,6 @@ const WallRun = ({
   thicknessMm = 20,
   veinRotation = 0,
   edgeProfile = "square",
-  worldTopUV,
 }: {
   width: number;
   centerX: number;
@@ -187,45 +305,33 @@ const WallRun = ({
   thicknessMm?: ThicknessMm;
   veinRotation?: 0 | 90;
   edgeProfile?: EdgeProfile;
-  worldTopUV?: WorldTopUV;
 }) => {
-  const doorCount = Math.max(2, Math.round(width / 0.95));
-  const doorWidth = width / doorCount - 0.1;
-  const doorXs = Array.from({ length: doorCount }, (_, i) => centerX - width / 2 + width / doorCount * (i + 0.5));
-  // Top surface stays at a fixed height regardless of thickness -- the extra
-  // material extends downward, like a real slab measured from its top face.
   const topY = 0.09;
   const slabHeight = topY * thicknessScale(thicknessMm);
+  const left = centerX - width / 2;
+  const right = centerX + width / 2;
+  const front = z + 0.31;
 
   return (
     <group>
-      <SolidBox args={[width, 0.85, 0.62]} position={[centerX, -0.425, z]} color={cabinetColor} roughness={0.55} map={cabinetTexture} />
-      {doorXs.map((x, i) => (
-        <CabinetDoor key={i} x={x} z={z + 0.31 - 0.03} width={doorWidth} color={cabinetColor === DOOR_COLOR ? "#2A241E" : DOOR_COLOR} />
-      ))}
+      <SolidBox args={[width - 0.12, 0.1, 0.5]} position={[centerX, -0.8, z]} color={RECESS_COLOR} roughness={0.9} />
+      <SolidBox args={[width, 0.75, 0.62]} position={[centerX, -0.375, z]} color={cabinetColor} roughness={0.55} map={cabinetTexture} />
+      <DoorRow axis="x" front={front} from={left} to={right} y={-0.375} height={0.7} color={cabinetColor} map={cabinetTexture} />
       <MaterialSurface
         product={countertopProduct}
         args={[width + 0.16, slabHeight, 0.7]}
         position={[centerX, topY - slabHeight / 2, z]}
         heroFace="top"
         veinRotationDeg={veinRotation}
-        worldTopUV={worldTopUV}
       />
-      {edgeProfile === "beveled" && <BevelEdge length={width + 0.16} centerX={centerX} topY={topY} frontZ={z + 0.35} />}
+      {edgeProfile === "beveled" && <BevelEdge position={[centerX, topY - 0.012, z + 0.35 - 0.012]} length={width + 0.16} axis="x" />}
 
       {withUpper && (
         <>
           <SolidBox args={[width, 0.55, 0.3]} position={[centerX, 1.15, z - 0.55]} color={cabinetColor} roughness={0.55} map={cabinetTexture} />
-          {doorXs.map((x, i) => (
-            <CabinetDoor key={i} x={x} z={z - 0.67} width={doorWidth} y={1.15} height={0.45} color={cabinetColor === DOOR_COLOR ? "#2A241E" : DOOR_COLOR} />
-          ))}
-          {/* Backsplash spans the full countertop-to-upper-cabinet height
-              (0.09 to 0.875) and its depth now extends back to z-0.4 to
-              physically touch the upper cabinet's front face (also z-0.4) --
-              it previously stopped 0.05 units short in depth, leaving a gap
-              you could see through to the wall behind (the bright seam). */}
+          <DoorRow axis="x" front={z - 0.4} from={left} to={right} y={1.15} height={0.51} color={cabinetColor} map={cabinetTexture} handle="bottom" />
           <MaterialSurface product={backsplashProduct} args={[width + 0.16, 0.785, 0.1]} position={[centerX, 0.4825, z - 0.35]} heroFace="front" />
-          <UnderCabinetLight x={centerX} z={z - 0.42} width={width} y={0.865} />
+          <UnderCabinetLight position={[centerX, 0.868, z - 0.37]} args={[width - 0.1, 0.012, 0.02]} />
         </>
       )}
 
@@ -235,153 +341,6 @@ const WallRun = ({
   );
 };
 
-/** Cabinet door for a run that faces +X into the room (the L-shape's
- * perpendicular return leg) -- CabinetDoor above only faces +Z, so this is
- * its 90-degree-rotated counterpart: the "width" runs along Z instead of X. */
-const ReturnLegDoor = ({
-  x,
-  z,
-  width,
-  y = -0.425,
-  height = 0.72,
-  color = DOOR_COLOR,
-}: {
-  x: number;
-  z: number;
-  width: number;
-  y?: number;
-  height?: number;
-  color?: string;
-}) => (
-  <group>
-    <SolidBox args={[0.035, height, width]} position={[x, y, z]} color={color} roughness={0.4} />
-    <SolidBox args={[0.012, height - 0.14, width - 0.09]} position={[x - 0.006, y, z]} color={darken(color, 0.68)} roughness={0.5} />
-    <mesh position={[x + 0.032, y + height / 2 - 0.06, z]} rotation={[0, 0, Math.PI / 2]} castShadow>
-      <cylinderGeometry args={[0.011, 0.011, 0.045, 10]} />
-      <meshStandardMaterial color={HANDLE_COLOR} roughness={0.25} metalness={0.6} />
-    </mesh>
-  </group>
-);
-
-/**
- * The L-shape's perpendicular second run, built directly in world
- * coordinates (no rotated group) so it can be derived from -- and always
- * stays flush with -- the main run and the side wall, instead of relying on
- * hand-tuned offsets that drift out of sync (the recurring source of gaps
- * and overlaps in earlier iterations).
- *
- * Geometrically this is a proper T-join, not an overlap: the return leg's
- * countertop/cabinet occupy X in [sideWallX, mainLeftEdge] -- a strip that
- * is fully outside the main run's own X range [mainLeftEdge, mainRightEdge]
- * -- so the two meet exactly at the shared plane x = mainLeftEdge with zero
- * gap and zero z-fighting, while the base cabinet's back face sits flush at
- * x = sideWallX with zero gap against the side wall.
- */
-const ReturnLeg = ({
-  sideWallX,
-  mainLeftEdge,
-  mainBackZ,
-  length,
-  cabinetColor,
-  cabinetTexture,
-  countertopProduct,
-  backsplashProduct,
-  withUpper = true,
-  thicknessMm = 20,
-  veinRotation = 0,
-  worldTopUV,
-}: {
-  sideWallX: number;
-  mainLeftEdge: number;
-  mainBackZ: number;
-  length: number;
-  cabinetColor: string;
-  cabinetTexture?: THREE.Texture | null;
-  countertopProduct: VisualizerProduct | null;
-  backsplashProduct: VisualizerProduct | null;
-  withUpper?: boolean;
-  thicknessMm?: ThicknessMm;
-  veinRotation?: 0 | 90;
-  worldTopUV?: WorldTopUV;
-}) => {
-  const topY = 0.09;
-  const slabHeight = topY * thicknessScale(thicknessMm);
-  // The main run's countertop and this one meet at the exact same plane
-  // (x = mainLeftEdge) computed the exact same way in both places, so in
-  // principle they touch with zero gap -- but two independently-drawn
-  // meshes sharing a perfectly coincident edge are still prone to a
-  // hairline seam/z-fight at that boundary from GPU floating-point
-  // rounding. OVERLAP nudges this slab 1.5cm further under the main run's
-  // countertop (invisible -- both show the same slab surface there) and
-  // Y_EPS drops it a fraction of a millimeter so the main run's top
-  // consistently wins the depth test in that sliver instead of flickering.
-  const OVERLAP = 0.015;
-  const Y_EPS = 0.0006;
-
-  const ctDepth = mainLeftEdge - sideWallX + OVERLAP;
-  const ctCenterX = (sideWallX + (mainLeftEdge + OVERLAP)) / 2;
-  const ctFrontZ = mainBackZ + length;
-  const ctCenterZ = (mainBackZ + ctFrontZ) / 2;
-
-  // Base cabinet: back face flush against the side wall (no gap), front
-  // face recessed 0.08 under the countertop overhang -- the same margin
-  // the countertop already overhangs the main run's cabinets by.
-  const cabDepth = ctDepth - 0.08;
-  const cabFrontX = mainLeftEdge - 0.08;
-  const cabCenterX = cabFrontX - cabDepth / 2;
-  const cabLength = length - 0.16;
-  const cabCenterZ = ctCenterZ;
-
-  const doorCount = Math.max(2, Math.round(cabLength / 0.95));
-  const doorWidth = cabLength / doorCount - 0.1;
-  const doorZs = Array.from({ length: doorCount }, (_, i) => cabCenterZ - cabLength / 2 + cabLength / doorCount * (i + 0.5));
-
-  // Upper cabinet + backsplash, mounted flush against the side wall the
-  // same way the base cabinet is -- both continue the main run's wall
-  // treatment around the corner instead of stopping at the main run.
-  const upperDepth = 0.3;
-  const upperCenterX = sideWallX + upperDepth / 2;
-  const upperFrontX = sideWallX + upperDepth;
-  const bsThickness = 0.1;
-  const bsCenterX = sideWallX + bsThickness / 2;
-
-  return (
-    <group>
-      <SolidBox args={[cabDepth, 0.85, cabLength]} position={[cabCenterX, -0.425, cabCenterZ]} color={cabinetColor} roughness={0.55} map={cabinetTexture} />
-      {doorZs.map((dz, i) => (
-        <ReturnLegDoor key={i} x={cabFrontX - 0.03} z={dz} width={doorWidth} color={cabinetColor === DOOR_COLOR ? "#2A241E" : DOOR_COLOR} />
-      ))}
-      <MaterialSurface
-        product={countertopProduct}
-        args={[ctDepth, slabHeight, length]}
-        position={[ctCenterX, topY - slabHeight / 2 - Y_EPS, ctCenterZ]}
-        heroFace="top"
-        veinRotationDeg={veinRotation}
-        worldTopUV={worldTopUV}
-      />
-
-      {withUpper && (
-        <>
-          <SolidBox args={[upperDepth, 0.55, cabLength]} position={[upperCenterX, 1.15, cabCenterZ]} color={cabinetColor} roughness={0.55} map={cabinetTexture} />
-          {doorZs.map((dz, i) => (
-            <ReturnLegDoor key={i} x={upperFrontX - 0.03} z={dz} width={doorWidth} y={1.15} height={0.45} color={cabinetColor === DOOR_COLOR ? "#2A241E" : DOOR_COLOR} />
-          ))}
-          <MaterialSurface product={backsplashProduct} args={[bsThickness, 0.785, cabLength]} position={[bsCenterX, 0.4825, cabCenterZ]} heroFace="sideEnd" />
-          <mesh position={[upperFrontX - 0.02, 0.865, cabCenterZ]}>
-            <boxGeometry args={[0.02, 0.015, cabLength - 0.1]} />
-            <meshStandardMaterial color="#FFE9C2" emissive="#FFD9A0" emissiveIntensity={1.4} roughness={0.5} toneMapped={false} />
-          </mesh>
-        </>
-      )}
-    </group>
-  );
-};
-
-// Pendant shade radius/bulb size trimmed down (0.13/0.1 -> 0.1/0.075) --
-// at the previous steep top-down camera angle this read as a disc with a
-// thin line through its center, i.e. a clock face rather than a light
-// fixture. Still oversized enough to read correctly from the new
-// eye-level camera.
 const PendantLight = ({ x, z }: { x: number; z: number }) => (
   <group position={[x, 0, z]}>
     <mesh position={[0, 1.55, 0]}>
@@ -419,16 +378,15 @@ const Island = ({
   const topY = 0.1;
   const scale = thicknessScale(thicknessMm);
   const slabHeight = topY * scale;
-  // The waterfall panel's own thickness (how chunky the slab edge reads)
-  // scales the same way as the top, so both stay visually one slab.
   const waterfallThickness = 0.06 * scale;
   const leftOuterX = -1.03;
   const rightOuterX = 0.83;
 
   return (
     <group>
-      <SolidBox args={[1.7, 0.85, 0.85]} position={[-0.1, -0.425, 0.55]} color={cabinetColor} roughness={0.55} map={cabinetTexture} />
-      <CabinetDoor x={-0.1} z={0.965} width={0.72} color={cabinetColor === DOOR_COLOR ? "#2A241E" : DOOR_COLOR} />
+      <SolidBox args={[1.58, 0.1, 0.73]} position={[-0.1, -0.8, 0.55]} color={RECESS_COLOR} roughness={0.9} />
+      <SolidBox args={[1.7, 0.75, 0.85]} position={[-0.1, -0.375, 0.55]} color={cabinetColor} roughness={0.55} map={cabinetTexture} />
+      <DoorRow axis="x" front={0.975} from={-0.95} to={0.75} y={-0.375} height={0.7} color={cabinetColor} map={cabinetTexture} />
       <MaterialSurface
         product={countertopProduct}
         args={[1.86, slabHeight, 1.0]}
@@ -436,12 +394,7 @@ const Island = ({
         heroFace="top"
         veinRotationDeg={veinRotation}
       />
-      {edgeProfile === "beveled" && <BevelEdge length={1.86} centerX={-0.1} topY={topY} frontZ={1.05} />}
-      {/* waterfall edges -- the same slab continuing down the selected end(s).
-          Depth and outer-face x match the top slab exactly so the two surfaces
-          meet flush at the mitre line instead of leaving a visible lip/step.
-          Left and right panels use identical args/y/z, mirrored in x, so
-          "both" is perfectly symmetrical. */}
+      {edgeProfile === "beveled" && <BevelEdge position={[-0.1, topY - 0.012, 1.05 - 0.012]} length={1.86} axis="x" />}
       {(waterfall === "left" || waterfall === "both") && (
         <MaterialSurface
           product={countertopProduct}
@@ -465,7 +418,7 @@ const Island = ({
       <group position={[-0.1, -0.65, 1.25]}>
         <mesh position={[0, 0.35, 0]} castShadow>
           <cylinderGeometry args={[0.2, 0.2, 0.06, 24]} />
-          <meshStandardMaterial color={DOOR_COLOR} roughness={0.5} />
+          <meshStandardMaterial color="#3C332B" roughness={0.5} />
         </mesh>
         {[
           [-0.14, -0.14],
@@ -496,11 +449,8 @@ const KitchenScene = ({
   veinRotation,
   edgeProfile,
 }: KitchenSceneProps) => {
-  // Generated once per cabinet color and shared by every cabinet body in
-  // the scene (base/upper runs, island, return leg, corner filler) -- a
-  // flat meshStandardMaterial color on a large cabinet face read as
-  // plastic/laminate; this bakes in a faint wood-grain streak pattern so
-  // it reads as a painted/stained wood finish instead.
+  // Generated once per cabinet color and shared by every cabinet body and
+  // door in the scene, so the wood grain matches everywhere.
   const cabinetTexture = useWoodGrainTexture(cabinetColor);
 
   return (
@@ -508,17 +458,10 @@ const KitchenScene = ({
       <Floor color={floorColor} roughness={floorRoughness} />
       <BackWall color={WALL_COLOR} />
       <SideWall color={WALL_COLOR} x={-2.7} />
-      {/* Solid corner post where the back wall and side wall meet (x=-2.7,
-          z=-1.75) -- two infinitely-thin perpendicular planes sharing an
-          edge are prone to z-fighting right at the seam from some angles,
-          which read as a visible gap/crack at the corner. This box just
-          physically fills that corner so there's nothing for the two
-          planes to fight over. */}
+      {/* Solid corner post where the back and side walls meet, so the two
+          thin planes have no shared edge to z-fight over. */}
       <SolidBox args={[0.08, 3.05, 0.08]} position={[-2.7, 0.675, -1.75]} color={WALL_COLOR} roughness={0.92} />
       <Ceiling />
-      {/* Window and fridge removed per feedback -- side wall now renders
-          as a plain solid wall with no opening, and the side-wall floor
-          space that the fridge occupied is left empty. */}
 
       {layout === "island" && (
         <>
@@ -547,66 +490,15 @@ const KitchenScene = ({
       )}
 
       {layout === "lshape" && (
-        <>
-          {/* Shared world-space bounding box covering BOTH the main run's
-              and the return leg's countertop footprint -- passed to both so
-              they sample adjoining sub-windows of one crop of the photo
-              instead of each independently cover-fitting to just its own
-              dimensions, which is what made two touching, gap-free meshes
-              still visually read as two different slabs at the seam. */}
-          <WallRun
-            width={LSHAPE_MAIN_WIDTH}
-            centerX={LSHAPE_MAIN_CENTER_X}
-            z={LSHAPE_MAIN_Z}
-            cabinetColor={cabinetColor}
-            cabinetTexture={cabinetTexture}
-            countertopProduct={countertopProduct}
-            backsplashProduct={backsplashProduct}
-            thicknessMm={thicknessMm}
-            veinRotation={veinRotation}
-            edgeProfile={edgeProfile}
-            worldTopUV={LSHAPE_TOP_UV}
-          />
-          {/* Perpendicular return leg, built as a proper T-join off the main
-              run's own left edge and the side wall (see ReturnLeg) instead of
-              a rotated copy of WallRun with hand-tuned offsets -- that
-              approach kept drifting out of sync and leaving gaps at either
-              the inside corner or the side wall. */}
-          <ReturnLeg
-            sideWallX={LSHAPE_SIDE_WALL_X}
-            mainLeftEdge={LSHAPE_MAIN_LEFT_EDGE}
-            mainBackZ={LSHAPE_MAIN_BACK_Z}
-            length={LSHAPE_RETURN_LENGTH}
-            cabinetColor={cabinetColor}
-            cabinetTexture={cabinetTexture}
-            countertopProduct={countertopProduct}
-            backsplashProduct={backsplashProduct}
-            thicknessMm={thicknessMm}
-            veinRotation={veinRotation}
-            worldTopUV={LSHAPE_TOP_UV}
-          />
-          {/* Corner filler for the upper cabinets: the main run's upper
-              cabinet only spans its own width (down to x=-1.8) and the
-              return leg's only spans its own length (back to z=-1.32), so the
-              wall-and-ceiling rectangle behind the inside corner between them
-              was left bare -- visible as a plain, unclad wall panel from a
-              side angle. This block occupies exactly that rectangle, flush
-              against the side wall and sharing the main run's own upper
-              cabinet depth/height, so it reads as one continuous run turning
-              the corner. */}
-          <SolidBox args={[0.9, 0.55, 0.43]} position={[-2.25, 1.15, -1.535]} color={cabinetColor} roughness={0.55} map={cabinetTexture} />
-          {/* Corner filler for the backsplash: the main run's backsplash
-              only spans X down to -1.88 (its own countertop's left edge)
-              and the return leg's only spans X from -2.70 to -2.60 (its
-              own thin panel flush against the side wall) -- neither
-              covers the X:[-2.60,-1.88] strip behind the inside corner,
-              which showed up as a gap/white strip of bare wall visible
-              between the two backsplash panels. This block spans the full
-              wall-to-wall corner rectangle (matching the upper-cabinet
-              corner filler's X/Z footprint) at the same backsplash
-              height/thickness as both walls' own panels. */}
-          <MaterialSurface product={backsplashProduct} args={[0.82, 0.785, 0.43]} position={[-2.29, 0.4825, -1.535]} heroFace="sideEnd" />
-        </>
+        <LShapeKitchen
+          cabinetColor={cabinetColor}
+          cabinetTexture={cabinetTexture}
+          countertopProduct={countertopProduct}
+          backsplashProduct={backsplashProduct}
+          thicknessMm={thicknessMm}
+          veinRotation={veinRotation}
+          edgeProfile={edgeProfile}
+        />
       )}
 
       {layout === "galley" && (

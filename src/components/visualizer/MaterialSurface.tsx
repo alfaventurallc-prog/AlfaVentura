@@ -16,22 +16,6 @@ const DEFAULT_COLOR = "#EDE8DD";
 const EDGE_COLOR = "#E9E4D8";
 const HIGHLIGHT_COLOR = "#C9A96E";
 
-/** World-space XZ bounding box of an entire multi-segment countertop run
- * (e.g. the L-shape's main run + return leg together). When passed to a
- * "top" face, that face's crop is computed as its own sub-window of ONE
- * shared crop of the photo across the whole box, instead of each segment
- * independently cover-fitting the photo to just its own dimensions -- so
- * the veining/pattern actually flows continuously across the seam between
- * two separate meshes instead of each one showing an unrelated crop of
- * the same photo (which reads as two different slabs even when the
- * geometry itself touches with zero gap). */
-export interface WorldTopUV {
-  minX: number;
-  maxX: number;
-  minZ: number;
-  maxZ: number;
-}
-
 interface FaceProps {
   args: Vec3;
   position: Vec3;
@@ -40,8 +24,6 @@ interface FaceProps {
   heroFace?: HeroFace;
   /** Rotates the slab's vein/pattern in-plane (0 = as photographed, 90 = turned a quarter-turn) -- a texture transform, not a fake per-product attribute. */
   veinRotationDeg?: number;
-  /** See WorldTopUV. Only meaningful for heroFace="top". */
-  worldTopUV?: WorldTopUV;
 }
 
 const NeutralFace = ({ args, position, highlighted }: FaceProps) => (
@@ -59,71 +41,24 @@ const NeutralFace = ({ args, position, highlighted }: FaceProps) => (
 /** Box material-array index for each face: [+X, -X, +Y, -Y, +Z, -Z]. */
 const HERO_INDEX: Record<HeroFace, number> = { top: 2, front: 4, side: 1, sideEnd: 0 };
 
-/** Cover-fit crop a texture against a given face size -- always a single,
- * uncropped-looking continuous image via ClampToEdgeWrapping, never tiled.
- * This used to switch to RepeatWrapping (with repeat > 1) once a face's
- * aspect ratio diverged enough from the photo's own aspect ratio, which
- * visibly repeated the same image side-by-side -- reading as multiple
- * separate stretched panels instead of one continuous slab. Now every
- * face always gets exactly one crop of the photo (repeat pinned to 1,1),
- * accepting some horizontal/vertical crop on very elongated faces instead
- * of ever tiling. Mutates `tex` in place. */
+/** Real-world size (in scene units, ~metres) that ONE photo of the slab
+ * covers vertically. Every surface samples the photo at this same density
+ * instead of cropping it to fit each face: cover-fitting a square photo to a
+ * 4m x 0.8m backsplash magnified a thin strip of it ~5x, which is what read
+ * as a stretched, smeared texture. */
+export const PHOTO_WORLD_SIZE = 2.0;
+
+/** Maps the photo onto a face at a fixed real-world scale. Long faces mirror
+ * the photo edge-to-edge (MirroredRepeatWrapping), so there's no hard tile
+ * seam and no magnification; faces smaller than the photo show a centred
+ * window of it. Mutates `tex` in place. */
 const fitTextureToFace = (tex: THREE.Texture, faceWidth: number, faceHeight: number, imageAspect: number) => {
-  const faceAspect = faceWidth / faceHeight;
-  tex.wrapS = THREE.ClampToEdgeWrapping;
-  tex.wrapT = THREE.ClampToEdgeWrapping;
-
-  if (imageAspect > faceAspect) {
-    // Photo is wider than the face -- crop its left/right edges, keep full height.
-    const repeatX = faceAspect / imageAspect;
-    tex.repeat.set(repeatX, 1);
-    tex.offset.set((1 - repeatX) / 2, 0);
-  } else {
-    // Photo is taller than the face -- crop its top/bottom edges, keep full width.
-    const repeatY = imageAspect / faceAspect;
-    tex.repeat.set(1, repeatY);
-    tex.offset.set(0, (1 - repeatY) / 2);
-  }
-  tex.center.set(0.5, 0.5);
-  tex.needsUpdate = true;
-};
-
-/** Same cover-fit-crop idea as fitTextureToFace, but computed against a
- * shared world-space bounding box (see WorldTopUV) instead of this one
- * face's own dimensions -- first works out the single crop the whole box
- * would get, then carves out just this face's own sub-rectangle of that
- * crop based on where it sits (in world X/Z) inside the box. Two faces
- * that together tile the box (e.g. the L-shape's two countertop meshes)
- * end up sampling adjoining, correctly-oriented slices of the exact same
- * crop, so the pattern reads as continuous across the seam between them. */
-const fitTextureToSharedBox = (tex: THREE.Texture, position: Vec3, args: Vec3, box: WorldTopUV, imageAspect: number) => {
-  const boxWidth = box.maxX - box.minX;
-  const boxHeight = box.maxZ - box.minZ;
-  const boxAspect = boxWidth / boxHeight;
-
-  let repeat0X = 1;
-  let repeat0Y = 1;
-  let offset0X = 0;
-  let offset0Y = 0;
-  if (imageAspect > boxAspect) {
-    repeat0X = boxAspect / imageAspect;
-    offset0X = (1 - repeat0X) / 2;
-  } else {
-    repeat0Y = imageAspect / boxAspect;
-    offset0Y = (1 - repeat0Y) / 2;
-  }
-
-  const faceMinX = position[0] - args[0] / 2;
-  const faceMinZ = position[2] - args[2] / 2;
-  const fracXStart = (faceMinX - box.minX) / boxWidth;
-  const fracXSpan = args[0] / boxWidth;
-  const fracZStart = (faceMinZ - box.minZ) / boxHeight;
-  const fracZSpan = args[2] / boxHeight;
-
-  tex.wrapS = THREE.ClampToEdgeWrapping;
-  tex.wrapT = THREE.ClampToEdgeWrapping;
-  tex.repeat.set(repeat0X * fracXSpan, repeat0Y * fracZSpan);
-  tex.offset.set(offset0X + repeat0X * fracXStart, offset0Y + repeat0Y * fracZStart);
+  const repeatX = faceWidth / (PHOTO_WORLD_SIZE * imageAspect);
+  const repeatY = faceHeight / PHOTO_WORLD_SIZE;
+  tex.wrapS = THREE.MirroredRepeatWrapping;
+  tex.wrapT = THREE.MirroredRepeatWrapping;
+  tex.repeat.set(repeatX, repeatY);
+  tex.offset.set(Math.max(0, (1 - repeatX) / 2), Math.max(0, (1 - repeatY) / 2));
   tex.center.set(0.5, 0.5);
   tex.needsUpdate = true;
 };
@@ -146,7 +81,6 @@ const TexturedFace = ({
   highlighted,
   heroFace = "top",
   veinRotationDeg = 0,
-  worldTopUV,
 }: FaceProps & { product: VisualizerProduct }) => {
   const texture = useTexture(product.image);
   texture.colorSpace = THREE.SRGBColorSpace;
@@ -155,13 +89,7 @@ const TexturedFace = ({
   // width/height should cover-fit against.
   const rotated = Math.abs(veinRotationDeg % 180) === 90;
 
-  // Cover-fit: crop the photo to the face's own aspect ratio instead of
-  // stretching it to fill, so the slab pattern keeps its real proportions.
-  // On a face MUCH wider than the photo (a long countertop run), a single
-  // clamped crop stretches that one photo thin across the whole width and
-  // the veining goes flat/washed-out -- repeat it sideways instead, the
-  // same way a real run that long would actually need more than one slab
-  // width, rather than one image stretched to fit.
+  // Sample the photo at a fixed real-world scale (see fitTextureToFace).
   const img = texture.image as HTMLImageElement | undefined;
   const imageAspect = img?.width && img?.height ? img.width / img.height : 1;
   const rawFaceWidth = heroFace === "side" || heroFace === "sideEnd" ? args[2] : args[0];
@@ -169,17 +97,7 @@ const TexturedFace = ({
   const faceWidth = rotated ? rawFaceHeight : rawFaceWidth;
   const faceHeight = rotated ? rawFaceWidth : rawFaceHeight;
   if (img?.width && img?.height) {
-    // worldTopUV (e.g. the L-shape's main run + return leg) makes this
-    // face sample its own sub-window of one shared crop across the whole
-    // multi-segment run, instead of independently cover-fitting the photo
-    // to just this face -- otherwise two segments that touch with zero
-    // geometric gap still show unrelated crops of the veining, reading as
-    // two different slabs rather than one continuous surface.
-    if (heroFace === "top" && worldTopUV && !rotated) {
-      fitTextureToSharedBox(texture, position, args, worldTopUV, imageAspect);
-    } else {
-      fitTextureToFace(texture, faceWidth, faceHeight, imageAspect);
-    }
+    fitTextureToFace(texture, faceWidth, faceHeight, imageAspect);
   } else {
     texture.wrapS = THREE.ClampToEdgeWrapping;
     texture.wrapT = THREE.ClampToEdgeWrapping;
@@ -338,7 +256,6 @@ export const MaterialSurface = ({
   highlighted,
   heroFace = "top",
   veinRotationDeg = 0,
-  worldTopUV,
 }: FaceProps & { product: VisualizerProduct | null }) => {
   if (!product) {
     return <NeutralFace args={args} position={position} highlighted={highlighted} />;
@@ -353,7 +270,6 @@ export const MaterialSurface = ({
         highlighted={highlighted}
         heroFace={heroFace}
         veinRotationDeg={veinRotationDeg}
-        worldTopUV={worldTopUV}
       />
     </Suspense>
   );
@@ -372,3 +288,159 @@ export const SolidBox = ({
     <meshStandardMaterial color={map ? "#ffffff" : color} map={map ?? undefined} roughness={roughness} metalness={metalness} />
   </mesh>
 );
+
+
+/**
+ * Extrudes a polygon footprint (points are [x, z] in world space) straight
+ * up into one solid, and gives every vertex a UV taken from its WORLD
+ * position (top/bottom: x,z; side walls: horizontal run, y). That is what
+ * lets an L-shaped countertop be a single mesh whose pattern flows around
+ * the corner with no seam, instead of two boxes each showing their own crop.
+ */
+const makeExtrudedFootprint = (points: [number, number][], bottomY: number, height: number) => {
+  const shape = new THREE.Shape(points.map(([x, z]) => new THREE.Vector2(x, -z)));
+  const geometry = new THREE.ExtrudeGeometry(shape, { depth: height, bevelEnabled: false });
+  geometry.rotateX(-Math.PI / 2);
+  geometry.translate(0, bottomY, 0);
+
+  const pos = geometry.attributes.position;
+  const nor = geometry.attributes.normal;
+  const uv = new Float32Array(pos.count * 2);
+  for (let i = 0; i < pos.count; i++) {
+    const x = pos.getX(i);
+    const y = pos.getY(i);
+    const z = pos.getZ(i);
+    const nx = Math.abs(nor.getX(i));
+    const ny = Math.abs(nor.getY(i));
+    const nz = Math.abs(nor.getZ(i));
+    let u = x;
+    let v = y;
+    if (ny > nx && ny > nz) {
+      u = x;
+      v = z;
+    } else if (nx > nz) {
+      u = z;
+      v = y;
+    }
+    uv[i * 2] = u;
+    uv[i * 2 + 1] = v;
+  }
+  geometry.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+  return geometry;
+};
+
+export const useExtrudedFootprint = (points: [number, number][], bottomY: number, height: number) => {
+  const key = JSON.stringify(points);
+  const geometry = useMemo(
+    () => makeExtrudedFootprint(points, bottomY, height),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [key, bottomY, height]
+  );
+  useEffect(() => () => geometry.dispose(), [geometry]);
+  return geometry;
+};
+
+/** A plain-colored (optionally wood-grain mapped) extruded solid. */
+export const SolidExtrusion = ({
+  geometry,
+  color,
+  roughness = 0.55,
+  metalness = 0,
+  map,
+}: {
+  geometry: THREE.BufferGeometry;
+  color: string;
+  roughness?: number;
+  metalness?: number;
+  map?: THREE.Texture | null;
+}) => (
+  <mesh geometry={geometry} castShadow receiveShadow>
+    <meshStandardMaterial color={map ? "#ffffff" : color} map={map ?? undefined} roughness={roughness} metalness={metalness} />
+  </mesh>
+);
+
+const TexturedSlabInner = ({
+  product,
+  geometry,
+  veinRotationDeg,
+}: {
+  product: VisualizerProduct;
+  geometry: THREE.BufferGeometry;
+  veinRotationDeg: number;
+}) => {
+  const source = useTexture(product.image);
+
+  const { map, normalMap } = useMemo(() => {
+    const img = source.image as HTMLImageElement | undefined;
+    const aspect = img?.width && img?.height ? img.width / img.height : 1;
+    const configure = (t: THREE.Texture) => {
+      t.wrapS = THREE.MirroredRepeatWrapping;
+      t.wrapT = THREE.MirroredRepeatWrapping;
+      // geometry UVs are raw world units, so this is what sets the density
+      t.repeat.set(1 / (PHOTO_WORLD_SIZE * aspect), 1 / PHOTO_WORLD_SIZE);
+      t.offset.set(0, 0);
+      t.center.set(0, 0);
+      t.rotation = THREE.MathUtils.degToRad(veinRotationDeg);
+      t.needsUpdate = true;
+    };
+    const color = source.clone();
+    color.colorSpace = THREE.SRGBColorSpace;
+    configure(color);
+    let normal: THREE.Texture | null = null;
+    if (img?.width) {
+      try {
+        normal = generateNormalMapFromImage(img, 0.6);
+        configure(normal);
+      } catch {
+        normal = null;
+      }
+    }
+    return { map: color, normalMap: normal };
+  }, [source, veinRotationDeg]);
+
+  useEffect(
+    () => () => {
+      map.dispose();
+      normalMap?.dispose();
+    },
+    [map, normalMap]
+  );
+
+  return (
+    <mesh geometry={geometry} castShadow receiveShadow>
+      <meshStandardMaterial
+        map={map}
+        normalMap={normalMap ?? undefined}
+        normalScale={normalMap ? new THREE.Vector2(0.45, 0.45) : undefined}
+        roughness={0.15}
+        metalness={0}
+        envMapIntensity={1.15}
+      />
+    </mesh>
+  );
+};
+
+/** A stone-photo-textured extruded solid (top, edges and any wall faces all
+ * sample the same world-anchored pattern). Falls back to the neutral stone
+ * tone until a product is chosen / while its photo loads. */
+export const TexturedSlab = ({
+  product,
+  geometry,
+  veinRotationDeg = 0,
+}: {
+  product: VisualizerProduct | null;
+  geometry: THREE.BufferGeometry;
+  veinRotationDeg?: number;
+}) => {
+  const neutral = (
+    <mesh geometry={geometry} castShadow receiveShadow>
+      <meshStandardMaterial color={DEFAULT_COLOR} roughness={0.7} />
+    </mesh>
+  );
+  if (!product) return neutral;
+  return (
+    <Suspense fallback={neutral}>
+      <TexturedSlabInner product={product} geometry={geometry} veinRotationDeg={veinRotationDeg} />
+    </Suspense>
+  );
+};

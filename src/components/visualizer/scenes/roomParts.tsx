@@ -3,45 +3,82 @@ import * as THREE from "three";
 
 const DEFAULT_FLOOR_COLOR = "#DDD3C4";
 
-/** Bakes plank grooves into a canvas texture instead of a flat color --
- * a solid-color plane reads as a colored slab rather than a floor, since
- * there's nothing to show it's made of individual boards. */
+// One floor tile = 8 boards across x 2 board-lengths, 2 scene units square,
+// so a board is 0.25 wide x 1.0 long. The tile repeats across the floor
+// plane (see PLANK_TILE_UNITS); each board has its own end-joint position.
+const PLANK_TILE_UNITS = 2;
+const PLANK_COLS = 8;
+const PLANK_ROWS = 2;
+
+const parseHex = (hex: string): [number, number, number] => {
+  const n = parseInt(hex.slice(1), 16);
+  return [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+};
+
+/** Bakes a plank floor: every board gets its own slight tone shift and a
+ * grain, with a clearly visible groove between boards and staggered end
+ * joints. The groove is darker than a light floor and LIGHTER than a dark
+ * one, otherwise the lines vanish on the walnut finish. */
 const usePlankTexture = (color: string) => {
   const texture = useMemo(() => {
     if (typeof document === "undefined") return null;
+    const size = 1024;
     const canvas = document.createElement("canvas");
-    canvas.width = 512;
-    canvas.height = 512;
+    canvas.width = size;
+    canvas.height = size;
     const ctx = canvas.getContext("2d");
     if (!ctx) return null;
-    ctx.fillStyle = color;
-    ctx.fillRect(0, 0, 512, 512);
-    // vertical plank seams
-    const plankWidth = 64;
-    ctx.strokeStyle = "rgba(0,0,0,0.14)";
-    ctx.lineWidth = 2;
-    for (let x = plankWidth; x < 512; x += plankWidth) {
-      ctx.beginPath();
-      ctx.moveTo(x, 0);
-      ctx.lineTo(x, 512);
-      ctx.stroke();
-    }
-    // staggered end-joints, offset every other row so it reads as real boards
-    ctx.strokeStyle = "rgba(0,0,0,0.07)";
-    const rowHeight = 128;
-    for (let row = 0, y = 0; y < 512; y += rowHeight, row++) {
-      const offset = row % 2 === 0 ? 0 : plankWidth / 2;
-      for (let x = offset; x < 512; x += plankWidth) {
-        ctx.beginPath();
-        ctx.moveTo(x, y);
-        ctx.lineTo(x + plankWidth, y);
-        ctx.stroke();
+
+    const [r, g, b] = parseHex(color);
+    const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+    const grooveColor = luminance > 0.38 ? "rgba(30,20,10,0.55)" : "rgba(255,240,220,0.32)";
+    const boardW = size / PLANK_COLS;
+    const boardH = size / PLANK_ROWS;
+
+    // deterministic pseudo-random so the floor doesn't reshuffle on re-render
+    let seed = 7;
+    const rand = () => {
+      seed = (seed * 16807) % 2147483647;
+      return (seed - 1) / 2147483646;
+    };
+
+    for (let col = 0; col < PLANK_COLS; col++) {
+      const x = col * boardW;
+      // every board gets its own end-joint offset, so joints don't line up
+      const yOffset = rand() * boardH;
+      // one look per board-length in the tile; the tile repeats every
+      // PLANK_ROWS lengths, so a length wrapping past the tile edge must
+      // reuse the same look or a visible seam appears at the tile border.
+      const looks = Array.from({ length: PLANK_ROWS }, () => ({
+        k: 1 + (rand() - 0.5) * 0.14,
+        grain: Array.from({ length: 12 }, () => ({ gx: rand(), light: rand() > 0.5, w: 0.6 + rand() * 1.6, d1: rand() - 0.5, d2: rand() - 0.5 })),
+      }));
+      for (let n = -1; n <= PLANK_ROWS; n++) {
+        const y = n * boardH + yOffset;
+        const look = looks[((n % PLANK_ROWS) + PLANK_ROWS) % PLANK_ROWS];
+        ctx.fillStyle = `rgb(${Math.min(255, r * look.k)},${Math.min(255, g * look.k)},${Math.min(255, b * look.k)})`;
+        ctx.fillRect(x, y, boardW, boardH);
+        for (const gr of look.grain) {
+          const gx = x + gr.gx * boardW;
+          ctx.strokeStyle = gr.light ? "rgba(255,255,255,0.06)" : "rgba(0,0,0,0.06)";
+          ctx.lineWidth = gr.w;
+          ctx.beginPath();
+          ctx.moveTo(gx, y);
+          ctx.bezierCurveTo(gx + gr.d1 * 10, y + boardH * 0.33, gx + gr.d2 * 10, y + boardH * 0.66, gx + gr.d1 * 6, y + boardH);
+          ctx.stroke();
+        }
+        // grooves: long edge and short end joint
+        ctx.fillStyle = grooveColor;
+        ctx.fillRect(x, y, 3.5, boardH);
+        ctx.fillRect(x, y, boardW, 3.5);
       }
     }
+
     const tex = new THREE.CanvasTexture(canvas);
     tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
-    tex.repeat.set(20, 20);
+    tex.repeat.set(40 / PLANK_TILE_UNITS, 40 / PLANK_TILE_UNITS);
     tex.colorSpace = THREE.SRGBColorSpace;
+    tex.anisotropy = 8;
     tex.needsUpdate = true;
     return tex;
   }, [color]);
@@ -220,7 +257,9 @@ export const Ceiling = ({ color = "#FBF8F2" }: { color?: string }) => (
         its edge well within camera range, showing up as a hard line
         across the frame where the ceiling ended and the sky began. */}
     <planeGeometry args={[40, 40]} />
-    <meshStandardMaterial color={color} roughness={0.95} />
+    {/* emissive so the underside isn't lit only by upward-bounced light,
+        which left it a murky brown-grey */}
+    <meshStandardMaterial color={color} roughness={0.95} emissive="#E8E2D6" emissiveIntensity={0.55} />
   </mesh>
 );
 
