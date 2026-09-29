@@ -456,7 +456,17 @@ const WallRun = ({
     <group>
       <SolidBox args={[width - 0.12, 0.1, 0.5]} position={[centerX, -0.8, z]} color={RECESS_COLOR} roughness={0.9} />
       <SolidBox args={[width, 0.75, 0.62]} position={[centerX, -0.375, z]} color={cabinetColor} roughness={0.55} map={cabinetTexture} />
-      <DoorRow axis="x" front={front} from={left} to={right} y={-0.375} height={0.7} color={cabinetColor} map={cabinetTexture} />
+      {withSink ? (
+        <>
+          <DoorRow axis="x" front={front} from={left} to={centerX - 0.85} y={-0.375} height={0.7} color={cabinetColor} map={cabinetTexture} />
+          <Dishwasher x={centerX - 0.55} front={front} y={-0.375} height={0.7} />
+          <DoorRow axis="x" front={front} from={centerX - 0.25} y={-0.375} to={centerX + 0.35} height={0.7} color={cabinetColor} map={cabinetTexture} />
+          <DrawerStack front={front} from={centerX + 0.65} to={right} color={cabinetColor} map={cabinetTexture} />
+          <Cooktop x={centerX} z={z - 0.02} topY={topY} />
+        </>
+      ) : (
+        <DoorRow axis="x" front={front} from={left} to={right} y={-0.375} height={0.7} color={cabinetColor} map={cabinetTexture} />
+      )}
       <MaterialSurface
         product={countertopProduct}
         args={[width + 0.16, slabHeight, 0.7]}
@@ -468,15 +478,18 @@ const WallRun = ({
 
       {withUpper && (
         <>
-          <SolidBox args={[width, 0.55, 0.3]} position={[centerX, 1.15, z - 0.55]} color={cabinetColor} roughness={0.55} map={cabinetTexture} />
-          <DoorRow axis="x" front={z - 0.4} from={left} to={right} y={1.15} height={0.51} color={cabinetColor} map={cabinetTexture} handle="bottom" />
+          <SolidBox args={[width - 0.9, 0.55, 0.3]} position={[centerX, 1.15, z - 0.55]} color={cabinetColor} roughness={0.55} map={cabinetTexture} />
+          <RangeHood x={centerX} z={z - 0.5} />
+          <DoorRow axis="x" front={z - 0.4} from={left} to={centerX - 0.5} y={1.15} height={0.51} color={cabinetColor} map={cabinetTexture} handle="bottom" glass />
+          <DoorRow axis="x" front={z - 0.4} from={centerX + 0.5} to={right} y={1.15} height={0.51} color={cabinetColor} map={cabinetTexture} handle="bottom" glass />
           <MaterialSurface product={backsplashProduct} args={[width + 0.16, 0.785, 0.1]} position={[centerX, 0.4825, z - 0.35]} heroFace="front" />
           <UnderCabinetLight position={[centerX, 0.868, z - 0.37]} args={[width - 0.1, 0.012, 0.02]} />
         </>
       )}
 
-      {withSink && <SinkFaucet x={centerX} z={z + 0.05} />}
-      {withSink && <CountertopDecor x={centerX + width / 2 - 0.55} z={z} topY={0.09} />}
+      {withSink && <SinkFaucet x={centerX - 1.15} z={z + 0.05} />}
+      {withSink && <CountertopDecor x={centerX + width / 2 - 0.35} z={z} topY={0.09} />}
+      {withSink && <Plant x={left + 0.35} z={z} topY={0.09} />}
     </group>
   );
 };
@@ -605,6 +618,7 @@ const KitchenScene = ({
 
       {layout === "island" && (
         <>
+          <TrackLights />
           <WallRun
             width={3.8}
             centerX={0.1}
@@ -643,6 +657,7 @@ const KitchenScene = ({
 
       {layout === "galley" && (
         <>
+          <TrackLights />
           <WallRun
             width={3.8}
             centerX={0.1}
