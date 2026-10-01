@@ -5,6 +5,7 @@ import { useTexture } from "@react-three/drei";
 import * as THREE from "three";
 import { generateNormalMapFromImage } from "@/three/generateNormalMap";
 import { extractAverageColor } from "@/three/extractAverageColor";
+import { cropToSlab, type CropSource } from "@/three/cropToSlab";
 import type { VisualizerProduct } from "../../../types";
 
 export type Vec3 = [number, number, number];
@@ -63,6 +64,32 @@ const fitTextureToFace = (tex: THREE.Texture, faceWidth: number, faceHeight: num
   tex.needsUpdate = true;
 };
 
+const slabTextureCache = new WeakMap<THREE.Texture, THREE.Texture>();
+
+/** The product photo as a texture, cropped to just the slab when the photo
+ * shows it standing in a warehouse (see cropToSlab). One texture per loaded
+ * photo, shared by every surface -- callers clone it before changing any
+ * transform. */
+const useSlabTexture = (url: string): THREE.Texture => {
+  const loaded = useTexture(url);
+  return useMemo(() => {
+    const cached = slabTextureCache.get(loaded);
+    if (cached) return cached;
+    const img = loaded.image as CropSource | undefined;
+    let result = loaded;
+    if (img?.width) {
+      const cropped = cropToSlab(img);
+      if (cropped !== img) {
+        result = new THREE.Texture(cropped);
+        result.needsUpdate = true;
+      }
+    }
+    result.colorSpace = THREE.SRGBColorSpace;
+    slabTextureCache.set(loaded, result);
+    return result;
+  }, [loaded]);
+};
+
 /** Darken a "#rrggbb" hex color by the given factor (0-1, lower = darker). */
 const shade = (hex: string, factor: number): string => {
   const n = parseInt(hex.slice(1), 16);
@@ -82,14 +109,14 @@ const TexturedFace = ({
   heroFace = "top",
   veinRotationDeg = 0,
 }: FaceProps & { product: VisualizerProduct }) => {
-  const source = useTexture(product.image);
+  const source = useSlabTexture(product.image);
 
   // A quarter-turn on the vein swaps which face dimension the image's own
   // width/height should cover-fit against.
   const rotated = Math.abs(veinRotationDeg % 180) === 90;
 
   // Sample the photo at a fixed real-world scale (see fitTextureToFace).
-  const img = source.image as HTMLImageElement | undefined;
+  const img = source.image as HTMLImageElement | HTMLCanvasElement | undefined;
   const imageAspect = img?.width && img?.height ? img.width / img.height : 1;
   const rawFaceWidth = heroFace === "side" || heroFace === "sideEnd" ? args[2] : args[0];
   const rawFaceHeight = heroFace === "top" ? args[2] : args[1];
@@ -154,7 +181,7 @@ const TexturedFace = ({
   // map exists for any product) so the polished stone catches light with
   // real micro-surface variation instead of looking like a flat sticker.
   const normalMap = useMemo(() => {
-    const img = texture.image as HTMLImageElement | undefined;
+    const img = texture.image as HTMLImageElement | HTMLCanvasElement | undefined;
     if (!img || !img.width) return null;
     try {
       const map = generateNormalMapFromImage(img, 0.6);
@@ -181,7 +208,7 @@ const TexturedFace = ({
   // a corner. Tinting them from the same photo's own average color instead
   // keeps the edge visually part of the same slab.
   const edgeColor = useMemo(() => {
-    const img = texture.image as HTMLImageElement | undefined;
+    const img = texture.image as HTMLImageElement | HTMLCanvasElement | undefined;
     if (!img?.width) return EDGE_COLOR;
     try {
       return shade(extractAverageColor(img), 0.85);
@@ -384,10 +411,10 @@ const TexturedSlabInner = ({
   geometry: THREE.BufferGeometry;
   veinRotationDeg: number;
 }) => {
-  const source = useTexture(product.image);
+  const source = useSlabTexture(product.image);
 
   const { map, normalMap } = useMemo(() => {
-    const img = source.image as HTMLImageElement | undefined;
+    const img = source.image as HTMLImageElement | HTMLCanvasElement | undefined;
     const aspect = img?.width && img?.height ? img.width / img.height : 1;
     const configure = (t: THREE.Texture) => {
       t.wrapS = THREE.MirroredRepeatWrapping;

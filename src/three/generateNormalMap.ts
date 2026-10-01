@@ -9,7 +9,7 @@ const WORK_SIZE = 512;
  * variation to catch light instead of reading as a flat printed texture --
  * there is no separate normal-map asset for any product, only the photo.
  */
-export const generateNormalMapFromImage = (image: HTMLImageElement | ImageBitmap, strength = 1): THREE.CanvasTexture => {
+export const generateNormalMapFromImage = (image: HTMLImageElement | ImageBitmap | HTMLCanvasElement, strength = 1): THREE.CanvasTexture => {
   const srcCanvas = document.createElement("canvas");
   const aspect = image.width / image.height;
   const w = aspect >= 1 ? WORK_SIZE : Math.round(WORK_SIZE * aspect);

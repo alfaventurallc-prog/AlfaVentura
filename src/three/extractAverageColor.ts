@@ -5,7 +5,7 @@
  * a whole slab/cabinet photograph clearly) but the surface should still
  * visually reflect the real product rather than a generic placeholder tone.
  */
-export const extractAverageColor = (image: HTMLImageElement): string => {
+export const extractAverageColor = (image: HTMLImageElement | HTMLCanvasElement): string => {
   const size = 24;
   const canvas = document.createElement("canvas");
   canvas.width = size;
