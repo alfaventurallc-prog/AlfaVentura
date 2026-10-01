@@ -482,7 +482,7 @@ const WallRun = ({
           <RangeHood x={centerX} z={z - 0.5} />
           <DoorRow axis="x" front={z - 0.4} from={left} to={centerX - 0.5} y={1.15} height={0.51} color={cabinetColor} map={cabinetTexture} handle="bottom" glass />
           <DoorRow axis="x" front={z - 0.4} from={centerX + 0.5} to={right} y={1.15} height={0.51} color={cabinetColor} map={cabinetTexture} handle="bottom" glass />
-          <MaterialSurface product={backsplashProduct} args={[width + 0.16, 0.785, 0.1]} position={[centerX, 0.4825, z - 0.35]} heroFace="front" />
+          <MaterialSurface product={backsplashProduct} args={[width + 0.16, 0.785, 0.1]} position={[centerX, 0.4825, z - 0.35]} heroFace="front" veinRotationDeg={veinRotation} />
           <UnderCabinetLight position={[centerX, 0.868, z - 0.37]} args={[width - 0.1, 0.012, 0.02]} />
         </>
       )}

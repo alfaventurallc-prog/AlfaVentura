@@ -82,30 +82,44 @@ const TexturedFace = ({
   heroFace = "top",
   veinRotationDeg = 0,
 }: FaceProps & { product: VisualizerProduct }) => {
-  const texture = useTexture(product.image);
-  texture.colorSpace = THREE.SRGBColorSpace;
+  const source = useTexture(product.image);
 
   // A quarter-turn on the vein swaps which face dimension the image's own
   // width/height should cover-fit against.
   const rotated = Math.abs(veinRotationDeg % 180) === 90;
 
   // Sample the photo at a fixed real-world scale (see fitTextureToFace).
-  const img = texture.image as HTMLImageElement | undefined;
+  const img = source.image as HTMLImageElement | undefined;
   const imageAspect = img?.width && img?.height ? img.width / img.height : 1;
   const rawFaceWidth = heroFace === "side" || heroFace === "sideEnd" ? args[2] : args[0];
   const rawFaceHeight = heroFace === "top" ? args[2] : args[1];
   const faceWidth = rotated ? rawFaceHeight : rawFaceWidth;
   const faceHeight = rotated ? rawFaceWidth : rawFaceHeight;
-  if (img?.width && img?.height) {
-    fitTextureToFace(texture, faceWidth, faceHeight, imageAspect);
-  } else {
-    texture.wrapS = THREE.ClampToEdgeWrapping;
-    texture.wrapT = THREE.ClampToEdgeWrapping;
-    texture.repeat.set(1, 1);
-    texture.offset.set(0, 0);
-  }
-  texture.rotation = THREE.MathUtils.degToRad(veinRotationDeg);
-  texture.needsUpdate = true;
+
+  // useTexture returns ONE cached Texture per URL, shared by every surface
+  // showing the same product (wall-run top, island top, backsplash,
+  // waterfalls). Mutating it in place let whichever surface rendered last
+  // dictate repeat/rotation for all of them -- e.g. the backsplash resetting
+  // rotation to 0 under a "vertical" countertop. Each face gets its own clone.
+  const texture = useMemo(() => {
+    const t = source.clone();
+    t.colorSpace = THREE.SRGBColorSpace;
+    if (img?.width && img?.height) {
+      fitTextureToFace(t, faceWidth, faceHeight, imageAspect);
+    } else {
+      t.wrapS = THREE.ClampToEdgeWrapping;
+      t.wrapT = THREE.ClampToEdgeWrapping;
+      t.repeat.set(1, 1);
+      t.offset.set(0, 0);
+      t.center.set(0.5, 0.5);
+    }
+    t.rotation = THREE.MathUtils.degToRad(veinRotationDeg);
+    t.needsUpdate = true;
+    return t;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [source, faceWidth, faceHeight, imageAspect, veinRotationDeg]);
+
+  useEffect(() => () => texture.dispose(), [texture]);
 
   // The countertop's own thickness/edge bands -- same slab pattern
   // continuing onto every visible vertical edge, not a flat tint, so it
@@ -119,8 +133,10 @@ const TexturedFace = ({
   const edgeTextures = useMemo(() => {
     if (heroFace !== "top" || !img?.width) return null;
     const front = texture.clone();
+    front.rotation = 0;
     fitTextureToFace(front, args[0], args[1], imageAspect);
     const side = texture.clone();
+    side.rotation = 0;
     fitTextureToFace(side, args[2], args[1], imageAspect);
     return { front, back: front, side, sideEnd: side };
     // eslint-disable-next-line react-hooks/exhaustive-deps
