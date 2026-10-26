@@ -267,6 +267,7 @@ export async function createProduct(productData: any) {
 
     revalidatePath("/admin/products");
     revalidatePath("/");
+    revalidatePath("/visualizer");
     revalidatePath(`/products/${product.id}`);
 
     return {
@@ -332,6 +333,7 @@ export async function updateProduct(id: string, productData: any) {
 
     revalidatePath("/admin/products");
     revalidatePath("/");
+    revalidatePath("/visualizer");
     // The public product detail page (src/app/(root)/products/[id]/page.tsx)
     // was never revalidated on edit, so once Next.js cached its rendered
     // output for a given id -- including, worst case, a cached "Product not
@@ -372,6 +374,7 @@ export async function deleteProduct(id: string) {
 
     revalidatePath("/admin/products");
     revalidatePath("/");
+    revalidatePath("/visualizer");
     revalidatePath(`/products/${id}`);
 
     return {
