@@ -15,5 +15,7 @@ export const KITCHEN_CAMERA: {
   // preset (y=1.25 camera, y=-0.1 target) put the eye ~2.1m up looking
   // steeply down, which read as an abstract top-down block layout rather
   // than someone standing in the kitchen.
-  hero: [2.5, 0.78, 2.45, -0.2, 0.15, -0.35],
+  // Pulled back and aimed slightly higher so the upper cabinets sit inside
+  // the frame instead of being cut off by its top edge.
+  hero: [3.1, 1.0, 3.05, -0.2, 0.42, -0.45],
 };

@@ -8,6 +8,9 @@ import type { VisualizerProduct } from "../../../../types";
 
 const WALL_COLOR = "#EFEAE0";
 const HANDLE_COLOR = "#9C9691";
+// Brushed brass for door/drawer pulls: grey pulls vanished against white and
+// grey finishes, and brass reads on light and dark cabinets alike.
+const PULL_COLOR = "#B08D57";
 const RECESS_COLOR = "#241C15";
 
 type Pt = [number, number];
@@ -76,15 +79,15 @@ const ShakerDoor = ({
   glass?: boolean;
 }) => {
   const rail = 0.07;
-  const railZ = SLAB / 2 + 0.006;
+  const railZ = SLAB / 2 + 0.008;
   const handleY = handle === "top" ? height / 2 - 0.11 : -height / 2 + 0.11;
   return (
     <group position={position} rotation={[0, rotationY, 0]}>
       <SolidBox args={[width, height, SLAB]} position={[0, 0, 0]} color={color} map={map} roughness={0.5} />
-      <SolidBox args={[width, rail, 0.012]} position={[0, height / 2 - rail / 2, railZ]} color={color} map={map} roughness={0.5} />
-      <SolidBox args={[width, rail, 0.012]} position={[0, -height / 2 + rail / 2, railZ]} color={color} map={map} roughness={0.5} />
-      <SolidBox args={[rail, height - rail * 2, 0.012]} position={[width / 2 - rail / 2, 0, railZ]} color={color} map={map} roughness={0.5} />
-      <SolidBox args={[rail, height - rail * 2, 0.012]} position={[-width / 2 + rail / 2, 0, railZ]} color={color} map={map} roughness={0.5} />
+      <SolidBox args={[width, rail, 0.016]} position={[0, height / 2 - rail / 2, railZ]} color={color} map={map} roughness={0.5} />
+      <SolidBox args={[width, rail, 0.016]} position={[0, -height / 2 + rail / 2, railZ]} color={color} map={map} roughness={0.5} />
+      <SolidBox args={[rail, height - rail * 2, 0.016]} position={[width / 2 - rail / 2, 0, railZ]} color={color} map={map} roughness={0.5} />
+      <SolidBox args={[rail, height - rail * 2, 0.016]} position={[-width / 2 + rail / 2, 0, railZ]} color={color} map={map} roughness={0.5} />
       {glass ? (
         <>
           <mesh position={[0, 0, 0.0]}>
@@ -100,13 +103,13 @@ const ShakerDoor = ({
         <SolidBox
           args={[width - rail * 2, height - rail * 2, 0.006]}
           position={[0, 0, SLAB / 2 + 0.003]}
-          color={darken(color, 0.9)}
+          color={darken(color, 0.8)}
           roughness={0.55}
         />
       )}
-      {!glass && <SolidBox args={[0.16, 0.014, 0.014]} position={[0, handleY, SLAB / 2 + 0.05]} color={HANDLE_COLOR} roughness={0.25} metalness={0.7} />}
-      <SolidBox args={[0.012, 0.012, 0.04]} position={[-0.06, handleY, SLAB / 2 + 0.03]} color={HANDLE_COLOR} roughness={0.25} metalness={0.7} />
-      <SolidBox args={[0.012, 0.012, 0.04]} position={[0.06, handleY, SLAB / 2 + 0.03]} color={HANDLE_COLOR} roughness={0.25} metalness={0.7} />
+      {!glass && <SolidBox args={[0.2, 0.016, 0.016]} position={[0, handleY, SLAB / 2 + 0.05]} color={PULL_COLOR} roughness={0.3} metalness={0.8} />}
+      <SolidBox args={[0.014, 0.014, 0.04]} position={[-0.08, handleY, SLAB / 2 + 0.03]} color={PULL_COLOR} roughness={0.3} metalness={0.8} />
+      <SolidBox args={[0.014, 0.014, 0.04]} position={[0.08, handleY, SLAB / 2 + 0.03]} color={PULL_COLOR} roughness={0.3} metalness={0.8} />
     </group>
   );
 };
@@ -142,8 +145,10 @@ const DoorRow = ({
   glass?: boolean;
 }) => {
   const length = to - from;
-  const count = Math.max(1, Math.round(length / 0.95));
-  const doorW = length / count - 0.016;
+  // ~55cm doors, close to real cabinet door widths; at ~95cm a whole upper
+  // run became one or two huge panels that did not read as cabinets.
+  const count = Math.max(1, Math.round(length / 0.55));
+  const doorW = length / count - 0.024;
   const mid = (from + to) / 2;
   const alongX = axis === "x";
   return (
@@ -478,10 +483,16 @@ const WallRun = ({
 
       {withUpper && (
         <>
-          <SolidBox args={[width - 0.9, 0.55, 0.3]} position={[centerX, 1.15, z - 0.55]} color={cabinetColor} roughness={0.55} map={cabinetTexture} />
+          {/* Two upper boxes either side of the hood, each exactly as wide as
+              its door row. The single centred box used to be narrower than
+              the doors, and the doors were all glass with a lit interior, so
+              the uppers read as light boxes instead of cabinets in the
+              selected finish. */}
+          <SolidBox args={[centerX - 0.5 - left, 0.55, 0.3]} position={[(left + centerX - 0.5) / 2, 1.15, z - 0.55]} color={cabinetColor} roughness={0.55} map={cabinetTexture} />
+          <SolidBox args={[right - centerX - 0.5, 0.55, 0.3]} position={[(centerX + 0.5 + right) / 2, 1.15, z - 0.55]} color={cabinetColor} roughness={0.55} map={cabinetTexture} />
           <RangeHood x={centerX} z={z - 0.5} />
-          <DoorRow axis="x" front={z - 0.4} from={left} to={centerX - 0.5} y={1.15} height={0.51} color={cabinetColor} map={cabinetTexture} handle="bottom" glass />
-          <DoorRow axis="x" front={z - 0.4} from={centerX + 0.5} to={right} y={1.15} height={0.51} color={cabinetColor} map={cabinetTexture} handle="bottom" glass />
+          <DoorRow axis="x" front={z - 0.4} from={left} to={centerX - 0.5} y={1.15} height={0.51} color={cabinetColor} map={cabinetTexture} handle="bottom" />
+          <DoorRow axis="x" front={z - 0.4} from={centerX + 0.5} to={right} y={1.15} height={0.51} color={cabinetColor} map={cabinetTexture} handle="bottom" />
           <MaterialSurface product={backsplashProduct} args={[width + 0.16, 0.785, 0.1]} position={[centerX, 0.4825, z - 0.35]} heroFace="front" veinRotationDeg={veinRotation} />
           <UnderCabinetLight position={[centerX, 0.868, z - 0.37]} args={[width - 0.1, 0.012, 0.02]} />
         </>
