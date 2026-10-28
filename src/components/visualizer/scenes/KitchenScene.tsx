@@ -23,6 +23,7 @@ interface KitchenSceneProps {
   backsplashProduct: VisualizerProduct | null;
   floorColor: string;
   floorRoughness: number;
+  floorTextureUrl?: string | null;
   waterfall: WaterfallOption;
   thicknessMm: ThicknessMm;
   veinRotation: 0 | 90;
@@ -608,6 +609,7 @@ const KitchenScene = ({
   backsplashProduct,
   floorColor,
   floorRoughness,
+  floorTextureUrl,
   waterfall,
   thicknessMm,
   veinRotation,
@@ -619,7 +621,7 @@ const KitchenScene = ({
 
   return (
     <group scale={[mirrored ? -1 : 1, 1, 1]}>
-      <Floor color={floorColor} roughness={floorRoughness} />
+      <Floor color={floorColor} roughness={floorRoughness} textureUrl={floorTextureUrl} />
       <BackWall color={WALL_COLOR} />
       <SideWall color={WALL_COLOR} x={-2.7} />
       {/* Solid corner post where the back and side walls meet, so the two

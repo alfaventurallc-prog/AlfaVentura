@@ -19,6 +19,7 @@ interface VisualizerCanvasProps {
   backsplashProduct: VisualizerProduct | null;
   floorColor: string;
   floorRoughness: number;
+  floorTextureUrl?: string | null;
   waterfall: WaterfallOption;
   thicknessMm: ThicknessMm;
   veinRotation: 0 | 90;
@@ -62,6 +63,7 @@ const VisualizerCanvas = ({
   backsplashProduct,
   floorColor,
   floorRoughness,
+  floorTextureUrl,
   waterfall,
   thicknessMm,
   veinRotation,
@@ -140,6 +142,7 @@ const VisualizerCanvas = ({
             backsplashProduct={backsplashProduct}
             floorColor={floorColor}
             floorRoughness={floorRoughness}
+            floorTextureUrl={floorTextureUrl}
             waterfall={waterfall}
             thicknessMm={thicknessMm}
             veinRotation={veinRotation}

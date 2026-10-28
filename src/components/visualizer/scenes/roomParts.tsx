@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import * as THREE from "three";
 
 const DEFAULT_FLOOR_COLOR = "#DDD3C4";
@@ -88,6 +88,84 @@ const usePlankTexture = (color: string) => {
   return texture;
 };
 
+/** Same plank layout as usePlankTexture, but each board is cut from a
+ * random strip of a real flooring product photo (an SPC colour-film
+ * swatch) instead of a flat tint, so the floor shows that product's actual
+ * grain and colour. Loads asynchronously; null until the photo is ready. */
+const usePhotoPlankTexture = (url: string | null | undefined) => {
+  const [texture, setTexture] = useState<THREE.CanvasTexture | null>(null);
+
+  useEffect(() => {
+    if (!url || typeof document === "undefined") {
+      setTexture(null);
+      return;
+    }
+    let cancelled = false;
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => {
+      if (cancelled) return;
+      const size = 1024;
+      const canvas = document.createElement("canvas");
+      canvas.width = size;
+      canvas.height = size;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) return;
+
+      // average tone of the photo decides whether grooves read darker or lighter
+      ctx.drawImage(img, 0, 0, 1, 1);
+      const [r, g, b] = ctx.getImageData(0, 0, 1, 1).data;
+      const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+      const grooveColor = luminance > 0.38 ? "rgba(30,20,10,0.45)" : "rgba(255,240,220,0.25)";
+
+      const boardW = size / PLANK_COLS;
+      const boardH = size / PLANK_ROWS;
+      // a strip with the board's own 1:4 aspect, so the grain isn't stretched
+      const stripW = Math.min(img.width, img.height / (boardH / boardW));
+      const stripH = stripW * (boardH / boardW);
+
+      let seed = 11;
+      const rand = () => {
+        seed = (seed * 16807) % 2147483647;
+        return (seed - 1) / 2147483646;
+      };
+
+      for (let col = 0; col < PLANK_COLS; col++) {
+        const x = col * boardW;
+        const yOffset = rand() * boardH;
+        const strips = Array.from({ length: PLANK_ROWS }, () => ({
+          sx: rand() * (img.width - stripW),
+          sy: rand() * (img.height - stripH),
+        }));
+        for (let n = -1; n <= PLANK_ROWS; n++) {
+          const y = n * boardH + yOffset;
+          const s = strips[((n % PLANK_ROWS) + PLANK_ROWS) % PLANK_ROWS];
+          ctx.drawImage(img, s.sx, s.sy, stripW, stripH, x, y, boardW, boardH);
+          ctx.fillStyle = grooveColor;
+          ctx.fillRect(x, y, 3, boardH);
+          ctx.fillRect(x, y, boardW, 3);
+        }
+      }
+
+      const tex = new THREE.CanvasTexture(canvas);
+      tex.wrapS = tex.wrapT = THREE.RepeatWrapping;
+      tex.repeat.set(40 / PLANK_TILE_UNITS, 40 / PLANK_TILE_UNITS);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = 8;
+      tex.needsUpdate = true;
+      setTexture(tex);
+    };
+    img.src = url;
+    return () => {
+      cancelled = true;
+    };
+  }, [url]);
+
+  useEffect(() => () => texture?.dispose(), [texture]);
+
+  return texture;
+};
+
 /** Bakes subtle wood-grain streaks into a canvas texture for cabinet
  * carcasses -- a flat meshStandardMaterial color on a large cabinet face
  * reads as plastic/laminate with nothing to catch the eye; a faint grain
@@ -165,8 +243,18 @@ const useWallTexture = (color: string) => {
   return texture;
 };
 
-export const Floor = ({ color = DEFAULT_FLOOR_COLOR, roughness = 0.95 }: { color?: string; roughness?: number }) => {
-  const plankTexture = usePlankTexture(color);
+export const Floor = ({
+  color = DEFAULT_FLOOR_COLOR,
+  roughness = 0.95,
+  textureUrl,
+}: {
+  color?: string;
+  roughness?: number;
+  textureUrl?: string | null;
+}) => {
+  const tintedPlanks = usePlankTexture(color);
+  const photoPlanks = usePhotoPlankTexture(textureUrl);
+  const plankTexture = (textureUrl && photoPlanks) || tintedPlanks;
   return (
     // Matches the cabinet/appliance bottom convention used throughout
     // KitchenScene (base boxes bottom out at y=-0.85) -- it used to sit

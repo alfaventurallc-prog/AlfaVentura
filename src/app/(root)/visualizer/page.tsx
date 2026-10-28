@@ -37,6 +37,7 @@ export default async function VisualizerPage() {
   // a flat slab texture. Matching "slab" only keeps this to actual
   // material swatches.
   const quartzProducts = withImages.filter((p) => /slab/i.test(p.category?.name ?? "")).map(toVisualizerProduct);
+  const floorProducts = withImages.filter((p) => /floor/i.test(p.category?.name ?? "")).map(toVisualizerProduct);
 
   return (
     <section className="bg-[#FDFAF7] py-12 md:py-20 px-5 md:px-10 xl:px-16">
@@ -57,7 +58,7 @@ export default async function VisualizerPage() {
           </p>
         </div>
 
-        <VisualizerShell cabinetProducts={cabinetProducts} quartzProducts={quartzProducts} />
+        <VisualizerShell cabinetProducts={cabinetProducts} quartzProducts={quartzProducts} floorProducts={floorProducts} />
       </div>
     </section>
   );

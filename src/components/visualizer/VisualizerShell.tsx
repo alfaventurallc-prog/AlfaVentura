@@ -30,6 +30,7 @@ import type { VisualizerProduct } from "../../../types";
 interface VisualizerShellProps {
   cabinetProducts: VisualizerProduct[];
   quartzProducts: VisualizerProduct[];
+  floorProducts?: VisualizerProduct[];
 }
 
 const SAVED_DESIGN_KEY = "alfa-ventura-visualizer-saved-design";
@@ -37,14 +38,14 @@ const DEFAULT_CABINET_COLOR = "#D8C9AE";
 
 const toSwatch = (p: VisualizerProduct): SwatchItem => ({ id: p.id, name: p.name, thumbnail: p.image });
 
-const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellProps) => {
+const VisualizerShell = ({ cabinetProducts, quartzProducts, floorProducts = [] }: VisualizerShellProps) => {
   const [config, setConfig] = useState<KitchenConfig>({
     layout: "island",
     mirrored: false,
     cabinetId: cabinetProducts[0]?.id ?? null,
     countertopId: quartzProducts[0]?.id ?? null,
     backsplashId: quartzProducts[1]?.id ?? quartzProducts[0]?.id ?? null,
-    floorId: FLOOR_FINISHES[0].id,
+    floorId: floorProducts[0]?.id ?? FLOOR_FINISHES[0].id,
     waterfall: "both",
     thicknessMm: 20,
     veinRotation: 0,
@@ -107,7 +108,15 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
 
   const countertopProduct = quartzProducts.find((p) => p.id === config.countertopId) ?? null;
   const backsplashProduct = quartzProducts.find((p) => p.id === config.backsplashId) ?? null;
-  const floorFinish = FLOOR_FINISHES.find((f) => f.id === config.floorId) ?? FLOOR_FINISHES[0];
+  // A floor id is either a flooring product (textured from its swatch
+  // photo) or one of the generic tinted finishes.
+  const resolveFloor = (id: string | null) => {
+    const product = floorProducts.find((p) => p.id === id);
+    if (product) return { color: FLOOR_FINISHES[0].color, roughness: 0.8, textureUrl: product.images[0] ?? product.image };
+    const finish = FLOOR_FINISHES.find((f) => f.id === id) ?? FLOOR_FINISHES[0];
+    return { color: finish.color, roughness: finish.roughness, textureUrl: null };
+  };
+  const floorFinish = resolveFloor(config.floorId);
 
   // The 3D surfaces texture from `.image` -- always uses the product's
   // first real photo (images[0], the main/front-view image) as the
@@ -121,7 +130,7 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
     cabinet: cabinetProducts.map(toSwatch),
     countertop: quartzProducts.map(toSwatch),
     backsplash: quartzProducts.map(toSwatch),
-    floor: FLOOR_FINISHES.map((f) => ({ id: f.id, name: f.name, color: f.color })),
+    floor: [...floorProducts.map(toSwatch), ...FLOOR_FINISHES.map((f) => ({ id: f.id, name: f.name, color: f.color }))],
   };
 
   const activeIdForCategory: Record<MaterialCategory, string | null> = {
@@ -198,7 +207,7 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
 
   const snapshotCountertop = snapshot ? quartzProducts.find((p) => p.id === snapshot.config.countertopId) ?? null : null;
   const snapshotBacksplash = snapshot ? quartzProducts.find((p) => p.id === snapshot.config.backsplashId) ?? null : null;
-  const snapshotFloor = snapshot ? FLOOR_FINISHES.find((f) => f.id === snapshot.config.floorId) ?? FLOOR_FINISHES[0] : null;
+  const snapshotFloor = snapshot ? resolveFloor(snapshot.config.floorId) : null;
 
   const handleDownload = async () => {
     if (mode === "image") {
@@ -303,6 +312,7 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
                     backsplashProduct={withTexturePhoto(snapshotBacksplash)}
                     floorColor={snapshotFloor!.color}
                     floorRoughness={snapshotFloor!.roughness}
+                    floorTextureUrl={snapshotFloor!.textureUrl}
                     waterfall={snapshot.config.waterfall}
                     thicknessMm={snapshot.config.thicknessMm}
                     veinRotation={snapshot.config.veinRotation}
@@ -331,6 +341,7 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
                     backsplashProduct={backsplashTextureProduct}
                     floorColor={floorFinish.color}
                     floorRoughness={floorFinish.roughness}
+                    floorTextureUrl={floorFinish.textureUrl}
                     waterfall={config.waterfall}
                     thicknessMm={config.thicknessMm}
                     veinRotation={config.veinRotation}
@@ -360,6 +371,7 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts }: VisualizerShellPro
                   backsplashProduct={backsplashTextureProduct}
                   floorColor={floorFinish.color}
                   floorRoughness={floorFinish.roughness}
+                  floorTextureUrl={floorFinish.textureUrl}
                   waterfall={config.waterfall}
                   thicknessMm={config.thicknessMm}
                   veinRotation={config.veinRotation}
