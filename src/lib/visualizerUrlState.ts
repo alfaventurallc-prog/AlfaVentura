@@ -43,13 +43,20 @@ export const decodeConfigFromParams = (params: URLSearchParams): Partial<Kitchen
   const thickness = Number(params.get("thickness"));
   const vein = params.get("vein");
   const edge = params.get("edge");
+  // Only keys actually present in the URL are returned, so a partial link
+  // (e.g. ?countertop=<id> from a product page) keeps every other default
+  // instead of nulling the cabinet, backsplash and floor.
+  const id = (key: string) => params.get(key) || undefined;
+  const ids = {
+    cabinetId: id("cabinet"),
+    countertopId: id("countertop"),
+    backsplashId: id("backsplash"),
+    floorId: id("floor"),
+  };
   return {
     ...(layout === "island" || layout === "lshape" || layout === "galley" ? { layout } : {}),
     mirrored: params.get("mirrored") === "1",
-    cabinetId: params.get("cabinet"),
-    countertopId: params.get("countertop"),
-    backsplashId: params.get("backsplash"),
-    floorId: params.get("floor"),
+    ...Object.fromEntries(Object.entries(ids).filter(([, v]) => v !== undefined)),
     ...(waterfall === "none" || waterfall === "left" || waterfall === "right" || waterfall === "both" ? { waterfall } : {}),
     ...(THICKNESS_OPTIONS.includes(thickness as ThicknessMm) ? { thicknessMm: thickness as ThicknessMm } : {}),
     ...(vein === "90" ? { veinRotation: 90 as const } : {}),

@@ -137,6 +137,22 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts, floorProducts = [] }
       : FLOOR_FINISHES.map((f) => ({ id: f.id, name: f.name, color: f.color })),
   };
 
+  // Sent with "Request a Quote" so the enquiry names every surface and links
+  // back to this exact design.
+  const getDesignSummary = () => {
+    const nameOf = (list: { id: string; name: string }[], id: string | null) => list.find((x) => x.id === id)?.name ?? "-";
+    const link = `${window.location.origin}/visualizer?${encodeConfigToParams(config).toString()}`;
+    return [
+      "Quote request for this kitchen design:",
+      `Countertop: ${countertopProduct?.name ?? "-"}`,
+      `Backsplash: ${backsplashProduct?.name ?? "-"}`,
+      `Cabinets: ${nameOf(cabinetProducts, config.cabinetId)}`,
+      `Floor: ${nameOf([...floorProducts, ...FLOOR_FINISHES], config.floorId)}`,
+      `Layout: ${config.layout}`,
+      `Design link: ${link}`,
+    ].join("\n");
+  };
+
   const searchTerm = productSearch.trim().toLowerCase();
   const visibleItems = searchTerm
     ? catalog[activeCategory].filter((item) => item.name.toLowerCase().includes(searchTerm))
@@ -586,7 +602,7 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts, floorProducts = [] }
       </div>
 
       <div className="lg:w-[320px] lg:shrink-0 lg:pl-6 lg:border-l lg:border-[#F0E8DB] space-y-5">
-        <ProductInfoPanel product={countertopProduct} />
+        <ProductInfoPanel product={countertopProduct} getDesignSummary={getDesignSummary} />
 
         <div className="bg-white rounded-2xl shadow-premium border border-[#F0E8DB] p-4 space-y-3">
           <p className="text-xs font-bold uppercase tracking-wide text-[#A8987F]">Actions</p>

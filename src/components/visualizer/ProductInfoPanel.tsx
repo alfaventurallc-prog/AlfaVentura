@@ -24,6 +24,9 @@ import type { VisualizerProduct } from "../../../types";
 
 interface ProductInfoPanelProps {
   product: VisualizerProduct | null;
+  /** Describes the whole kitchen design (all surfaces + a link back to it);
+   * sent as the enquiry message instead of the countertop alone. */
+  getDesignSummary?: () => string;
 }
 
 const formSchema = z.object({
@@ -31,7 +34,7 @@ const formSchema = z.object({
   email: z.string().min(5, "Email is required").email("Invalid email address"),
 });
 
-const ProductInfoPanel = ({ product }: ProductInfoPanelProps) => {
+const ProductInfoPanel = ({ product, getDesignSummary }: ProductInfoPanelProps) => {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -48,7 +51,9 @@ const ProductInfoPanel = ({ product }: ProductInfoPanelProps) => {
     );
   }
 
-  const message = `Interested in ${product.name} for a kitchen countertop, island and backsplash.`;
+  const fallbackMessage = `Interested in ${product.name} for a kitchen countertop, island and backsplash.`;
+  // built only while the dialog is open (it reads window.location)
+  const message = (open && getDesignSummary?.()) || fallbackMessage;
 
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setIsSubmitting(true);
@@ -129,7 +134,7 @@ const ProductInfoPanel = ({ product }: ProductInfoPanelProps) => {
               />
               <FormItem className="space-y-0">
                 <FormLabel>Message</FormLabel>
-                <Textarea readOnly rows={3} value={message} className="bg-[#F5F1EA] text-[#57534E]" />
+                <Textarea readOnly rows={getDesignSummary ? 7 : 3} value={message} className="bg-[#F5F1EA] text-[#57534E]" />
               </FormItem>
               <DialogFooter>
                 <DialogClose asChild>
