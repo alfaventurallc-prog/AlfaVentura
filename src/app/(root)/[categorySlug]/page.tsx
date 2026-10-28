@@ -2,7 +2,7 @@ import { getCategoryBySlug } from "@/actions/categories";
 import { ChevronRight, Home, Package } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
-import ProductCard from "@/components/ProductCard";
+import ProductCatalog from "@/components/ProductCatalog";
 
 interface CategoryWithSubcategories {
   id: string;
@@ -201,11 +201,7 @@ const ProductsPage = async ({ params }: { params: Promise<{ categorySlug: string
                   </span>
                 </h2>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                {allProducts.map((product) => (
-                  <ProductCard key={product.id} product={product} />
-                ))}
-              </div>
+              <ProductCatalog products={allProducts} />
             </div>
           ) : (
             <div className="bg-white rounded-2xl border border-[#E8DDD0] shadow-sm p-12 text-center">
