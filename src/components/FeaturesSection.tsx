@@ -1,263 +1,119 @@
 "use client";
 
-import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
-import Link from "next/link";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import Image from "next/image";
-import { useRouter } from "nextjs-toploader/app";
-import { FaLongArrowAltRight } from "react-icons/fa";
-import { ChevronLeft, ChevronRight } from "lucide-react";
+import Link from "next/link";
+import {
+  AnimatePresence,
+  animate,
+  motion,
+  useMotionValue,
+  useReducedMotion,
+  type AnimationPlaybackControls,
+  type PanInfo,
+} from "motion/react";
+import { ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react";
 import SectionWrapper from "./SectionWrapper";
-import { motion } from "framer-motion";
 import { Category } from "../../types";
 
+type ShowcaseCategory = Category & { parentSlug?: string };
+
 interface FeaturesSectionProps {
-  categories: Category[];
+  categories: ShowcaseCategory[];
 }
 
+const AUTOPLAY_SECONDS = 6;
+const EASE_OUT: [number, number, number, number] = [0.22, 1, 0.36, 1];
+
+// Styled lifestyle photos for the showcase, matched on the category name.
+// The category's own admin image is the fallback for anything not listed.
+const SHOWCASE_IMAGES: { match: RegExp; src: string }[] = [
+  { match: /floor/i, src: "/home-categories/flooring.webp" },
+  { match: /vanit/i, src: "/home-categories/vanities.webp" },
+  { match: /cabinet/i, src: "/home-categories/cabinets.webp" },
+  { match: /slab|quartz/i, src: "/home-categories/quartz.webp" },
+];
+
+const showcaseImage = (category: ShowcaseCategory) =>
+  SHOWCASE_IMAGES.find((s) => s.match.test(category.name))?.src ?? category.imageUrl ?? "/placeholder.jpg";
+
+const categoryHref = (category: ShowcaseCategory) =>
+  category.parentId ? `/${category.parentSlug ?? category.parentId}/${category.slug}` : `/${category.slug}`;
+
+// Subcategories arrive named "Parent > Child"; show the child as the title
+// and the parent as a small label above it.
+const splitName = (name: string) => {
+  const parts = name.split(" > ");
+  return parts.length > 1 ? { parent: parts[0], title: parts.slice(1).join(" > ") } : { parent: null, title: name };
+};
+
 const FeaturesSection = ({ categories }: FeaturesSectionProps) => {
-  const router = useRouter();
-  const [isPlaying, setIsPlaying] = useState(true);
-  const [isMobile, setIsMobile] = useState(false);
-  const [currentTranslate, setCurrentTranslate] = useState(0);
-  const [itemWidth, setItemWidth] = useState(0);
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [startTranslate, setStartTranslate] = useState(0);
-  const [draggedDistance, setDraggedDistance] = useState(0);
-  const containerRef = useRef<HTMLDivElement>(null);
-  const sliderRef = useRef<HTMLDivElement>(null);
-  const firstCardRef = useRef<HTMLDivElement>(null);
-  const animationRef = useRef<number>(0);
-  const lastTimeRef = useRef<number>(0);
+  const reduceMotion = useReducedMotion();
+  const [index, setIndex] = useState(0);
+  const [direction, setDirection] = useState(1);
+  const [hovered, setHovered] = useState(false);
+  const [pageHidden, setPageHidden] = useState(false);
+  const progress = useMotionValue(0);
+  const draggedRef = useRef(false);
 
-  const duplicatedCategories = categories.length ? [...categories, ...categories, ...categories] : [];
+  const count = categories.length;
+  const paused = hovered || pageHidden || !!reduceMotion;
 
-  useLayoutEffect(() => {
-    if (!duplicatedCategories.length) return;
+  const goTo = useCallback(
+    (next: number, dir: number) => {
+      if (!count) return;
+      setDirection(dir);
+      progress.set(0);
+      setIndex(((next % count) + count) % count);
+    },
+    [count, progress]
+  );
+  const goNext = useCallback(() => goTo(index + 1, 1), [goTo, index]);
+  const goPrev = useCallback(() => goTo(index - 1, -1), [goTo, index]);
 
-    const updateItemWidth = () => {
-      if (firstCardRef.current) {
-        setItemWidth(firstCardRef.current.getBoundingClientRect().width);
-      }
-    };
-
-    updateItemWidth();
-    window.addEventListener("resize", updateItemWidth);
-    return () => window.removeEventListener("resize", updateItemWidth);
-  }, [duplicatedCategories.length]);
+  // Autoplay: the progress bar's own animation drives the slide change, so
+  // pausing (hover, hidden tab) freezes the bar exactly where it is.
+  useEffect(() => {
+    if (paused || count < 2) return;
+    const controls: AnimationPlaybackControls = animate(progress, 1, {
+      duration: AUTOPLAY_SECONDS * (1 - progress.get()),
+      ease: "linear",
+      onComplete: goNext,
+    });
+    return () => controls.stop();
+  }, [paused, count, index, progress, goNext]);
 
   useEffect(() => {
-    const isTouchDevice = "ontouchstart" in window || navigator.maxTouchPoints > 0;
-    setIsMobile(isTouchDevice);
-    if (isTouchDevice) setIsPlaying(false);
+    const onVisibility = () => setPageHidden(document.hidden);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => document.removeEventListener("visibilitychange", onVisibility);
   }, []);
 
-  useEffect(() => {
-    if (!isPlaying || isDragging || !itemWidth || isMobile) return;
-
-    const animate = (currentTime: number) => {
-      if (!lastTimeRef.current) lastTimeRef.current = currentTime;
-
-      const deltaTime = currentTime - lastTimeRef.current;
-      const speed = 50;
-      const moveDistance = (speed * deltaTime) / 1000;
-
-      setCurrentTranslate((prev) => {
-        const newTranslate = prev - moveDistance;
-        const resetPoint = -(categories.length * itemWidth);
-
-        if (newTranslate <= resetPoint) {
-          return 0;
-        }
-
-        return newTranslate;
-      });
-
-      lastTimeRef.current = currentTime;
-
-      if (isPlaying && !isDragging) {
-        animationRef.current = requestAnimationFrame(animate);
-      }
-    };
-
-    lastTimeRef.current = 0;
-    animationRef.current = requestAnimationFrame(animate);
-
-    return () => {
-      if (animationRef.current) {
-        cancelAnimationFrame(animationRef.current);
-      }
-    };
-  }, [isPlaying, isDragging, itemWidth, categories.length, isMobile]);
-
-  const handleDragStart = (clientX: number) => {
-    setIsDragging(true);
-    setStartX(clientX);
-    setStartTranslate(currentTranslate);
-    setDraggedDistance(0);
+  const handleDragEnd = (_: unknown, info: PanInfo) => {
+    const swipe = info.offset.x + info.velocity.x * 0.2;
+    if (swipe < -80) goNext();
+    else if (swipe > 80) goPrev();
+    // a click fires right after pointerup; let the Explore link ignore it
+    setTimeout(() => (draggedRef.current = false), 0);
   };
 
-  const handleDragMove = (clientX: number) => {
-    if (!isDragging) return;
-
-    const currentX = clientX;
-    const diff = currentX - startX;
-    const distance = Math.abs(diff);
-
-    setDraggedDistance(distance);
-
-    const dragMultiplier = 1.2;
-    const newTranslate = startTranslate + diff * dragMultiplier;
-
-    const resetPoint = -(categories.length * itemWidth);
-
-    if (newTranslate > 0) {
-      setCurrentTranslate(resetPoint + (newTranslate % (categories.length * itemWidth)));
-    } else if (newTranslate < resetPoint) {
-      setCurrentTranslate(newTranslate % resetPoint);
-    } else {
-      setCurrentTranslate(newTranslate);
-    }
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === "ArrowRight") goNext();
+    if (e.key === "ArrowLeft") goPrev();
   };
 
-  const handleDragEnd = () => {
-    if (!isDragging) return;
-
-    setIsDragging(false);
-
-    if (draggedDistance > 50) {
-      const momentum = Math.min(draggedDistance * 2, 200);
-      const direction = startX > startX + draggedDistance ? -1 : 1;
-
-      setTimeout(() => {
-        if (!isDragging) {
-          setCurrentTranslate((prev) => {
-            const newPos = prev + momentum * direction;
-            const resetPoint = -(categories.length * itemWidth);
-
-            if (newPos > 0) {
-              return resetPoint + (newPos % (categories.length * itemWidth));
-            } else if (newPos < resetPoint) {
-              return newPos % resetPoint;
-            }
-            return newPos;
-          });
-        }
-      }, 50);
-    }
-
-    setTimeout(() => {
-      setDraggedDistance(0);
-    }, 200);
-  };
-
-  const handleMouseDown = (e: React.MouseEvent) => {
-    e.preventDefault();
-    handleDragStart(e.clientX);
-  };
-
-  const handleTouchStart = (e: React.TouchEvent) => {
-    handleDragStart(e.touches[0].clientX);
-  };
-
-  const handleTouchMove = (e: React.TouchEvent) => {
-    handleDragMove(e.touches[0].clientX);
-  };
-
-  const handleCardClick = (e: React.MouseEvent, url: string) => {
-    if (draggedDistance > 10) {
-      e.preventDefault();
-      e.stopPropagation();
-      return false;
-    }
-    router.push(url);
-  };
-
-  const togglePlayPause = () => {
-    if (isMobile) return;
-    setIsPlaying(!isPlaying);
-  };
-
-  const goNext = () => {
-    if (!itemWidth) return;
-    setIsPlaying(false);
-    setCurrentTranslate((prev) => {
-      const resetPoint = -(categories.length * itemWidth);
-      const newTranslate = prev - itemWidth;
-      return newTranslate <= resetPoint ? 0 : newTranslate;
-    });
-  };
-
-  const goPrev = () => {
-    if (!itemWidth) return;
-    setIsPlaying(false);
-    setCurrentTranslate((prev) => {
-      const resetPoint = -(categories.length * itemWidth);
-      const newTranslate = prev + itemWidth;
-      return newTranslate > 0 ? resetPoint + itemWidth : newTranslate;
-    });
-  };
-
-  useEffect(() => {
-    const handleGlobalMouseMove = (e: MouseEvent) => {
-      if (isDragging) {
-        e.preventDefault();
-        handleDragMove(e.clientX);
-      }
-    };
-
-    const handleGlobalMouseUp = () => {
-      if (isDragging) {
-        handleDragEnd();
-      }
-    };
-
-    const handleGlobalTouchMove = (e: TouchEvent) => {
-      if (isDragging) {
-        handleDragMove(e.touches[0].clientX);
-      }
-    };
-
-    const handleGlobalTouchEnd = () => {
-      if (isDragging) {
-        handleDragEnd();
-      }
-    };
-
-    if (isDragging) {
-      document.addEventListener("mousemove", handleGlobalMouseMove, { passive: false });
-      document.addEventListener("mouseup", handleGlobalMouseUp);
-      document.addEventListener("touchmove", handleGlobalTouchMove, { passive: false });
-      document.addEventListener("touchend", handleGlobalTouchEnd);
-    }
-
-    return () => {
-      document.removeEventListener("mousemove", handleGlobalMouseMove);
-      document.removeEventListener("mouseup", handleGlobalMouseUp);
-      document.removeEventListener("touchmove", handleGlobalTouchMove);
-      document.removeEventListener("touchend", handleGlobalTouchEnd);
-    };
-  }, [isDragging, startX, startTranslate]);
+  const active = categories[index];
+  const activeName = active ? splitName(active.name) : null;
 
   return (
-    <section className="bg-[#1C1917] py-20 px-4 md:px-8 lg:px-16 xl:px-20 overflow-hidden">
-      <style>{`
-        .slider-container { cursor: grab; user-select: none; -webkit-user-select: none; touch-action: pan-y; }
-        .slider-container:active { cursor: grabbing; }
-        .slider-container.dragging { cursor: grabbing; }
-        .slider-content { will-change: transform; backface-visibility: hidden; -webkit-backface-visibility: hidden; }
-        .card-item { pointer-events: auto; }
-        .card-item.no-click { pointer-events: none; }
-      `}</style>
-
+    <section className="bg-[#1C1917] py-20 md:py-24 px-4 md:px-8 lg:px-16 xl:px-20 overflow-hidden">
       <div className="max-w-[1400px] mx-auto">
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 28 }}
           whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.65 }}
+          transition={{ duration: 0.65, ease: EASE_OUT }}
           viewport={{ once: true }}
-          className="text-center mb-14"
+          className="text-center mb-12 md:mb-14"
         >
           <span className="inline-block text-xs font-bold tracking-[0.2em] uppercase text-[#C9A96E] border-l-[3px] border-[#C9A96E] pl-3 mb-4">
             Our Products
@@ -271,117 +127,228 @@ const FeaturesSection = ({ categories }: FeaturesSectionProps) => {
             <span className="text-[#C9A96E]">premium surfaces</span> worldwide
           </h2>
           <p className="text-[#A8A29E] text-base md:text-lg max-w-xl mx-auto leading-relaxed">
-            Discover our comprehensive range of high-quality engineered quartz slabs and stone surfaces.
+            Engineered quartz, cabinetry and flooring, selected for consistency in colour, pattern and finish.
           </p>
-          <p className="text-[#6B7280] text-sm mt-3">💡 Drag to navigate · Click to explore</p>
-
-          <div className="flex md:hidden items-center justify-center gap-4 mt-5">
-            <button
-              type="button"
-              onClick={goPrev}
-              aria-label="Previous"
-              className="w-11 h-11 rounded-full border border-white/15 bg-white/5 text-white flex items-center justify-center active:scale-95 transition-transform"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <button
-              type="button"
-              onClick={goNext}
-              aria-label="Next"
-              className="w-11 h-11 rounded-full border border-white/15 bg-white/5 text-white flex items-center justify-center active:scale-95 transition-transform"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </div>
         </motion.div>
 
-        {/* Infinite Slider */}
-        <div className="relative">
-          {!duplicatedCategories.length ? (
-            <p className="text-center text-[#A8A29E] py-12">No categories to show yet.</p>
-          ) : null}
-
+        {!count || !active || !activeName ? (
+          <p className="text-center text-[#A8A29E] py-12">No categories to show yet.</p>
+        ) : (
           <div
-            ref={containerRef}
-            className={`overflow-hidden pt-2.5 mt-6 slider-container ${isDragging ? "dragging" : ""}`}
-            onMouseDown={handleMouseDown}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleDragEnd}
-            onMouseEnter={togglePlayPause}
-            onMouseLeave={togglePlayPause}
+            role="region"
+            aria-roledescription="carousel"
+            aria-label="Product categories"
+            tabIndex={0}
+            onKeyDown={handleKeyDown}
+            onMouseEnter={() => setHovered(true)}
+            onMouseLeave={() => setHovered(false)}
+            onFocus={() => setHovered(true)}
+            onBlur={() => setHovered(false)}
+            className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_360px] focus-visible:outline-none"
           >
-            <div
-              ref={sliderRef}
-              className="flex slider-content"
-              style={{
-                transform: `translate3d(${Math.round(currentTranslate)}px, 0, 0)`,
-                transition: isDragging ? "none" : "transform 0.1s ease-out",
-              }}
+            {/* Stage */}
+            <motion.div
+              initial={{ opacity: 0, y: 32 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, ease: EASE_OUT, delay: 0.1 }}
+              viewport={{ once: true }}
+              className="relative aspect-[4/5] sm:aspect-[16/11] lg:aspect-auto lg:min-h-[560px] rounded-3xl overflow-hidden bg-[#292524] border border-white/10"
             >
-              {duplicatedCategories.length > 0 &&
-                duplicatedCategories.map((category, index) => (
-                  <div
-                    key={`${category.name}-${index}`}
-                    ref={index === 0 ? firstCardRef : undefined}
-                    className="flex-shrink-0 px-3 w-full md:w-1/2 lg:w-1/3"
+              <motion.div
+                className="absolute inset-0 cursor-grab active:cursor-grabbing touch-pan-y"
+                drag={count > 1 ? "x" : false}
+                dragConstraints={{ left: 0, right: 0 }}
+                dragElastic={0.18}
+                onDragStart={() => (draggedRef.current = true)}
+                onDragEnd={handleDragEnd}
+              >
+                <AnimatePresence initial={false} custom={direction}>
+                  <motion.div
+                    key={active.id}
+                    custom={direction}
+                    className="absolute inset-0"
+                    initial={reduceMotion ? { opacity: 0 } : { opacity: 0, scale: 1.08, x: direction * 40 }}
+                    animate={{ opacity: 1, scale: 1, x: 0 }}
+                    exit={{ opacity: 0 }}
+                    transition={{ duration: 0.9, ease: EASE_OUT }}
                   >
                     <motion.div
-                      whileHover={{ y: -8 }}
-                      transition={{ type: "spring", damping: 22, stiffness: 220 }}
-                      className="group"
+                      className="absolute inset-0"
+                      initial={{ scale: 1 }}
+                      animate={reduceMotion ? { scale: 1 } : { scale: 1.06 }}
+                      transition={{ duration: AUTOPLAY_SECONDS + 1, ease: "linear" }}
                     >
-                      <div
-                        className={`card-item ${draggedDistance > 10 ? "no-click" : ""}`}
-                        onClick={(e) =>
-                          handleCardClick(
-                            e,
-                            category.parentId ? `/${category.parentId}/${category.slug}` : `/${category.slug}`
-                          )
-                        }
-                      >
-                        <div className="bg-white/5 border border-white/10 rounded-2xl overflow-hidden hover:bg-white/10 hover:border-[#C9A96E]/40 cursor-pointer transition-all duration-300">
-                          {/* Image */}
-                          <div className="relative h-60 overflow-hidden">
-                            <Image
-                              src={category.imageUrl || "/placeholder.jpg"}
-                              alt={category.name}
-                              fill
-                              className="object-cover group-hover:scale-105 transition-transform duration-500"
-                              draggable={false}
-                              sizes="400px"
-                            />
-                            <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
-                          </div>
-                          {/* Content */}
-                          <div className="p-6">
-                            <h3
-                              className="text-lg font-bold text-white mb-2 group-hover:text-[#C9A96E] transition-colors duration-300"
-                              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
-                            >
-                              {category.name}
-                            </h3>
-                            <p className="text-[#A8A29E] text-sm mb-4 line-clamp-2 leading-relaxed">
-                              {category.description}
-                            </p>
-                            <div className="flex items-center text-[#C9A96E] font-semibold text-sm group-hover:text-white transition-colors duration-300">
-                              Explore
-                              <svg
-                                className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform duration-300"
-                                fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
-                              >
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                              </svg>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                      <Image
+                        src={showcaseImage(active)}
+                        alt={activeName.title}
+                        fill
+                        priority={index === 0}
+                        draggable={false}
+                        sizes="(min-width: 1024px) 900px, 100vw"
+                        className="object-cover select-none"
+                      />
                     </motion.div>
-                  </div>
-                ))}
+                  </motion.div>
+                </AnimatePresence>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/10 pointer-events-none" />
+                <div className="absolute inset-0 bg-gradient-to-r from-black/45 via-transparent to-transparent pointer-events-none" />
+              </motion.div>
+
+              {/* Counter */}
+              <div className="absolute top-5 left-5 md:top-7 md:left-8 flex items-center gap-2 text-white/80 text-xs font-bold tracking-[0.2em] pointer-events-none">
+                <span className="text-white">{String(index + 1).padStart(2, "0")}</span>
+                <span className="w-8 h-px bg-white/40" />
+                <span>{String(count).padStart(2, "0")}</span>
+              </div>
+
+              {/* Content */}
+              <div className="absolute inset-x-0 bottom-0 p-5 sm:p-7 md:p-10 flex flex-col gap-5 md:flex-row md:items-end md:justify-between pointer-events-none">
+                {/* Keyed remount, no exit: the new text staggers in the moment
+                    the slide changes instead of waiting for the old text to leave. */}
+                <motion.div
+                    key={active.id}
+                    className="max-w-xl"
+                    initial="textHidden"
+                    animate="textShow"
+                    variants={{
+                      textHidden: {},
+                      textShow: { transition: { staggerChildren: 0.08, delayChildren: 0.1 } },
+                    }}
+                  >
+                    {[
+                      activeName.parent ? (
+                        <span key="p" className="block text-[11px] font-bold tracking-[0.2em] uppercase text-[#C9A96E] mb-2">
+                          {activeName.parent}
+                        </span>
+                      ) : null,
+                      <h3
+                        key="t"
+                        className="text-3xl sm:text-4xl md:text-5xl font-bold text-white leading-[1.05] tracking-tight mb-3"
+                        style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                      >
+                        {activeName.title}
+                      </h3>,
+                      active.description ? (
+                        <p key="d" className="text-white/75 text-sm md:text-base leading-relaxed line-clamp-3 md:line-clamp-2">
+                          {active.description}
+                        </p>
+                      ) : null,
+                    ]
+                      .filter(Boolean)
+                      .map((child, i) => (
+                        <motion.div
+                          key={i}
+                          variants={{
+                            textHidden: { opacity: 0, y: 18 },
+                            textShow: { opacity: 1, y: 0, transition: { duration: 0.6, ease: EASE_OUT } },
+                          }}
+                        >
+                          {child}
+                        </motion.div>
+                      ))}
+                  </motion.div>
+
+                <div className="flex items-center gap-3 shrink-0 pointer-events-auto">
+                  <Link
+                    href={categoryHref(active)}
+                    onClick={(e) => draggedRef.current && e.preventDefault()}
+                    className="group inline-flex items-center gap-2 rounded-full bg-[#C9A96E] px-5 py-3 text-sm font-bold text-[#1C1917] transition-colors duration-300 hover:bg-white"
+                  >
+                    Explore
+                    {active._count?.products ? (
+                      <span className="text-[#1C1917]/60 font-semibold">
+                        {active._count.products} {active._count.products === 1 ? "design" : "designs"}
+                      </span>
+                    ) : null}
+                    <ArrowUpRight className="w-4 h-4 transition-transform duration-300 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                  </Link>
+                  {count > 1 && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={goPrev}
+                        aria-label="Previous category"
+                        className="w-11 h-11 rounded-full border border-white/25 bg-black/30 backdrop-blur-sm text-white flex items-center justify-center transition-colors duration-200 hover:bg-white hover:text-[#1C1917] active:scale-95"
+                      >
+                        <ChevronLeft className="w-5 h-5" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={goNext}
+                        aria-label="Next category"
+                        className="w-11 h-11 rounded-full border border-white/25 bg-black/30 backdrop-blur-sm text-white flex items-center justify-center transition-colors duration-200 hover:bg-white hover:text-[#1C1917] active:scale-95"
+                      >
+                        <ChevronRight className="w-5 h-5" />
+                      </button>
+                    </>
+                  )}
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Category list (desktop) / progress pills (mobile) */}
+            <div className="flex lg:flex-col gap-2 lg:gap-3 justify-center">
+              {categories.map((category, i) => {
+                const name = splitName(category.name);
+                const isActive = i === index;
+                return (
+                  <motion.button
+                    key={category.id}
+                    type="button"
+                    onClick={() => goTo(i, i > index ? 1 : -1)}
+                    aria-label={`Show ${name.title}`}
+                    aria-current={isActive}
+                    initial={{ opacity: 0, x: 24 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    viewport={{ once: true }}
+                    transition={{ duration: 0.5, ease: EASE_OUT, delay: 0.15 + i * 0.07 }}
+                    className={`relative overflow-hidden text-left transition-colors duration-300 rounded-full lg:rounded-2xl h-1.5 lg:h-auto lg:flex lg:items-center lg:gap-4 lg:p-3 lg:border ${
+                      isActive
+                        ? "w-12 lg:w-auto bg-white/15 lg:bg-white/[0.07] lg:border-[#C9A96E]/50"
+                        : "w-6 lg:w-auto bg-white/15 lg:bg-white/[0.03] lg:border-white/10 hover:lg:bg-white/[0.06]"
+                    }`}
+                  >
+                    <span className="hidden lg:block relative w-[72px] h-[72px] shrink-0 rounded-xl overflow-hidden">
+                      <Image
+                        src={showcaseImage(category)}
+                        alt=""
+                        fill
+                        sizes="72px"
+                        className={`object-cover transition-transform duration-500 ${isActive ? "scale-110" : "scale-100"}`}
+                      />
+                    </span>
+                    <span className="hidden lg:block min-w-0 flex-1">
+                      {name.parent && (
+                        <span className="block text-[10px] font-bold tracking-[0.18em] uppercase text-[#A8A29E] truncate">
+                          {name.parent}
+                        </span>
+                      )}
+                      <span
+                        className={`block font-bold leading-snug truncate transition-colors duration-300 ${isActive ? "text-white" : "text-white/70"}`}
+                        style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                      >
+                        {name.title}
+                      </span>
+                      {category._count?.products ? (
+                        <span className="block text-xs text-[#A8A29E] mt-0.5">
+                          {category._count.products} {category._count.products === 1 ? "design" : "designs"}
+                        </span>
+                      ) : null}
+                    </span>
+                    {/* autoplay progress: fills the pill on mobile, a thin bar under the card on desktop */}
+                    {isActive && (
+                      <motion.span
+                        aria-hidden
+                        className="absolute left-0 bottom-0 h-full lg:h-[2px] w-full origin-left bg-[#C9A96E]"
+                        style={{ scaleX: progress }}
+                      />
+                    )}
+                  </motion.button>
+                );
+              })}
             </div>
           </div>
-        </div>
+        )}
       </div>
     </section>
   );

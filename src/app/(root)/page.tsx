@@ -10,11 +10,12 @@ export default async function Home() {
   const categoriesRes = await getCategories({ includeSubcategories: true });
   const categories =
     categoriesRes.success && categoriesRes.data
-      ? categoriesRes.data.categories.flatMap((cat) =>
+      ? categoriesRes.data.categories.flatMap((cat): Record<string, unknown>[] =>
           cat.subcategories && cat.subcategories.length > 0
             ? cat.subcategories.map((sub) => ({
                 ...sub,
                 name: `${cat.name} > ${sub.name}`,
+                parentSlug: cat.slug,
               }))
             : [cat]
         )
