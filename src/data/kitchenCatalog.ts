@@ -19,9 +19,10 @@ export interface FloorFinish {
   roughness: number;
 }
 
-// Generic complementary floor finishes, not attributed to Alfa Ventura
-// products. The visualizer lists real flooring products (any category whose
-// name contains "floor", e.g. SPC Flooring) ahead of these.
+// Generic floor finishes, not attributed to Alfa Ventura products. Only
+// shown when the catalog has no flooring products; otherwise the visualizer
+// lists the real flooring products (any category whose name contains
+// "floor", e.g. SPC Flooring) instead.
 export const FLOOR_FINISHES: FloorFinish[] = [
   { id: "light-oak", name: "Light Oak", color: "#D9C4A3", roughness: 0.85 },
   { id: "warm-walnut", name: "Warm Walnut", color: "#6B4A34", roughness: 0.8 },

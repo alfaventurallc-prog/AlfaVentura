@@ -108,10 +108,12 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts, floorProducts = [] }
 
   const countertopProduct = quartzProducts.find((p) => p.id === config.countertopId) ?? null;
   const backsplashProduct = quartzProducts.find((p) => p.id === config.backsplashId) ?? null;
-  // A floor id is either a flooring product (textured from its swatch
-  // photo) or one of the generic tinted finishes.
+  // A floor id is a flooring product (textured from its swatch photo). The
+  // generic tinted finishes are only a fallback for when no flooring
+  // products exist; an id that matches neither (e.g. an old shared link to a
+  // removed finish) falls back to the first flooring product.
   const resolveFloor = (id: string | null) => {
-    const product = floorProducts.find((p) => p.id === id);
+    const product = floorProducts.find((p) => p.id === id) ?? (FLOOR_FINISHES.some((f) => f.id === id) && !floorProducts.length ? undefined : floorProducts[0]);
     if (product) return { color: FLOOR_FINISHES[0].color, roughness: 0.8, textureUrl: product.images[0] ?? product.image };
     const finish = FLOOR_FINISHES.find((f) => f.id === id) ?? FLOOR_FINISHES[0];
     return { color: finish.color, roughness: finish.roughness, textureUrl: null };
@@ -130,7 +132,9 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts, floorProducts = [] }
     cabinet: cabinetProducts.map(toSwatch),
     countertop: quartzProducts.map(toSwatch),
     backsplash: quartzProducts.map(toSwatch),
-    floor: [...floorProducts.map(toSwatch), ...FLOOR_FINISHES.map((f) => ({ id: f.id, name: f.name, color: f.color }))],
+    floor: floorProducts.length
+      ? floorProducts.map(toSwatch)
+      : FLOOR_FINISHES.map((f) => ({ id: f.id, name: f.name, color: f.color })),
   };
 
   const searchTerm = productSearch.trim().toLowerCase();
