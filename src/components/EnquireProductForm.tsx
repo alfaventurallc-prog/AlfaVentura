@@ -32,7 +32,16 @@ const formSchema = z.object({
   message: z.string().min(1, "Message is required"),
 });
 
-const EnquireProductForm = ({ product }: { product: Product }) => {
+interface EnquireProductFormProps {
+  product: Product;
+  /** "sample" opens the same enquiry with a sample-request message prefilled. */
+  variant?: "enquiry" | "sample";
+  triggerClassName?: string;
+  showBack?: boolean;
+}
+
+const EnquireProductForm = ({ product, variant = "enquiry", triggerClassName, showBack = true }: EnquireProductFormProps) => {
+  const isSample = variant === "sample";
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [open, setOpen] = useState(false);
 
@@ -41,7 +50,7 @@ const EnquireProductForm = ({ product }: { product: Product }) => {
     defaultValues: {
       name: "",
       email: "",
-      message: "",
+      message: isSample ? `I would like to request a sample of ${product.title}. Please let me know the next steps.` : "",
     },
   });
 
@@ -55,7 +64,7 @@ const EnquireProductForm = ({ product }: { product: Product }) => {
       const res = await createEnquiry(submitData);
 
       if (res.success) {
-        toast.success("Enquiry submitted successfully!");
+        toast.success(isSample ? "Sample request sent! We'll be in touch shortly." : "Enquiry submitted successfully!");
         form.reset();
       } else {
         toast.error(res.error || "Failed to submit enquiry.");
@@ -70,7 +79,7 @@ const EnquireProductForm = ({ product }: { product: Product }) => {
   };
 
   return (
-    <div className="flex items-center mt-3">
+    <div className={showBack ? "flex items-center mt-3" : "contents"}>
       <Dialog
         open={open}
         onOpenChange={setOpen}
@@ -81,16 +90,20 @@ const EnquireProductForm = ({ product }: { product: Product }) => {
           </div>
         )}
         <DialogTrigger asChild>
-          <Button className="bg-alfa-primary hover:bg-alfa-blue text-white">
-            Enquire Now
-            <TbHandFinger className="inline-block ml-2" />
+          <Button className={triggerClassName ?? "bg-alfa-primary hover:bg-alfa-blue text-white"}>
+            {isSample ? "Request a Sample" : "Enquire Now"}
+            {!isSample && <TbHandFinger className="inline-block ml-2" />}
           </Button>
         </DialogTrigger>
         <DialogContent className="sm:max-w-[425px]">
           <Form {...form}>
             <DialogHeader>
-              <DialogTitle>Enquire about {product.title}</DialogTitle>
-              <DialogDescription>Fill out the form below to make an enquiry about this product.</DialogDescription>
+              <DialogTitle>{isSample ? `Request a sample of ${product.title}` : `Enquire about ${product.title}`}</DialogTitle>
+              <DialogDescription>
+                {isSample
+                  ? "Tell us where to reach you and we'll arrange a sample."
+                  : "Fill out the form below to make an enquiry about this product."}
+              </DialogDescription>
             </DialogHeader>
             <form
               onSubmit={form.handleSubmit(onSubmit)}
@@ -166,13 +179,14 @@ const EnquireProductForm = ({ product }: { product: Product }) => {
                   disabled={isSubmitting}
                   className="bg-alfa-primary hover:bg-alfa-blue text-white"
                 >
-                  {isSubmitting ? "Submitting..." : "Submit Enquiry"}
+                  {isSubmitting ? "Submitting..." : isSample ? "Request Sample" : "Submit Enquiry"}
                 </Button>
               </DialogFooter>
             </form>
           </Form>
         </DialogContent>
       </Dialog>
+      {showBack && (
       <Button
         onClick={() => window.history.back()}
         variant="secondary"
@@ -181,6 +195,7 @@ const EnquireProductForm = ({ product }: { product: Product }) => {
         <FaLongArrowAltLeft />
         Go Back
       </Button>
+      )}
     </div>
   );
 };

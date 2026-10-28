@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { productTraits } from "@/lib/productTraits";
 
 export async function getProducts(params?: { page?: number; limit?: number; search?: string; categoryId?: string }) {
   try {
@@ -67,7 +68,7 @@ export async function getProductById(id: string) {
     const product = await prisma.product.findUnique({
       where: { id },
       include: {
-        category: true,
+        category: { include: { parent: { select: { name: true, slug: true } } } },
       },
     });
 
@@ -88,6 +89,41 @@ export async function getProductById(id: string) {
       success: false,
       error: "Failed to fetch product",
     };
+  }
+}
+
+/** Up to `limit` products from the same category, closest look first: shared
+ * colour tags count double, shared style tags once, newest breaks ties. */
+export async function getRelatedProducts(productId: string, categoryId: string, limit = 6) {
+  try {
+    const [current, candidates] = await Promise.all([
+      prisma.product.findUnique({ where: { id: productId }, select: { title: true, description: true } }),
+      prisma.product.findMany({
+        where: { categoryId, id: { not: productId } },
+        orderBy: { createdAt: "desc" },
+        take: 300,
+        select: { id: true, title: true, description: true, images: true, isPremium: true },
+      }),
+    ]);
+    if (!current) return { success: true, data: [] };
+
+    const mine = productTraits(current.title, current.description);
+    const score = (p: { title: string; description: string | null }) => {
+      const t = productTraits(p.title, p.description);
+      return (
+        t.colours.filter((c) => mine.colours.includes(c)).length * 2 + t.styles.filter((s) => mine.styles.includes(s)).length
+      );
+    };
+    const related = candidates
+      .map((p, i) => ({ p, s: score(p), i }))
+      .sort((a, b) => b.s - a.s || a.i - b.i)
+      .slice(0, limit)
+      .map(({ p }) => p);
+
+    return { success: true, data: related };
+  } catch (error) {
+    console.error("Error fetching related products:", error);
+    return { success: false, error: "Failed to fetch related products", data: [] };
   }
 }
 
