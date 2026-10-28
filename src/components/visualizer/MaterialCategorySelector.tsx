@@ -15,13 +15,15 @@ interface MaterialCategorySelectorProps {
   onToggleFavorite?: (id: string) => void;
 }
 
+// A wrapping grid in a vertically scrolling box: with 100+ products a single
+// horizontal row meant sliding through the whole catalogue to find one.
 const MaterialCategorySelector = ({ items, activeId, onSelect, isFavorite, onToggleFavorite }: MaterialCategorySelectorProps) => (
-  <div className="flex gap-3.5 overflow-x-auto pb-2 -mx-1 px-1">
+  <div className="grid grid-cols-2 min-[440px]:grid-cols-3 sm:grid-cols-4 md:grid-cols-5 xl:grid-cols-6 gap-3 max-h-[440px] overflow-y-auto p-1.5 -mx-1.5">
     {items.map((item) => {
       const active = activeId === item.id;
       const favorited = isFavorite?.(item.id) ?? false;
       return (
-        <div key={item.id} className="relative shrink-0 w-32 group">
+        <div key={item.id} className="relative min-w-0 group">
           <button
             type="button"
             onClick={() => onSelect(item.id)}
@@ -32,20 +34,22 @@ const MaterialCategorySelector = ({ items, activeId, onSelect, isFavorite, onTog
                 : "border-[#E8DDD0] shadow-premium hover:border-[#C9A96E] hover:shadow-premium-hover hover:-translate-y-0.5"
             }`}
           >
-            <span className="block w-full h-24 overflow-hidden">
+            <span className="block w-full aspect-[4/3] overflow-hidden">
               <span
                 className="block w-full h-full bg-cover bg-center transition-transform duration-300 ease-out group-hover:scale-110"
                 style={item.thumbnail ? { backgroundImage: `url(${item.thumbnail})` } : { backgroundColor: item.color }}
               />
             </span>
             <span className="block px-2.5 py-2 border-t border-[#F0E8DB]">
-              <span className={`block text-xs font-bold truncate transition-colors ${active ? "text-[#9B7040]" : "text-[#1C1917]"}`}>
+              <span
+                className={`text-xs font-bold leading-snug line-clamp-2 break-words min-h-[2lh] transition-colors ${active ? "text-[#9B7040]" : "text-[#1C1917]"}`}
+              >
                 {item.name}
               </span>
             </span>
           </button>
           {active && (
-            <span className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-[#9B7040] text-white text-[10px] flex items-center justify-center shadow-premium">
+            <span className="absolute -top-1 -left-1 w-5 h-5 rounded-full bg-[#9B7040] text-white text-[10px] flex items-center justify-center shadow-premium">
               ✓
             </span>
           )}

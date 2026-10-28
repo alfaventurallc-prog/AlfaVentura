@@ -63,7 +63,7 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts, floorProducts = [] }
   // not a fabricated installed-kitchen composite).
   const [mode, setMode] = useState<"3d" | "image">("3d");
   const [surfaceSearch, setSurfaceSearch] = useState("");
-  const surfaceCarouselRef = useRef<HTMLDivElement | null>(null);
+  const [productSearch, setProductSearch] = useState("");
 
   const cameraControlsRef = useRef<CameraControlsImpl | null>(null);
   const compareCameraControlsRef = useRef<CameraControlsImpl | null>(null);
@@ -132,6 +132,11 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts, floorProducts = [] }
     backsplash: quartzProducts.map(toSwatch),
     floor: [...floorProducts.map(toSwatch), ...FLOOR_FINISHES.map((f) => ({ id: f.id, name: f.name, color: f.color }))],
   };
+
+  const searchTerm = productSearch.trim().toLowerCase();
+  const visibleItems = searchTerm
+    ? catalog[activeCategory].filter((item) => item.name.toLowerCase().includes(searchTerm))
+    : catalog[activeCategory];
 
   const activeIdForCategory: Record<MaterialCategory, string | null> = {
     cabinet: config.cabinetId,
@@ -495,7 +500,10 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts, floorProducts = [] }
                   <button
                     key={cat}
                     type="button"
-                    onClick={() => setActiveCategory(cat)}
+                    onClick={() => {
+                      setActiveCategory(cat);
+                      setProductSearch("");
+                    }}
                     className={`px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wide shrink-0 transition-all duration-200 ${
                       activeCategory === cat ? "bg-[#1C1917] text-white shadow-premium-hover" : "bg-[#F5F1EA] text-[#78716C] shadow-premium hover:bg-white hover:text-[#1C1917]"
                     }`}
@@ -505,15 +513,27 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts, floorProducts = [] }
                 ))}
               </div>
 
-              <span className="text-xs font-bold uppercase tracking-wide text-[#78716C] block mb-2">
-                Products &mdash; {MATERIAL_CATEGORY_LABELS[activeCategory]}
-              </span>
+              <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
+                <span className="text-xs font-bold uppercase tracking-wide text-[#78716C]">
+                  Products &mdash; {MATERIAL_CATEGORY_LABELS[activeCategory]}{" "}
+                  <span className="text-[#A8A29E]">({visibleItems.length})</span>
+                </span>
+                <input
+                  type="text"
+                  value={productSearch}
+                  onChange={(e) => setProductSearch(e.target.value)}
+                  placeholder="Search by name..."
+                  className="w-full sm:w-56 px-3 py-2 rounded-lg border border-[#E8DDD0] text-sm text-[#1C1917] placeholder:text-[#A8A29E] transition-colors duration-200 focus:outline-none focus:border-[#9B7040] focus:ring-2 focus:ring-[#9B7040]/15"
+                />
+              </div>
 
               {catalog[activeCategory].length === 0 ? (
                 <p className="text-sm text-[#78716C] py-4">No options available for this category yet.</p>
+              ) : visibleItems.length === 0 ? (
+                <p className="text-sm text-[#78716C] py-4">No products match your search.</p>
               ) : (
                 <MaterialCategorySelector
-                  items={catalog[activeCategory]}
+                  items={visibleItems}
                   activeId={activeIdForCategory[activeCategory]}
                   onSelect={(id) => applySelection(activeCategory, id)}
                   isFavorite={(id) => isFavorite({ category: activeCategory, productId: id })}
@@ -534,16 +554,8 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts, floorProducts = [] }
               placeholder="Search surfaces..."
               className="w-full mb-3 px-3 py-2.5 rounded-lg border border-[#E8DDD0] text-sm text-[#1C1917] placeholder:text-[#A8A29E] transition-colors duration-200 focus:outline-none focus:border-[#9B7040] focus:ring-2 focus:ring-[#9B7040]/15"
             />
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => surfaceCarouselRef.current?.scrollBy({ left: -300, behavior: "smooth" })}
-                aria-label="Scroll surfaces left"
-                className="shrink-0 w-8 h-8 rounded-full border border-[#E8DDD0] shadow-premium text-[#44403C] hover:border-[#9B7040] hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center"
-              >
-                ←
-              </button>
-              <div ref={surfaceCarouselRef} className="flex-1 min-w-0">
+            <div>
+              <div>
                 {(() => {
                   const filtered = quartzProducts.filter(
                     (p) =>
@@ -564,14 +576,6 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts, floorProducts = [] }
                   );
                 })()}
               </div>
-              <button
-                type="button"
-                onClick={() => surfaceCarouselRef.current?.scrollBy({ left: 300, behavior: "smooth" })}
-                aria-label="Scroll surfaces right"
-                className="shrink-0 w-8 h-8 rounded-full border border-[#E8DDD0] shadow-premium text-[#44403C] hover:border-[#9B7040] hover:-translate-y-0.5 transition-all duration-200 flex items-center justify-center"
-              >
-                →
-              </button>
             </div>
           </div>
         )}
