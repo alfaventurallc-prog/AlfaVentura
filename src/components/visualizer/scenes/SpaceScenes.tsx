@@ -307,7 +307,7 @@ export const LivingScene = (props: SpaceSceneProps) => {
 
       {/* TV */}
       <SolidBox args={[1.65, 0.95, 0.04]} position={[cx, 0.85, -1.69]} color="#141516" roughness={0.3} metalness={0.3} />
-      <mesh position={[cx, 0.85, -1.669]}>
+      <mesh position={[cx, 0.85, -1.664]}>
         <planeGeometry args={[1.6, 0.9]} />
         <meshStandardMaterial color="#0B0D10" roughness={0.12} metalness={0.5} />
       </mesh>

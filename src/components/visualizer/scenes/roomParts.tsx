@@ -88,16 +88,28 @@ const usePlankTexture = (color: string) => {
   return texture;
 };
 
+// Baked photo floors by URL, kept for the session. Switching space remounts
+// the Floor, and without this every switch (and every floor pick) showed the
+// flat tinted planks for a moment before the photo planks were rebaked,
+// which read as the floor blinking.
+const photoPlankCache = new Map<string, THREE.CanvasTexture>();
+
 /** Same plank layout as usePlankTexture, but each board is cut from a
  * random strip of a real flooring product photo (an SPC colour-film
  * swatch) instead of a flat tint, so the floor shows that product's actual
- * grain and colour. Loads asynchronously; null until the photo is ready. */
+ * grain and colour. Loads asynchronously; while a new photo loads the
+ * previous floor stays up, and it is null only before the first one. */
 const usePhotoPlankTexture = (url: string | null | undefined) => {
-  const [texture, setTexture] = useState<THREE.CanvasTexture | null>(null);
+  const [texture, setTexture] = useState<THREE.CanvasTexture | null>(() => (url && photoPlankCache.get(url)) || null);
 
   useEffect(() => {
     if (!url || typeof document === "undefined") {
       setTexture(null);
+      return;
+    }
+    const cached = photoPlankCache.get(url);
+    if (cached) {
+      setTexture(cached);
       return;
     }
     let cancelled = false;
@@ -153,15 +165,14 @@ const usePhotoPlankTexture = (url: string | null | undefined) => {
       tex.colorSpace = THREE.SRGBColorSpace;
       tex.anisotropy = 8;
       tex.needsUpdate = true;
-      setTexture(tex);
+      photoPlankCache.set(url, tex);
+      if (!cancelled) setTexture(tex);
     };
     img.src = url;
     return () => {
       cancelled = true;
     };
   }, [url]);
-
-  useEffect(() => () => texture?.dispose(), [texture]);
 
   return texture;
 };
