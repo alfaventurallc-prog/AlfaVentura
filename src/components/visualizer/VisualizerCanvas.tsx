@@ -5,13 +5,15 @@ import { Canvas } from "@react-three/fiber";
 import { CameraControls, ContactShadows, Environment, Html, type CameraControls as CameraControlsImpl } from "@react-three/drei";
 import * as THREE from "three";
 import KitchenScene from "./scenes/KitchenScene";
+import { BathroomScene, CommercialScene, LivingScene } from "./scenes/SpaceScenes";
 import VisualizerErrorBoundary from "./VisualizerErrorBoundary";
-import { KITCHEN_CAMERA } from "@/data/scenes";
-import type { LayoutId, ThicknessMm, EdgeProfile } from "@/data/kitchenCatalog";
+import { SPACE_CAMERA } from "@/data/scenes";
+import type { LayoutId, SpaceId, ThicknessMm, EdgeProfile } from "@/data/kitchenCatalog";
 import type { WaterfallOption } from "@/lib/visualizerUrlState";
 import type { VisualizerProduct } from "../../../types";
 
 interface VisualizerCanvasProps {
+  space?: SpaceId;
   layout: LayoutId;
   mirrored: boolean;
   cabinetColor: string;
@@ -46,6 +48,23 @@ const CanvasLoadingSkeleton = () => (
   </div>
 );
 
+/** Moves the orbit camera to the space's start view whenever the space
+ * changes, and saves it as the pose "Reset view" returns to. */
+const CameraRig = ({ space, controlsRef }: { space: SpaceId; controlsRef: RefObject<CameraControlsImpl | null> }) => {
+  useEffect(() => {
+    const controls = controlsRef.current;
+    if (!controls) return;
+    let cancelled = false;
+    controls.setLookAt(...SPACE_CAMERA[space], false).then(() => {
+      if (!cancelled) controls.saveState();
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [space, controlsRef]);
+  return null;
+};
+
 const hasWebGL = () => {
   try {
     const canvas = document.createElement("canvas");
@@ -56,6 +75,7 @@ const hasWebGL = () => {
 };
 
 const VisualizerCanvas = ({
+  space = "kitchen",
   layout,
   mirrored,
   cabinetColor,
@@ -89,6 +109,18 @@ const VisualizerCanvas = ({
   }
 
   const isDay = lightingMode === "day";
+  const sceneProps = {
+    cabinetColor,
+    countertopProduct,
+    backsplashProduct,
+    floorColor,
+    floorRoughness,
+    floorTextureUrl,
+    waterfall,
+    thicknessMm,
+    veinRotation,
+    edgeProfile,
+  };
 
   return (
     <VisualizerErrorBoundary>
@@ -96,7 +128,7 @@ const VisualizerCanvas = ({
         ref={canvasRef}
         shadows
         gl={{ toneMapping: THREE.ACESFilmicToneMapping, toneMappingExposure: isDay ? 0.95 : 0.7, preserveDrawingBuffer: true }}
-        camera={{ position: KITCHEN_CAMERA.hero.slice(0, 3) as [number, number, number], fov: 40 }}
+        camera={{ position: SPACE_CAMERA[space].slice(0, 3) as [number, number, number], fov: 40 }}
       >
         {/* 3-point lighting: key (sun through the "window" side), fill
             (soft opposite-side bounce so shadows don't go pure black), and
@@ -134,20 +166,19 @@ const VisualizerCanvas = ({
             as the visible sky instead. */}
         <color attach="background" args={[isDay ? "#EAE3D6" : "#2A2018"]} />
         <Suspense fallback={<Html fullscreen><CanvasLoadingSkeleton /></Html>}>
-          <KitchenScene
-            layout={layout}
-            mirrored={mirrored}
-            cabinetColor={cabinetColor}
-            countertopProduct={countertopProduct}
-            backsplashProduct={backsplashProduct}
-            floorColor={floorColor}
-            floorRoughness={floorRoughness}
-            floorTextureUrl={floorTextureUrl}
-            waterfall={waterfall}
-            thicknessMm={thicknessMm}
-            veinRotation={veinRotation}
-            edgeProfile={edgeProfile}
-          />
+          {space === "kitchen" ? (
+            <KitchenScene
+              layout={layout}
+              mirrored={mirrored}
+              {...sceneProps}
+            />
+          ) : space === "bathroom" ? (
+            <BathroomScene {...sceneProps} />
+          ) : space === "living" ? (
+            <LivingScene {...sceneProps} />
+          ) : (
+            <CommercialScene {...sceneProps} />
+          )}
           {/* Soft contact shadow disc under the cabinets/island so they
               read as resting on the floor instead of floating -- a real
               shadow map alone left the underside of the toe-kick reading
@@ -165,6 +196,7 @@ const VisualizerCanvas = ({
           minPolarAngle={0.85}
           maxPolarAngle={Math.PI / 2.05}
         />
+        <CameraRig space={space} controlsRef={cameraControlsRef} />
       </Canvas>
     </VisualizerErrorBoundary>
   );

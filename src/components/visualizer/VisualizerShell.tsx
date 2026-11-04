@@ -14,11 +14,13 @@ import FavoritesPanel from "./FavoritesPanel";
 import ProductInfoPanel from "./ProductInfoPanel";
 import {
   FLOOR_FINISHES,
-  MATERIAL_CATEGORY_LABELS,
+  SPACES,
+  SPACE_MATERIAL_LABELS,
   THICKNESS_OPTIONS,
   EDGE_PROFILES,
   type LayoutId,
   type MaterialCategory,
+  type SpaceId,
   type ThicknessMm,
   type EdgeProfile,
 } from "@/data/kitchenCatalog";
@@ -40,6 +42,7 @@ const toSwatch = (p: VisualizerProduct): SwatchItem => ({ id: p.id, name: p.name
 
 const VisualizerShell = ({ cabinetProducts, quartzProducts, floorProducts = [] }: VisualizerShellProps) => {
   const [config, setConfig] = useState<KitchenConfig>({
+    space: "kitchen",
     layout: "island",
     mirrored: false,
     cabinetId: cabinetProducts[0]?.id ?? null,
@@ -137,18 +140,21 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts, floorProducts = [] }
       : FLOOR_FINISHES.map((f) => ({ id: f.id, name: f.name, color: f.color })),
   };
 
+  const labels = SPACE_MATERIAL_LABELS[config.space];
+  const spaceName = SPACES.find((sp) => sp.id === config.space)?.name ?? "Kitchen";
+
   // Sent with "Request a Quote" so the enquiry names every surface and links
   // back to this exact design.
   const getDesignSummary = () => {
     const nameOf = (list: { id: string; name: string }[], id: string | null) => list.find((x) => x.id === id)?.name ?? "-";
     const link = `${window.location.origin}/visualizer?${encodeConfigToParams(config).toString()}`;
     return [
-      "Quote request for this kitchen design:",
-      `Countertop: ${countertopProduct?.name ?? "-"}`,
-      `Backsplash: ${backsplashProduct?.name ?? "-"}`,
-      `Cabinets: ${nameOf(cabinetProducts, config.cabinetId)}`,
-      `Floor: ${nameOf([...floorProducts, ...FLOOR_FINISHES], config.floorId)}`,
-      `Layout: ${config.layout}`,
+      `Quote request for this ${spaceName.toLowerCase()} design:`,
+      `${labels.countertop}: ${countertopProduct?.name ?? "-"}`,
+      `${labels.backsplash}: ${backsplashProduct?.name ?? "-"}`,
+      `${labels.cabinet}: ${nameOf(cabinetProducts, config.cabinetId)}`,
+      `${labels.floor}: ${nameOf([...floorProducts, ...FLOOR_FINISHES], config.floorId)}`,
+      ...(config.space === "kitchen" ? [`Layout: ${config.layout}`] : []),
       `Design link: ${link}`,
     ].join("\n");
   };
@@ -254,7 +260,7 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts, floorProducts = [] }
     const canvas = canvasRef.current;
     if (!canvas) return;
     const link = document.createElement("a");
-    link.download = "alfa-ventura-kitchen-design.png";
+    link.download = `alfa-ventura-${config.space}-design.png`;
     link.href = canvas.toDataURL("image/png");
     link.click();
   };
@@ -296,21 +302,17 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts, floorProducts = [] }
               <div className="flex items-center gap-2">
                 <span className="text-xs font-bold uppercase tracking-wide text-[#A8987F]">Space</span>
                 <div className="flex gap-1.5 flex-wrap">
-                  <button
-                    type="button"
-                    className="px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide bg-[#9B7040] text-white shadow-premium"
-                  >
-                    Kitchen
-                  </button>
-                  {["Bathroom", "Living", "Commercial"].map((space) => (
+                  {SPACES.map((sp) => (
                     <button
-                      key={space}
+                      key={sp.id}
                       type="button"
-                      disabled
-                      title="Coming soon"
-                      className="px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide bg-[#F5F1EA] text-[#C4BCAF] cursor-not-allowed"
+                      onClick={() => setConfig((prev) => ({ ...prev, space: sp.id as SpaceId }))}
+                      aria-pressed={config.space === sp.id}
+                      className={`px-3 py-1.5 rounded-full text-xs font-semibold uppercase tracking-wide transition-all duration-200 ${
+                        config.space === sp.id ? "bg-[#9B7040] text-white shadow-premium" : "bg-[#F5F1EA] text-[#78716C] shadow-premium hover:bg-white hover:text-[#1C1917]"
+                      }`}
                     >
-                      {space}
+                      {sp.name}
                     </button>
                   ))}
                 </div>
@@ -330,6 +332,7 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts, floorProducts = [] }
               <>
                 <div className="relative w-full h-full overflow-hidden">
                   <VisualizerCanvas
+                    space={snapshot.config.space}
                     layout={snapshot.config.layout}
                     mirrored={snapshot.config.mirrored}
                     cabinetColor={snapshot.cabinetColor}
@@ -359,6 +362,7 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts, floorProducts = [] }
                 </div>
                 <div className="relative w-full h-full overflow-hidden">
                   <VisualizerCanvas
+                    space={config.space}
                     layout={config.layout}
                     mirrored={config.mirrored}
                     cabinetColor={cabinetColor}
@@ -389,6 +393,7 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts, floorProducts = [] }
             ) : (
               <>
                 <VisualizerCanvas
+                  space={config.space}
                   layout={config.layout}
                   mirrored={config.mirrored}
                   cabinetColor={cabinetColor}
@@ -420,12 +425,14 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts, floorProducts = [] }
 
         {mode === "3d" && (
           <>
-            <LayoutSelector
-              activeLayout={config.layout}
-              mirrored={config.mirrored}
-              onSelectLayout={(layout: LayoutId) => setConfig((prev) => ({ ...prev, layout }))}
-              onToggleMirror={() => setConfig((prev) => ({ ...prev, mirrored: !prev.mirrored }))}
-            />
+            {config.space === "kitchen" && (
+              <LayoutSelector
+                activeLayout={config.layout}
+                mirrored={config.mirrored}
+                onSelectLayout={(layout: LayoutId) => setConfig((prev) => ({ ...prev, layout }))}
+                onToggleMirror={() => setConfig((prev) => ({ ...prev, mirrored: !prev.mirrored }))}
+              />
+            )}
 
           <div className="bg-white rounded-2xl shadow-premium border border-[#F0E8DB] p-5 space-y-4">
             <div className="flex items-center gap-2 flex-wrap">
@@ -482,9 +489,11 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts, floorProducts = [] }
               </div>
             </div>
 
-            {config.layout === "island" && (
+            {(config.space === "kitchen" ? config.layout === "island" : config.space !== "bathroom") && (
               <div className="flex items-center gap-2 flex-wrap">
-                <span className="text-xs font-bold uppercase tracking-wide text-[#78716C]">Waterfall edge</span>
+                <span className="text-xs font-bold uppercase tracking-wide text-[#78716C]">
+                  {config.space === "living" ? "Coffee table waterfall" : config.space === "commercial" ? "Desk waterfall" : "Waterfall edge"}
+                </span>
                 <div className="flex gap-1.5">
                   {(["none", "left", "right", "both"] as WaterfallOption[]).map((option) => (
                     <button
@@ -509,14 +518,14 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts, floorProducts = [] }
                 onChange={handleToggleSyncBacksplash}
                 className="w-4 h-4 accent-[#9B7040] rounded"
               />
-              Use countertop for backsplash
+              Use {labels.countertop.toLowerCase()} for {labels.backsplash.toLowerCase()}
             </label>
           </div>
 
           <div className="bg-white rounded-2xl shadow-premium border border-[#F0E8DB] p-5">
               <span className="text-xs font-bold uppercase tracking-wide text-[#A8987F] block mb-2">Application</span>
               <div className="flex gap-1.5 mb-3 overflow-x-auto">
-                {(Object.keys(MATERIAL_CATEGORY_LABELS) as MaterialCategory[]).map((cat) => (
+                {(Object.keys(labels) as MaterialCategory[]).map((cat) => (
                   <button
                     key={cat}
                     type="button"
@@ -528,14 +537,14 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts, floorProducts = [] }
                       activeCategory === cat ? "bg-[#1C1917] text-white shadow-premium-hover" : "bg-[#F5F1EA] text-[#78716C] shadow-premium hover:bg-white hover:text-[#1C1917]"
                     }`}
                   >
-                    {MATERIAL_CATEGORY_LABELS[cat]}
+                    {labels[cat]}
                   </button>
                 ))}
               </div>
 
               <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
                 <span className="text-xs font-bold uppercase tracking-wide text-[#78716C]">
-                  Products &mdash; {MATERIAL_CATEGORY_LABELS[activeCategory]}{" "}
+                  Products &mdash; {labels[activeCategory]}{" "}
                   <span className="text-[#A8A29E]">({visibleItems.length})</span>
                 </span>
                 <input
@@ -602,7 +611,7 @@ const VisualizerShell = ({ cabinetProducts, quartzProducts, floorProducts = [] }
       </div>
 
       <div className="lg:w-[320px] lg:shrink-0 lg:pl-6 lg:border-l lg:border-[#F0E8DB] space-y-5">
-        <ProductInfoPanel product={countertopProduct} getDesignSummary={getDesignSummary} />
+        <ProductInfoPanel product={countertopProduct} getDesignSummary={getDesignSummary} spaceName={spaceName} surfaceLabel={labels.countertop} />
 
         <div className="bg-white rounded-2xl shadow-premium border border-[#F0E8DB] p-4 space-y-3">
           <p className="text-xs font-bold uppercase tracking-wide text-[#A8987F]">Actions</p>

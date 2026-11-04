@@ -1,5 +1,16 @@
 export type LayoutId = "island" | "lshape" | "galley";
 
+/** The room the visualizer shows. Every space uses the same four material
+ * slots; only what each slot is called (and the furniture) changes. */
+export type SpaceId = "kitchen" | "bathroom" | "living" | "commercial";
+
+export const SPACES: { id: SpaceId; name: string }[] = [
+  { id: "kitchen", name: "Kitchen" },
+  { id: "bathroom", name: "Bathroom" },
+  { id: "living", name: "Living" },
+  { id: "commercial", name: "Commercial" },
+];
+
 export interface LayoutDef {
   id: LayoutId;
   name: string;
@@ -55,4 +66,11 @@ export const MATERIAL_CATEGORY_LABELS: Record<MaterialCategory, string> = {
   countertop: "Countertop",
   backsplash: "Backsplash",
   floor: "Floor",
+};
+
+export const SPACE_MATERIAL_LABELS: Record<SpaceId, Record<MaterialCategory, string>> = {
+  kitchen: MATERIAL_CATEGORY_LABELS,
+  bathroom: { cabinet: "Vanity", countertop: "Vanity Top", backsplash: "Wall Panel", floor: "Floor" },
+  living: { cabinet: "Media Unit", countertop: "Tabletop", backsplash: "Feature Wall", floor: "Floor" },
+  commercial: { cabinet: "Desk & Cabinets", countertop: "Counter Top", backsplash: "Wall Cladding", floor: "Floor" },
 };

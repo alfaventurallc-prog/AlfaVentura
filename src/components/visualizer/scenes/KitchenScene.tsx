@@ -6,12 +6,12 @@ import { thicknessScale } from "@/data/kitchenCatalog";
 import type { WaterfallOption } from "@/lib/visualizerUrlState";
 import type { VisualizerProduct } from "../../../../types";
 
-const WALL_COLOR = "#EFEAE0";
-const HANDLE_COLOR = "#9C9691";
+export const WALL_COLOR = "#EFEAE0";
+export const HANDLE_COLOR = "#9C9691";
 // Brushed brass for door/drawer pulls: grey pulls vanished against white and
 // grey finishes, and brass reads on light and dark cabinets alike.
-const PULL_COLOR = "#B08D57";
-const RECESS_COLOR = "#241C15";
+export const PULL_COLOR = "#B08D57";
+export const RECESS_COLOR = "#241C15";
 
 type Pt = [number, number];
 
@@ -31,7 +31,7 @@ interface KitchenSceneProps {
 }
 
 /** Darken a "#rrggbb" hex color by the given factor (0-1, lower = darker). */
-const darken = (hex: string, factor: number): string => {
+export const darken = (hex: string, factor: number): string => {
   const n = parseInt(hex.slice(1), 16);
   const clamp = (v: number) => Math.max(0, Math.min(255, Math.round(v)));
   const r = clamp(((n >> 16) & 0xff) * factor);
@@ -43,7 +43,7 @@ const darken = (hex: string, factor: number): string => {
 
 /** A rounded ("bullnose") front-top edge -- a thin cylinder running along
  * the counter's front corner, muted so it blends with any slab tone. */
-const BevelEdge = ({ position, length, axis = "x" }: { position: [number, number, number]; length: number; axis?: "x" | "z" }) => (
+export const BevelEdge = ({ position, length, axis = "x" }: { position: [number, number, number]; length: number; axis?: "x" | "z" }) => (
   <mesh position={position} rotation={axis === "x" ? [0, 0, Math.PI / 2] : [Math.PI / 2, 0, 0]} castShadow receiveShadow>
     <cylinderGeometry args={[0.014, 0.014, length, 16]} />
     <meshStandardMaterial color="#CFC6B4" roughness={0.35} metalness={0} />
@@ -122,7 +122,7 @@ const ShakerDoor = ({
  * behind the doors so the small gaps between them read as real reveal lines
  * instead of vanishing into the same-coloured cabinet body.
  */
-const DoorRow = ({
+export const DoorRow = ({
   axis,
   front,
   from,
@@ -180,7 +180,7 @@ const DoorRow = ({
   );
 };
 
-const STEEL = "#B7BBBD";
+export const STEEL = "#B7BBBD";
 
 /** Built-in dishwasher: stainless front panel with a control strip and a
  * long bar handle, centred at `x`, flush with the base-cabinet face `front`. */
@@ -260,7 +260,7 @@ const RangeHood = ({ x, z }: { x: number; z: number }) => (
 );
 
 /** Small potted plant. */
-const Plant = ({ x, z, topY }: { x: number; z: number; topY: number }) => (
+export const Plant = ({ x, z, topY }: { x: number; z: number; topY: number }) => (
   <group position={[x, topY, z]}>
     <mesh position={[0, 0.05, 0]} castShadow>
       <cylinderGeometry args={[0.06, 0.05, 0.1, 18]} />
@@ -508,7 +508,7 @@ const WallRun = ({
   );
 };
 
-const PendantLight = ({ x, z }: { x: number; z: number }) => (
+export const PendantLight = ({ x, z }: { x: number; z: number }) => (
   <group position={[x, 0, z]}>
     <mesh position={[0, 1.55, 0]}>
       <cylinderGeometry args={[0.006, 0.006, 0.7, 6]} />

@@ -27,6 +27,9 @@ interface ProductInfoPanelProps {
   /** Describes the whole kitchen design (all surfaces + a link back to it);
    * sent as the enquiry message instead of the countertop alone. */
   getDesignSummary?: () => string;
+  /** The room being designed and what the selected quartz is used as there. */
+  spaceName?: string;
+  surfaceLabel?: string;
 }
 
 const formSchema = z.object({
@@ -34,7 +37,7 @@ const formSchema = z.object({
   email: z.string().min(5, "Email is required").email("Invalid email address"),
 });
 
-const ProductInfoPanel = ({ product, getDesignSummary }: ProductInfoPanelProps) => {
+const ProductInfoPanel = ({ product, getDesignSummary, spaceName = "Kitchen", surfaceLabel = "Countertop" }: ProductInfoPanelProps) => {
   const [open, setOpen] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -46,12 +49,15 @@ const ProductInfoPanel = ({ product, getDesignSummary }: ProductInfoPanelProps) 
   if (!product) {
     return (
       <div className="bg-white rounded-2xl shadow-premium border border-[#F0E8DB] p-5">
-        <p className="text-sm text-[#78716C]">Select a quartz design below to see it applied in the kitchen.</p>
+        <p className="text-sm text-[#78716C]">Select a quartz design below to see it applied in the {spaceName.toLowerCase()}.</p>
       </div>
     );
   }
 
-  const fallbackMessage = `Interested in ${product.name} for a kitchen countertop, island and backsplash.`;
+  const fallbackMessage =
+    spaceName === "Kitchen"
+      ? `Interested in ${product.name} for a kitchen countertop, island and backsplash.`
+      : `Interested in ${product.name} as a ${surfaceLabel.toLowerCase()} for a ${spaceName.toLowerCase()} project.`;
   // built only while the dialog is open (it reads window.location)
   const message = (open && getDesignSummary?.()) || fallbackMessage;
 
@@ -82,7 +88,7 @@ const ProductInfoPanel = ({ product, getDesignSummary }: ProductInfoPanelProps) 
   return (
     <div className="bg-white rounded-2xl shadow-premium border border-[#F0E8DB] p-5 space-y-6">
       <div>
-        <p className="text-xs font-bold tracking-[0.15em] uppercase text-[#9B7040] mb-2">Selected Quartz</p>
+        <p className="text-xs font-bold tracking-[0.15em] uppercase text-[#9B7040] mb-2">Selected Quartz · {surfaceLabel}</p>
         <h3 className="text-xl font-bold text-[#1C1917] leading-snug" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
           {product.name}
         </h3>

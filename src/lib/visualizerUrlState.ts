@@ -1,9 +1,10 @@
-import type { LayoutId, ThicknessMm, EdgeProfile } from "@/data/kitchenCatalog";
-import { THICKNESS_OPTIONS, EDGE_PROFILES } from "@/data/kitchenCatalog";
+import type { LayoutId, SpaceId, ThicknessMm, EdgeProfile } from "@/data/kitchenCatalog";
+import { THICKNESS_OPTIONS, EDGE_PROFILES, SPACES } from "@/data/kitchenCatalog";
 
 export type WaterfallOption = "none" | "left" | "right" | "both";
 
 export interface KitchenConfig {
+  space: SpaceId;
   layout: LayoutId;
   mirrored: boolean;
   cabinetId: string | null;
@@ -23,6 +24,7 @@ export interface KitchenConfig {
 
 export const encodeConfigToParams = (config: KitchenConfig): URLSearchParams => {
   const params = new URLSearchParams();
+  if (config.space !== "kitchen") params.set("space", config.space);
   params.set("layout", config.layout);
   if (config.mirrored) params.set("mirrored", "1");
   if (config.cabinetId) params.set("cabinet", config.cabinetId);
@@ -38,6 +40,7 @@ export const encodeConfigToParams = (config: KitchenConfig): URLSearchParams => 
 };
 
 export const decodeConfigFromParams = (params: URLSearchParams): Partial<KitchenConfig> => {
+  const space = params.get("space");
   const layout = params.get("layout");
   const waterfall = params.get("waterfall");
   const thickness = Number(params.get("thickness"));
@@ -54,6 +57,7 @@ export const decodeConfigFromParams = (params: URLSearchParams): Partial<Kitchen
     floorId: id("floor"),
   };
   return {
+    ...(SPACES.some((sp) => sp.id === space) ? { space: space as SpaceId } : {}),
     ...(layout === "island" || layout === "lshape" || layout === "galley" ? { layout } : {}),
     mirrored: params.get("mirrored") === "1",
     ...Object.fromEntries(Object.entries(ids).filter(([, v]) => v !== undefined)),

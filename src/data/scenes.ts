@@ -1,3 +1,5 @@
+import type { SpaceId } from "./kitchenCatalog";
+
 export type CameraPreset = [number, number, number, number, number, number];
 
 /**
@@ -18,4 +20,13 @@ export const KITCHEN_CAMERA: {
   // Pulled back and aimed slightly higher so the upper cabinets sit inside
   // the frame instead of being cut off by its top edge.
   hero: [3.1, 1.0, 3.05, -0.2, 0.42, -0.45],
+};
+
+/** Start view per space: [camera x, y, z, target x, y, z]. The kitchen keeps
+ * the orbit target at the origin, as it had before spaces existed. */
+export const SPACE_CAMERA: Record<SpaceId, CameraPreset> = {
+  kitchen: [3.1, 1.0, 3.05, 0, 0, 0],
+  bathroom: [2.3, 0.8, 2.5, -0.5, 0.25, -1.0],
+  living: [3.2, 0.9, 3.3, -0.6, 0.15, -0.7],
+  commercial: [3.0, 0.95, 3.5, -0.2, 0.2, -0.6],
 };
