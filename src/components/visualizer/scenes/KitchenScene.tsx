@@ -412,7 +412,9 @@ const LShapeKitchen = ({
       <DoorRow axis="z" front={-2.1} from={-1.15} to={0.55} y={-0.375} height={0.7} color={cabinetColor} map={cabinetTexture} />
       {/* upper doors (these used to be hidden inside the upper cabinet box) */}
       <DoorRow axis="x" front={-1.43} from={-2.38} to={2.03} y={1.15} height={0.51} color={cabinetColor} map={cabinetTexture} handle="bottom" />
-      <DoorRow axis="z" front={-2.38} from={-1.43} to={0.55} y={1.15} height={0.51} color={cabinetColor} map={cabinetTexture} handle="bottom" glass />
+      {/* solid doors like every other cabinet: the lit glass fronts here read
+          as a different cabinet line next to the rest of the kitchen */}
+      <DoorRow axis="z" front={-2.38} from={-1.43} to={0.55} y={1.15} height={0.51} color={cabinetColor} map={cabinetTexture} handle="bottom" />
 
       <UnderCabinetLight position={[-0.175, 0.868, -1.4]} args={[4.2, 0.012, 0.02]} />
       <UnderCabinetLight position={[-2.35, 0.868, -0.44]} args={[0.02, 0.012, 1.85]} />
