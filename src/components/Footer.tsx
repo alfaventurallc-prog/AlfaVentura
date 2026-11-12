@@ -1,11 +1,15 @@
 import Image from "next/image";
 import Link from "next/link";
 import { Instagram, Phone, MapPin, Mail } from "lucide-react";
+import { COLLECTIONS, collectionPath } from "@/data/seoContent";
 
 const quickLinks = [
   { href: "/", label: "Home" },
   { href: "/about", label: "About Us" },
   { href: "/all-products", label: "Products" },
+  { href: "/trade", label: "Trade & Wholesale" },
+  { href: "/visualizer", label: "3D Visualizer" },
+  { href: "/guides", label: "Quartz Guides" },
   { href: "/contact", label: "Contact" },
   { href: "/privacy-policy", label: "Privacy Policy" },
 ];
@@ -16,7 +20,7 @@ const Footer = () => (
     <div className="max-w-[1400px] mx-auto px-5 md:px-12 lg:px-20 xl:px-32 py-14 md:py-16">
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10 lg:gap-8">
         {/* Brand column */}
-        <div className="lg:col-span-2 space-y-5">
+        <div className="space-y-5">
           <Link href="/" aria-label="Alfa Ventura Home">
             <Image
               src="/new_logo.png"
@@ -71,6 +75,28 @@ const Footer = () => (
                   className="text-sm hover:text-[#C9A96E] transition-colors duration-200"
                 >
                   {lnk.label}
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Quartz looks */}
+        <div className="space-y-4">
+          <h4
+            className="text-white text-sm font-bold tracking-wide uppercase"
+            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+          >
+            Quartz Looks
+          </h4>
+          <ul className="space-y-2.5">
+            {Object.entries(COLLECTIONS).map(([slug, c]) => (
+              <li key={slug}>
+                <Link
+                  href={collectionPath(slug)}
+                  className="text-sm hover:text-[#C9A96E] transition-colors duration-200"
+                >
+                  {c.name}
                 </Link>
               </li>
             ))}

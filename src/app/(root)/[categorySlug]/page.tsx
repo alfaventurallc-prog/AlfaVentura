@@ -7,6 +7,7 @@ import { notFound, permanentRedirect } from "next/navigation";
 import { categoryMetadata, categoryPath } from "@/lib/categorySeo";
 import { breadcrumbJsonLd, jsonLdScript } from "@/lib/seo";
 import ProductCatalog from "@/components/ProductCatalog";
+import CategoryContent from "@/components/seo/CategoryContent";
 
 interface CategoryWithSubcategories {
   id: string;
@@ -207,6 +208,7 @@ const ProductsPage = async ({ params }: { params: Promise<{ categorySlug: string
               <p className="text-[#6B5E52]">There are no products in this category at the moment.</p>
             </div>
           ))}
+        <CategoryContent slug={category.slug} isQuartz={/quartz|slab/i.test(`${category.name} ${category.parent?.name ?? ""}`)} />
       </div>
     </div>
   );

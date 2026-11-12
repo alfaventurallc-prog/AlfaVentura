@@ -9,6 +9,7 @@ export const NAV_LINKS = [
   { href: "/", key: "home", label: "Home" },
   { href: "/about", key: "how_alfa_ventura_works", label: "About Us" },
   { href: "/visualizer", key: "visualizer", label: "Visualizer" },
+  { href: "/trade", key: "trade", label: "Trade" },
   { href: "/contact", key: "contact_us", label: "Contact Us" },
 ];
 

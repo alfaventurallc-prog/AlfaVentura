@@ -92,6 +92,23 @@ export async function getProductById(id: string) {
   }
 }
 
+/** Every quartz slab product (category or parent category named like
+ * "quartz"/"slab"), newest first, for the look collection pages. */
+export async function getQuartzProducts() {
+  try {
+    const slabCategory = { OR: [{ name: { contains: "slab", mode: "insensitive" as const } }, { name: { contains: "quartz", mode: "insensitive" as const } }] };
+    const products = await prisma.product.findMany({
+      where: { category: { OR: [slabCategory, { parent: slabCategory }] } },
+      orderBy: { createdAt: "desc" },
+      select: { id: true, slug: true, title: true, description: true, images: true, isPremium: true },
+    });
+    return { success: true, data: products };
+  } catch (error) {
+    console.error("Error fetching quartz products:", error);
+    return { success: false, error: "Failed to fetch quartz products", data: [] };
+  }
+}
+
 /** A product by its public URL key: the slug (canonical) or, for links
  * shared before slugs were used in URLs, its id. */
 export async function getProductBySlugOrId(key: string) {
