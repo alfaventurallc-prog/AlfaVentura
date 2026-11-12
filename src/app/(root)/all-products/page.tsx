@@ -5,8 +5,10 @@ import LoadingSpinner from "@/components/LoadingSpinner";
 import AllProductsContent from "@/components/AllProductsContent";
 
 export const metadata: Metadata = {
-  title: "All Products | Alfa Ventura",
-  description: "Explore our complete range of premium quartz, granite, and marble products.",
+  title: "All Products - Quartz Slabs, Cabinets & SPC Flooring",
+  description:
+    "Browse Alfa Ventura's full range: 150+ engineered quartz slab designs (Calacatta, Carrara, Statuario and more), kitchen cabinets and SPC flooring for US projects.",
+  alternates: { canonical: "/all-products" },
 };
 
 const AllProductsPage = async () => {

@@ -1,6 +1,10 @@
 import { getCategoryBySlug } from "@/actions/categories";
 import { ChevronRight, Home, Package } from "lucide-react";
 import Link from "next/link";
+import type { Metadata } from "next";
+import { notFound, permanentRedirect } from "next/navigation";
+import { categoryMetadata, categoryPath } from "@/lib/categorySeo";
+import { breadcrumbJsonLd, jsonLdScript } from "@/lib/seo";
 import ProductCatalog from "@/components/ProductCatalog";
 
 interface CategoryWithSubcategories {
@@ -54,45 +58,33 @@ interface ProductWithCategory {
   };
 }
 
-const ProductsPage = async ({ params }: { params: Promise<{ categorySlug: string; subCategorySlug: string }> }) => {
+export async function generateMetadata({ params }: { params: Promise<{ categorySlug: string; subCategorySlug: string }> }): Promise<Metadata> {
   const { subCategorySlug } = await params;
+  return categoryMetadata(subCategorySlug);
+}
+
+const ProductsPage = async ({ params }: { params: Promise<{ categorySlug: string; subCategorySlug: string }> }) => {
+  const { categorySlug, subCategorySlug } = await params;
 
   const categoryResponse = await getCategoryBySlug(subCategorySlug);
 
-  if (!categoryResponse?.success) {
-    return (
-      <div className="min-h-[50vh] flex items-center justify-center px-5">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-[#1C1917]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Category Not Found</h1>
-          <p className="text-[#6B5E52] mt-2">No category found for: {subCategorySlug}</p>
-          <Link href="/" className="inline-flex items-center mt-4 text-[#9B7040] hover:text-[#7A5520] gap-1">
-            <Home className="w-4 h-4" /> Back to Home
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  if (!categoryResponse?.success) notFound();
 
   const category = categoryResponse.data;
 
-  if (!category) {
-    return (
-      <div className="min-h-[50vh] flex items-center justify-center px-5">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-[#1C1917]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>Category Not Found</h1>
-          <p className="text-[#6B5E52] mt-2">No category found for: {subCategorySlug}</p>
-          <Link href="/" className="inline-flex items-center mt-4 text-[#9B7040] hover:text-[#7A5520] gap-1">
-            <Home className="w-4 h-4" /> Back to Home
-          </Link>
-        </div>
-      </div>
-    );
-  }
+  if (!category) notFound();
 
+  if (categoryPath(category) !== `/${categorySlug}/${subCategorySlug}`) permanentRedirect(categoryPath(category));
   const allProducts = category.allProducts || [];
+  const crumbs = [
+    { name: "Home", path: "/" },
+    ...(category.parent ? [{ name: category.parent.name, path: `/${category.parent.slug}` }] : []),
+    { name: category.name, path: categoryPath(category) },
+  ];
 
   return (
     <div className="bg-[#FDFAF7]">
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(breadcrumbJsonLd(crumbs))} />
       <div className="max-w-[1400px] mx-auto px-5 md:px-12 lg:px-20 xl:px-32 py-10">
         {/* Breadcrumb */}
         <nav className="flex items-center space-x-2 text-sm text-[#6B5E52] mb-6">

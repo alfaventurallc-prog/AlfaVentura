@@ -3,6 +3,7 @@
 import React, { useState } from "react";
 import { cn } from "@/lib/utils";
 import Link from "next/link";
+import { productPath } from "@/lib/seo";
 
 export const Card = React.memo(
   ({
@@ -17,7 +18,7 @@ export const Card = React.memo(
     setHovered: React.Dispatch<React.SetStateAction<number | null>>;
   }) => (
     <Link
-      href={`/products/${card.id}`}
+      href={productPath(card)}
       onMouseEnter={() => setHovered(index)}
       onMouseLeave={() => setHovered(null)}
       className={cn(

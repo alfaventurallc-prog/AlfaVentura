@@ -1,12 +1,15 @@
+import type { Metadata } from "next";
+import { cache } from "react";
 import Link from "next/link";
+import { notFound, permanentRedirect } from "next/navigation";
 import { ChevronRight, Home, Box, MessageCircle } from "lucide-react";
-import { getProductById, getRelatedProducts } from "@/actions/products";
+import { getProductBySlugOrId, getRelatedProducts } from "@/actions/products";
 import EnquireProductForm from "@/components/EnquireProductForm";
 import ProductGallery, { type GalleryMedia } from "@/components/ProductGallery";
 import ProductCard from "@/components/ProductCard";
 import { COLOUR_TRAITS, STYLE_TRAITS, productCode, productTraits } from "@/lib/productTraits";
+import { SITE_NAME, SITE_URL, absoluteUrl, breadcrumbJsonLd, jsonLdScript, metaText, productPath } from "@/lib/seo";
 
-const SITE_URL = "https://www.alfa-ventura.com";
 const WHATSAPP_NUMBER = "14807915581";
 
 type ProductDetail = {
@@ -41,19 +44,55 @@ const visualizerParam = (categoryName: string) => {
   return null;
 };
 
+/** One DB read per request, shared by generateMetadata and the page. */
+const loadProduct = cache(async (key: string) => {
+  const res = await getProductBySlugOrId(decodeURIComponent(key));
+  return res.success && res.data ? (res.data as ProductDetail) : null;
+});
+
+/** "Calacatta Gold" -> "Calacatta Gold Quartz Slab"; cabinet and flooring
+ * titles already say what they are. */
+const searchTitle = (product: ProductDetail) => {
+  const { title, category } = product;
+  if (/slab/i.test(category.name) && !/quartz|slab/i.test(title)) return `${title} Quartz Slab`;
+  if (/floor/i.test(category.name) && !/floor/i.test(title)) return `${title} Flooring`;
+  return title;
+};
+
+export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
+  const { id } = await params;
+  const product = await loadProduct(id);
+  if (!product) return { title: "Product Not Found", robots: { index: false } };
+  const code = productCode(product.description);
+  const name = searchTitle(product);
+  const title = code && !name.includes(code) ? `${name} (${code})` : name;
+  const description =
+    metaText(product.description) ||
+    `${name} from ${SITE_NAME}, available across the USA. Request a quote or a sample today.`;
+  const path = productPath(product);
+  return {
+    title,
+    description,
+    alternates: { canonical: path },
+    openGraph: {
+      type: "website",
+      url: path,
+      title: `${title} | ${SITE_NAME}`,
+      description,
+      images: product.images.slice(0, 3).map((url) => ({ url, alt: product.title })),
+    },
+  };
+}
+
 const traitLabel = (id: string) => [...COLOUR_TRAITS, ...STYLE_TRAITS].find((t) => t.id === id)?.label ?? id;
 
 const ProductDetailPage = async ({ params }: { params: Promise<{ id: string }> }) => {
   const { id } = await params;
+  const product = await loadProduct(id);
+  if (!product) notFound();
+  // Old /products/<id> links move permanently to the slug URL.
+  if (product.slug && decodeURIComponent(id) !== product.slug) permanentRedirect(productPath(product));
 
-  let prodRes;
-  if (id) prodRes = await getProductById(id);
-
-  if (!prodRes?.success || !prodRes.data) {
-    return <div>Product not found</div>;
-  }
-
-  const product: ProductDetail = prodRes.data;
   const relatedRes = await getRelatedProducts(product.id, product.categoryId);
   const related = relatedRes.data ?? [];
 
@@ -69,11 +108,30 @@ const ProductDetailPage = async ({ params }: { params: Promise<{ id: string }> }
   const tags = [...traits.colours, ...traits.styles].map(traitLabel);
   const surface = visualizerParam(category.name);
   const whatsappText = encodeURIComponent(
-    `Hi Alfa Ventura, I'm interested in ${product.title}${code ? ` (${code})` : ""}. ${SITE_URL}/products/${product.id}`
+    `Hi Alfa Ventura, I'm interested in ${product.title}${code ? ` (${code})` : ""}. ${SITE_URL}${productPath(product)}`
   );
+
+  const crumbs = [
+    { name: "Home", path: "/" },
+    ...(category.parent ? [{ name: category.parent.name, path: `/${category.parent.slug}` }] : []),
+    { name: category.name, path: categoryHref },
+    { name: product.title, path: productPath(product) },
+  ];
+  const productLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: searchTitle(product),
+    url: absoluteUrl(productPath(product)),
+    image: product.images,
+    description: product.description ?? undefined,
+    sku: code ?? undefined,
+    category: category.name,
+    brand: { "@type": "Brand", name: SITE_NAME },
+  };
 
   return (
     <div className="bg-[#FDFAF7] min-h-screen pb-24 md:pb-0">
+      <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript([productLd, breadcrumbJsonLd(crumbs)])} />
       <div className="max-w-[1400px] mx-auto px-5 md:px-12 lg:px-20 xl:px-28 py-8 md:py-12">
         <nav className="flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[#6B5E52] mb-6 md:mb-8">
           <Link href="/" className="hover:text-[#9B7040] flex items-center transition-colors">

@@ -92,6 +92,21 @@ export async function getProductById(id: string) {
   }
 }
 
+/** A product by its public URL key: the slug (canonical) or, for links
+ * shared before slugs were used in URLs, its id. */
+export async function getProductBySlugOrId(key: string) {
+  try {
+    const include = { category: { include: { parent: { select: { name: true, slug: true } } } } };
+    const product =
+      (await prisma.product.findUnique({ where: { slug: key }, include })) ??
+      (await prisma.product.findUnique({ where: { id: key }, include }));
+    return product ? { success: true, data: product } : { success: false, error: "Product not found" };
+  } catch (error) {
+    console.error("Error fetching product:", error);
+    return { success: false, error: "Failed to fetch product" };
+  }
+}
+
 /** Up to `limit` products from the same category, closest look first: shared
  * colour tags count double, shared style tags once, newest breaks ties. */
 export async function getRelatedProducts(productId: string, categoryId: string, limit = 6) {
@@ -102,7 +117,7 @@ export async function getRelatedProducts(productId: string, categoryId: string, 
         where: { categoryId, id: { not: productId } },
         orderBy: { createdAt: "desc" },
         take: 300,
-        select: { id: true, title: true, description: true, images: true, isPremium: true },
+        select: { id: true, slug: true, title: true, description: true, images: true, isPremium: true },
       }),
     ]);
     if (!current) return { success: true, data: [] };
@@ -304,7 +319,8 @@ export async function createProduct(productData: any) {
     revalidatePath("/admin/products");
     revalidatePath("/");
     revalidatePath("/visualizer");
-    revalidatePath(`/products/${product.id}`);
+    revalidatePath("/products/[id]", "page"); // every product URL, slug or id
+    revalidatePath("/sitemap.xml");
 
     return {
       success: true,
@@ -375,7 +391,8 @@ export async function updateProduct(id: string, productData: any) {
     // output for a given id -- including, worst case, a cached "Product not
     // found" from a transient DB hiccup -- it stayed stale forever, no
     // matter how many times the product was edited afterward.
-    revalidatePath(`/products/${id}`);
+    revalidatePath("/products/[id]", "page"); // every product URL, slug or id
+    revalidatePath("/sitemap.xml");
 
     return {
       success: true,
@@ -411,7 +428,8 @@ export async function deleteProduct(id: string) {
     revalidatePath("/admin/products");
     revalidatePath("/");
     revalidatePath("/visualizer");
-    revalidatePath(`/products/${id}`);
+    revalidatePath("/products/[id]", "page"); // every product URL, slug or id
+    revalidatePath("/sitemap.xml");
 
     return {
       success: true,

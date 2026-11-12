@@ -3,11 +3,13 @@
 import { useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { productPath } from "@/lib/seo";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 
 interface ProductCardProps {
   product: {
     id: string;
+    slug?: string | null;
     title: string;
     description: string | null;
     images: string[];
@@ -34,7 +36,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
 
   return (
     <div className="group transition-all hover:-translate-y-1">
-      <Link href={`/products/${product.id}`}>
+      <Link href={productPath(product)}>
         <div
           className={`bg-white relative rounded-xl border overflow-hidden border-[#E8DDD0] hover:shadow-[0_8px_28px_rgba(155,112,64,0.15)] transition-shadow ${
             product.isPremium ? "ring-2 ring-[#C9A96E]" : ""

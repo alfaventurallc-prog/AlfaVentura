@@ -3,6 +3,7 @@ import NextTopLoader from "nextjs-toploader";
 import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
+import { SITE_NAME, SITE_URL } from "@/lib/seo";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -18,8 +19,24 @@ const jakarta = Plus_Jakarta_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "Alfa Ventura — Premium Engineered Quartz Export",
-  description: "USA-based premier exporter of engineered quartz slabs, precision countertops, and stone surfaces for residential and commercial projects worldwide.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "Engineered Quartz Slabs & Countertops Supplier in the USA | Alfa Ventura",
+    template: "%s | Alfa Ventura",
+  },
+  description:
+    "Alfa Ventura supplies 150+ engineered quartz slab designs, quartz countertops, vanity tops, cabinets and SPC flooring across the USA. Request a quote or sample today.",
+  applicationName: SITE_NAME,
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    locale: "en_US",
+    url: SITE_URL,
+    images: [{ url: "/ban1.webp", alt: "Alfa Ventura engineered quartz kitchen" }],
+  },
+  twitter: { card: "summary_large_image" },
+  robots: { index: true, follow: true, googleBot: { "max-image-preview": "large", "max-snippet": -1 } },
+  ...(process.env.GOOGLE_SITE_VERIFICATION ? { verification: { google: process.env.GOOGLE_SITE_VERIFICATION } } : {}),
 };
 
 export default function RootLayout({

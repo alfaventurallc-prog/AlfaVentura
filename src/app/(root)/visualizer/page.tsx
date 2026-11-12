@@ -4,8 +4,10 @@ import { getProducts } from "@/actions/products";
 import type { VisualizerProduct } from "../../../../types";
 
 export const metadata: Metadata = {
-  title: "Virtual Kitchen Design Tool — Alfa Ventura",
-  description: "Explore our quartz designs in a real kitchen setting.",
+  title: "3D Quartz Visualizer - Design Your Kitchen, Bath & More",
+  description:
+    "Try any Alfa Ventura quartz slab on countertops, backsplashes, vanities and feature walls in a free 3D room visualizer, then request a quote for your design.",
+  alternates: { canonical: "/visualizer" },
 };
 
 const toVisualizerProduct = (p: { id: string; slug: string; title: string; images: string[]; category?: { name: string } | null }): VisualizerProduct => ({

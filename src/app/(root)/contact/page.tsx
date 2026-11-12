@@ -1,8 +1,10 @@
 import ContactForm from "@/components/ContactForm";
 
 export const metadata = {
-  title: "Contact Us | Alfa Ventura",
-  description: "Get in touch with Alfa Ventura — USA's premier engineered quartz export company.",
+  title: "Contact Us - Get a Quartz Quote",
+  description:
+    "Contact Alfa Ventura in Albuquerque, NM for quartz slab pricing, samples and project quotes. Call +1 (480) 791-5581 or email info@alfa-ventura.com.",
+  alternates: { canonical: "/contact" },
 };
 
 export default function ContactPage() {

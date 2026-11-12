@@ -1,16 +1,15 @@
-import Head from "next/head";
+import type { Metadata } from "next";
 import Link from "next/link";
+
+export const metadata: Metadata = {
+  title: "Privacy Policy",
+  description: "How Alfa Ventura collects, uses and protects the information you share with us.",
+  alternates: { canonical: "/privacy-policy" },
+};
 
 export default function PrivacyPolicy() {
   return (
     <>
-      <Head>
-        <title>Privacy Policy – Alfa Ventura</title>
-        <meta
-          name="description"
-          content="Privacy Policy for Alfa Ventura"
-        />
-      </Head>
 
       {/* Full-height light background */}
       <div className="min-h-screen bg-gray-100 py-16">

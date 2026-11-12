@@ -4,7 +4,10 @@ import InstallationFlowSection from "@/components/InstallationFlowSection";
 import FeaturesSection from "../../components/FeaturesSection";
 import Hero from "../../components/Hero";
 import Try3DPromoSection from "@/components/Try3DPromoSection";
+import type { Metadata } from "next";
 import { getCategories } from "@/actions/categories";
+
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 export default async function Home() {
   const categoriesRes = await getCategories({ includeSubcategories: true });
