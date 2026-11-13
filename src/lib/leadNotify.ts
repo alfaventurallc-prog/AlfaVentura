@@ -1,13 +1,15 @@
 import nodemailer from "nodemailer";
-import { SITE_URL } from "./seo";
+import { BUSINESS, SITE_URL } from "./seo";
 
 // Emails every new lead (contact form, quote, sample request) to the team.
 // Configured only through environment variables, so it is off until they are
 // set in Vercel:
 //   SMTP_HOST, SMTP_PORT (465 default), SMTP_USER, SMTP_PASS,
-//   LEAD_NOTIFY_TO (comma-separated), SMTP_FROM (optional, defaults to SMTP_USER)
+//   LEAD_NOTIFY_TO (optional, comma-separated; defaults to the site's info@ address),
+//   SMTP_FROM (optional, defaults to SMTP_USER)
 // Works with any SMTP server, e.g. Gmail with an App Password
-// (smtp.gmail.com:465) or a free Resend account (smtp.resend.com:465).
+// (smtp.gmail.com:465), Zoho Mail on a plan with SMTP (smtp.zoho.in:465) or a
+// free Resend account (smtp.resend.com:465).
 
 const SEND_TIMEOUT_MS = 8000;
 
@@ -27,8 +29,9 @@ export interface Lead {
 /** Sends the notification; never throws, so a mail problem can't fail the
  * form for the visitor (the lead is already saved in the database). */
 export async function notifyLead(lead: Lead) {
-  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, LEAD_NOTIFY_TO, SMTP_FROM } = process.env;
-  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS || !LEAD_NOTIFY_TO) return;
+  const { SMTP_HOST, SMTP_PORT, SMTP_USER, SMTP_PASS, SMTP_FROM } = process.env;
+  const to = process.env.LEAD_NOTIFY_TO || BUSINESS.email;
+  if (!SMTP_HOST || !SMTP_USER || !SMTP_PASS) return;
 
   const port = Number(SMTP_PORT) || 465;
   const rows: [string, string | undefined][] = [
@@ -51,7 +54,7 @@ export async function notifyLead(lead: Lead) {
     await Promise.race([
       transport.sendMail({
         from: SMTP_FROM || SMTP_USER,
-        to: LEAD_NOTIFY_TO,
+        to,
         replyTo: `${lead.name.replace(/["<>]/g, "")} <${lead.email}>`,
         subject: `New ${lead.kind}: ${lead.name}${lead.product ? ` - ${lead.product.title}` : ""}`,
         text,
