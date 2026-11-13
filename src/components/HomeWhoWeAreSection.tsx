@@ -79,7 +79,7 @@ const HomeWhoWeAreSection = () => {
             transition={{ duration: 0.5, delay: 0.5 }}
             className="absolute top-6 -right-4 md:-right-8 bg-white rounded-2xl px-4 py-3 shadow-[0_8px_28px_rgba(0,0,0,0.1)] border border-[#E8DDD0]"
           >
-            <p className="text-xl font-bold text-[#9B7040]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            <p className="text-xl font-bold text-[#9B7040]" style={{ fontFamily: "var(--font-jakarta), sans-serif" }}>
               Premium
             </p>
             <p className="text-xs text-[#78716C] font-medium">Engineered Quartz</p>
@@ -98,7 +98,7 @@ const HomeWhoWeAreSection = () => {
             <span className="section-label">Alfa Ventura</span>
             <h2
               className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[#1C1917] leading-[1.1] tracking-tight mt-3"
-              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
             >
               "Precision In Every Slab,
               <span className="block text-[#9B7040]">Trust In Every Shipment"</span>
@@ -124,7 +124,7 @@ const HomeWhoWeAreSection = () => {
               <div key={s.label} className="text-center sm:text-left">
                 <p
                   className="text-2xl font-bold text-[#9B7040]"
-                  style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                  style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
                 >
                   {s.value}
                 </p>

@@ -22,7 +22,7 @@ export default function ContactPage() {
           </span>
           <h1
             className="text-3xl md:text-5xl font-bold text-white leading-tight"
-            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
           >
             Contact Us
           </h1>
@@ -45,7 +45,7 @@ export default function ContactPage() {
           <div className="absolute top-4 left-4 bg-white/95 backdrop-blur-sm rounded-xl p-4 shadow-md w-72 border border-[#E8DDD0]">
             <p
               className="font-bold text-[#1C1917] mb-2 text-sm"
-              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
             >
               Alfa Ventura — USA Office
             </p>

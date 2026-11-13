@@ -79,7 +79,7 @@ const TradePage = () => (
     <div className="bg-[#1C1917] text-white">
       <div className="max-w-[1400px] mx-auto px-5 md:px-12 lg:px-20 xl:px-32 py-14 md:py-20">
         <p className="text-xs font-bold tracking-[0.2em] uppercase text-[#C9A96E] mb-4">Trade & Wholesale</p>
-        <h1 className="text-3xl md:text-5xl font-bold tracking-tight max-w-3xl mb-5" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+        <h1 className="text-3xl md:text-5xl font-bold tracking-tight max-w-3xl mb-5" style={{ fontFamily: "var(--font-jakarta), sans-serif" }}>
           Wholesale Quartz Slabs for Fabricators, Contractors & Designers
         </h1>
         <p className="text-white/75 text-base md:text-lg max-w-2xl leading-relaxed">
@@ -101,7 +101,7 @@ const TradePage = () => (
       <div className="space-y-10 max-w-4xl">
         <ContentSections sections={SECTIONS} />
         <section>
-          <h2 className="text-xl md:text-2xl font-bold text-[#1C1917] mb-3 tracking-tight" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          <h2 className="text-xl md:text-2xl font-bold text-[#1C1917] mb-3 tracking-tight" style={{ fontFamily: "var(--font-jakarta), sans-serif" }}>
             Popular quartz looks
           </h2>
           <div className="flex flex-wrap gap-2">
@@ -119,7 +119,7 @@ const TradePage = () => (
         <FaqList faqs={FAQS} />
       </div>
       <section id="trade-quote" className="scroll-mt-28">
-        <h2 className="text-2xl md:text-3xl font-bold text-[#1C1917] mb-2 tracking-tight" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+        <h2 className="text-2xl md:text-3xl font-bold text-[#1C1917] mb-2 tracking-tight" style={{ fontFamily: "var(--font-jakarta), sans-serif" }}>
           Request trade pricing
         </h2>
         <p className="text-[#6B5E52] mb-6">Include the designs, quantities and your project location in your message.</p>

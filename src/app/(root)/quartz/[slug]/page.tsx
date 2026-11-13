@@ -85,7 +85,7 @@ const CollectionPage = async ({ params }: { params: Promise<{ slug: string }> })
         </nav>
 
         <header className="max-w-3xl mb-8">
-          <h1 className="text-3xl md:text-5xl font-bold text-[#1C1917] tracking-tight mb-4" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          <h1 className="text-3xl md:text-5xl font-bold text-[#1C1917] tracking-tight mb-4" style={{ fontFamily: "var(--font-jakarta), sans-serif" }}>
             {collection.h1}
           </h1>
           <p className="text-[#57534E] text-base md:text-lg leading-relaxed">{collection.intro}</p>
@@ -101,7 +101,7 @@ const CollectionPage = async ({ params }: { params: Promise<{ slug: string }> })
 
         {products.length > 0 ? (
           <section className="mb-14">
-            <h2 className="text-xl font-semibold text-[#1C1917] mb-5" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            <h2 className="text-xl font-semibold text-[#1C1917] mb-5" style={{ fontFamily: "var(--font-jakarta), sans-serif" }}>
               {products.length} {collection.name} {products.length === 1 ? "design" : "designs"}
             </h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

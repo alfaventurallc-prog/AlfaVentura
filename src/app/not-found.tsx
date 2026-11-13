@@ -8,7 +8,7 @@ export default function NotFound() {
     <main className="min-h-[70vh] flex items-center justify-center bg-[#FDFAF7] px-5">
       <div className="text-center max-w-md">
         <p className="text-xs font-bold tracking-[0.15em] uppercase text-[#9B7040] mb-3">404</p>
-        <h1 className="text-3xl font-bold text-[#1C1917] mb-3" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+        <h1 className="text-3xl font-bold text-[#1C1917] mb-3" style={{ fontFamily: "var(--font-jakarta), sans-serif" }}>
           This page doesn&apos;t exist
         </h1>
         <p className="text-[#6B5E52] mb-6">The link may be old or mistyped. Browse our quartz slabs or get in touch for a quote.</p>

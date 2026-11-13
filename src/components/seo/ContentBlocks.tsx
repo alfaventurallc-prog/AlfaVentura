@@ -1,7 +1,7 @@
 import Link from "next/link";
 import type { ContentSection, Faq } from "@/data/seoContent";
 
-const heading = { fontFamily: "'Plus Jakarta Sans', sans-serif" };
+const heading = { fontFamily: "var(--font-jakarta), sans-serif" };
 
 export const ContentSections = ({ sections }: { sections: ContentSection[] }) => (
   <div className="space-y-8">

@@ -4,6 +4,7 @@ import { Inter, Plus_Jakarta_Sans } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "sonner";
 import { SITE_NAME, SITE_URL } from "@/lib/seo";
+import Analytics from "@/components/Analytics";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -53,6 +54,7 @@ export default function RootLayout({
           showSpinner={false}
         />
         <div>{children}</div>
+        <Analytics />
         <Toaster
           position="top-center"
           richColors

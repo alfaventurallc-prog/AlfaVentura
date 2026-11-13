@@ -84,7 +84,7 @@ export default function HeroSlider({ slides }: { slides: Slide[] }) {
 
                       <h1
                         className="text-4xl sm:text-5xl md:text-6xl font-bold text-white leading-[1.05] tracking-tight mb-5"
-                        style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                        style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
                       >
                         {slide.title}
                       </h1>

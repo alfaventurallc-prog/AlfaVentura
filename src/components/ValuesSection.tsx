@@ -18,7 +18,7 @@ const ValuesSection = () => {
           <span className="section-label">Our Values</span>
           <h2
             className="text-3xl md:text-5xl font-bold text-[#1C1917] tracking-tight leading-[1.1]"
-            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
           >
             Crafted with Care
             <span className="block text-[#9B7040]">Delivered with Purpose</span>

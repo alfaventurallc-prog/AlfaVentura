@@ -2,6 +2,8 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { notifyLead } from "@/lib/leadNotify";
+import { productPath } from "@/lib/seo";
 
 export async function getEnquiries(params?: { page?: number; limit?: number; search?: string }) {
   try {
@@ -70,9 +72,23 @@ export async function createEnquiry(enquiryData: any) {
   try {
     const enquiry = await prisma.enquiry.create({
       data: enquiryData,
+      include: { product: { select: { title: true, slug: true, id: true } } },
     });
 
     revalidatePath("/admin/enquiries");
+
+    const message: string = enquiry.message ?? "";
+    await notifyLead({
+      kind: message.startsWith("I would like to request a sample")
+        ? "Sample request"
+        : message.startsWith("Quote request for this")
+          ? "Visualizer quote request"
+          : "Product enquiry",
+      name: enquiry.name,
+      email: enquiry.email,
+      product: enquiry.product ? { title: enquiry.product.title, path: productPath(enquiry.product) } : undefined,
+      message,
+    });
 
     return {
       success: true,

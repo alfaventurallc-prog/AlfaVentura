@@ -58,7 +58,7 @@ export const CardTitle = ({ className, children }: { className?: string; childre
   return (
     <h4
       className={cn("text-[#1C1917] text-lg font-bold tracking-tight mt-1 capitalize", className)}
-      style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+      style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
     >
       {children}
     </h4>

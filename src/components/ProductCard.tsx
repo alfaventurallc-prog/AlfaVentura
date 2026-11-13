@@ -93,7 +93,7 @@ const ProductCard = ({ product }: ProductCardProps) => {
           <div className="p-4">
             <h3
               className="text-base font-semibold text-[#1C1917] mb-1"
-              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
             >
               {product.title}
             </h3>

@@ -18,6 +18,7 @@ import { toast } from "sonner";
 import { useState } from "react";
 import LoadingSpinner from "./LoadingSpinner";
 import { createContact } from "@/actions/contact";
+import { trackLead } from "@/components/Analytics";
 import { Send } from "lucide-react";
 
 const formSchema = z.object({
@@ -56,6 +57,7 @@ const ContactForm = () => {
       setIsSubmitting(true);
       const res = await createContact(values);
       if (res.success) {
+        trackLead("contact");
         toast.success("Message sent successfully!");
         form.reset();
       } else {
@@ -84,7 +86,7 @@ const ContactForm = () => {
             <span className="section-label">Get In Touch</span>
             <h2
               className="mt-2 text-2xl md:text-3xl font-bold text-[#1C1917] leading-tight"
-              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
             >
               We&apos;d Love to Hear
               <span className="text-[#9B7040]"> from You</span>
@@ -212,7 +214,7 @@ const ContactForm = () => {
             </p>
             <h3
               className="text-white text-xl font-bold leading-snug"
-              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
             >
               Let&apos;s Build Something
               <br />

@@ -48,7 +48,7 @@ const DownloadBrochureSection = () => {
               <span className="section-label">Product Catalogue</span>
               <h2
                 className="text-3xl md:text-4xl font-bold text-[#1C1917] tracking-tight leading-[1.15] mt-3 mb-4"
-                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
               >
                 Download our
                 <span className="text-[#9B7040]"> Brochure</span>
@@ -147,7 +147,7 @@ const DownloadBrochureSection = () => {
                 <div className="absolute inset-0 bg-[url('/aboutusimg.webp')] bg-cover bg-center opacity-30 rounded-2xl" />
                 <div className="relative z-10 text-center px-8 py-10">
                   <FileDown className="w-12 h-12 text-[#9B7040] mx-auto mb-4" />
-                  <p className="text-xl font-bold text-[#1C1917]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+                  <p className="text-xl font-bold text-[#1C1917]" style={{ fontFamily: "var(--font-jakarta), sans-serif" }}>
                     Product Catalogue
                   </p>
                   <p className="text-sm text-[#78716C] mt-2">Full specs, sizes &amp; profiles</p>

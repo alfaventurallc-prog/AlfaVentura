@@ -11,7 +11,7 @@ const Try3DPromoSection = () => {
           </span>
           <h2
             className="text-2xl md:text-4xl font-bold text-white mb-4"
-            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
           >
             See It Before You Choose It
           </h2>

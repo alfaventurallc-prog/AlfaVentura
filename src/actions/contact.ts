@@ -2,6 +2,7 @@
 
 import { prisma } from "@/lib/prisma";
 import { revalidatePath } from "next/cache";
+import { notifyLead } from "@/lib/leadNotify";
 
 export async function getContacts(params?: { page?: number; limit?: number; search?: string }) {
   try {
@@ -56,6 +57,15 @@ export async function createContact(contactData: any) {
     });
 
     revalidatePath("/admin/contacts");
+
+    await notifyLead({
+      kind: "Contact form lead",
+      name: contact.name,
+      email: contact.email,
+      phone: contact.contactNumber,
+      company: contact.organizationName,
+      message: contact.message,
+    });
 
     return {
       success: true,

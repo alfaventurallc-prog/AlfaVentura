@@ -43,7 +43,7 @@ export default function BrochureSections() {
 
           {/* Text */}
           <div className="w-full md:w-1/2">
-            <h2 className="text-2xl md:text-3xl font-bold text-[#1C1917] mb-4" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{title}</h2>
+            <h2 className="text-2xl md:text-3xl font-bold text-[#1C1917] mb-4" style={{ fontFamily: "var(--font-jakarta), sans-serif" }}>{title}</h2>
             <p className="text-[#6B5E52] leading-relaxed">{description}</p>
           </div>
         </section>

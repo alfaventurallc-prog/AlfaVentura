@@ -79,7 +79,7 @@ const CategoryCard = ({ category }: CategoryCardProps) => {
             href={`/${category.slug}`}
             className="group"
           >
-            <h3 className="font-semibold text-lg text-[#1C1917] group-hover:text-[#9B7040] transition-colors mb-2 flex items-center" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            <h3 className="font-semibold text-lg text-[#1C1917] group-hover:text-[#9B7040] transition-colors mb-2 flex items-center" style={{ fontFamily: "var(--font-jakarta), sans-serif" }}>
               {category.name}
               <ChevronRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
             </h3>

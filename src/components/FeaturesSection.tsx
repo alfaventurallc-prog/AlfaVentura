@@ -120,7 +120,7 @@ const FeaturesSection = ({ categories }: FeaturesSectionProps) => {
           </span>
           <h2
             className="text-3xl md:text-5xl font-bold text-white leading-tight mb-5 tracking-tight"
-            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
           >
             Your trusted source for
             <br />
@@ -224,7 +224,7 @@ const FeaturesSection = ({ categories }: FeaturesSectionProps) => {
                       <h3
                         key="t"
                         className="text-3xl sm:text-4xl md:text-5xl font-bold text-white leading-[1.05] tracking-tight mb-3"
-                        style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                        style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
                       >
                         {activeName.title}
                       </h3>,
@@ -325,7 +325,7 @@ const FeaturesSection = ({ categories }: FeaturesSectionProps) => {
                       )}
                       <span
                         className={`block font-bold leading-snug truncate transition-colors duration-300 ${isActive ? "text-white" : "text-white/70"}`}
-                        style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                        style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
                       >
                         {name.title}
                       </span>

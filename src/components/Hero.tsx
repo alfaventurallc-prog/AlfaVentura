@@ -81,7 +81,7 @@ const Hero = () => {
                   </div>
                   <h3
                     className="text-lg font-bold text-[#1C1917]"
-                    style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                    style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
                   >
                     {item.title}
                   </h3>

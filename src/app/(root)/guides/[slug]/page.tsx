@@ -63,7 +63,7 @@ const GuidePage = async ({ params }: { params: Promise<{ slug: string }> }) => {
 
         <article className="space-y-10">
           <header>
-            <h1 className="text-3xl md:text-5xl font-bold text-[#1C1917] tracking-tight mb-4" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            <h1 className="text-3xl md:text-5xl font-bold text-[#1C1917] tracking-tight mb-4" style={{ fontFamily: "var(--font-jakarta), sans-serif" }}>
               {guide.h1}
             </h1>
             <p className="text-sm text-[#8A7B68] mb-5">
@@ -80,7 +80,7 @@ const GuidePage = async ({ params }: { params: Promise<{ slug: string }> }) => {
 
           {guide.related.length > 0 && (
             <section>
-              <h2 className="text-xl md:text-2xl font-bold text-[#1C1917] mb-4 tracking-tight" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+              <h2 className="text-xl md:text-2xl font-bold text-[#1C1917] mb-4 tracking-tight" style={{ fontFamily: "var(--font-jakarta), sans-serif" }}>
                 Browse quartz designs
               </h2>
               <div className="flex flex-wrap gap-2">

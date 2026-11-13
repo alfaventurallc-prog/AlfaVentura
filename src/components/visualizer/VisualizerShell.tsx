@@ -25,6 +25,7 @@ import {
   type EdgeProfile,
 } from "@/data/kitchenCatalog";
 import { getAverageColorForImage } from "@/three/extractAverageColor";
+import { cloudinaryThumb } from "@/lib/cloudinaryUrl";
 import { encodeConfigToParams, decodeConfigFromParams, type KitchenConfig, type WaterfallOption } from "@/lib/visualizerUrlState";
 import { useFavorites } from "@/hooks/useFavorites";
 import type { VisualizerProduct } from "../../../types";
@@ -38,7 +39,7 @@ interface VisualizerShellProps {
 const SAVED_DESIGN_KEY = "alfa-ventura-visualizer-saved-design";
 const DEFAULT_CABINET_COLOR = "#D8C9AE";
 
-const toSwatch = (p: VisualizerProduct): SwatchItem => ({ id: p.id, name: p.name, thumbnail: p.image });
+const toSwatch = (p: VisualizerProduct): SwatchItem => ({ id: p.id, name: p.name, thumbnail: cloudinaryThumb(p.image) });
 
 const VisualizerShell = ({ cabinetProducts, quartzProducts, floorProducts = [] }: VisualizerShellProps) => {
   const [config, setConfig] = useState<KitchenConfig>({

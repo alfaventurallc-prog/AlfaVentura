@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 const GuidesPage = () => (
   <div className="bg-[#FDFAF7]">
     <div className="max-w-5xl mx-auto px-5 md:px-8 py-12">
-      <h1 className="text-3xl md:text-5xl font-bold text-[#1C1917] tracking-tight mb-4" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+      <h1 className="text-3xl md:text-5xl font-bold text-[#1C1917] tracking-tight mb-4" style={{ fontFamily: "var(--font-jakarta), sans-serif" }}>
         Quartz Guides & Advice
       </h1>
       <p className="text-[#57534E] text-lg max-w-2xl mb-10">
@@ -25,7 +25,7 @@ const GuidesPage = () => (
             href={guidePath(slug)}
             className="block bg-white rounded-2xl border border-[#E8DDD0] p-6 hover:shadow-[0_8px_28px_rgba(155,112,64,0.15)] hover:-translate-y-1 transition-all"
           >
-            <h2 className="text-lg font-bold text-[#1C1917] mb-2" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+            <h2 className="text-lg font-bold text-[#1C1917] mb-2" style={{ fontFamily: "var(--font-jakarta), sans-serif" }}>
               {g.h1}
             </h2>
             <p className="text-sm text-[#57534E] leading-relaxed">{g.description}</p>

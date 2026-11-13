@@ -33,7 +33,7 @@ const AboutBannerSection = () => {
             </div>
             <h1
               className="text-4xl md:text-6xl font-bold text-white leading-[1.05] tracking-tight mb-5"
-              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
             >
               About Alfa Ventura
             </h1>
@@ -96,7 +96,7 @@ const AboutBannerSection = () => {
             <span className="section-label">About Us</span>
             <h2
               className="text-3xl sm:text-4xl font-bold text-[#1C1917] leading-[1.1] tracking-tight"
-              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
             >
               "Building Trust, Quality,<span className="block text-[#9B7040]">And Innovation"</span>
             </h2>

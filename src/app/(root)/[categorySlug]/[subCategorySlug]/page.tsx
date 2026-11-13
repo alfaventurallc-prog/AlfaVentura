@@ -111,7 +111,7 @@ const ProductsPage = async ({ params }: { params: Promise<{ categorySlug: string
             <div className="flex items-center gap-3 mb-3">
               <h1
                 className="text-3xl font-bold text-[#1C1917]"
-                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
               >
                 {category.name}
               </h1>
@@ -133,7 +133,7 @@ const ProductsPage = async ({ params }: { params: Promise<{ categorySlug: string
             <div className="flex items-center justify-between mb-6">
               <h2
                 className="text-xl font-semibold text-[#1C1917]"
-                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
               >
                 Products in{" "}
                 <span className="text-[#9B7040]">
@@ -148,7 +148,7 @@ const ProductsPage = async ({ params }: { params: Promise<{ categorySlug: string
             <Package className="w-16 h-16 mx-auto text-[#C9A96E] mb-4" />
             <h3
               className="text-lg font-medium text-[#1C1917] mb-2"
-              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
             >
               No Products Yet
             </h3>

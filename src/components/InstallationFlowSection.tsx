@@ -40,7 +40,7 @@ const InstallationFlowSection = () => {
             <span className="section-label">From Slab to Installation</span>
             <h2
               className="text-3xl sm:text-4xl lg:text-5xl font-bold text-[#1C1917] leading-[1.05] mt-3"
-              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
             >
               FROM RAW QUARTZ TO FINISHED SPACES
             </h2>

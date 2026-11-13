@@ -93,7 +93,7 @@ const Navbar: React.FC = () => {
             />
             <span
               className="text-[#9B7040] text-xl font-bold tracking-tight leading-none"
-              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
             >
               Alfa Ventura
             </span>

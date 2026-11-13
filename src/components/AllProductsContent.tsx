@@ -80,21 +80,21 @@ const AllProductsContent = ({ categories }: AllProductsContentProps) => {
       {/* Stats Section */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
         <div className="bg-white rounded-xl border border-[#E8DDD0] shadow-sm p-5 text-center">
-          <div className="text-2xl font-bold text-[#9B7040]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{categories.length}</div>
+          <div className="text-2xl font-bold text-[#9B7040]" style={{ fontFamily: "var(--font-jakarta), sans-serif" }}>{categories.length}</div>
           <div className="text-xs text-[#6B5E52] mt-1 font-medium uppercase tracking-wide">Total Categories</div>
         </div>
         <div className="bg-white rounded-xl border border-[#E8DDD0] shadow-sm p-5 text-center">
-          <div className="text-2xl font-bold text-[#9B7040]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{mainCategories.length}</div>
+          <div className="text-2xl font-bold text-[#9B7040]" style={{ fontFamily: "var(--font-jakarta), sans-serif" }}>{mainCategories.length}</div>
           <div className="text-xs text-[#6B5E52] mt-1 font-medium uppercase tracking-wide">Main Categories</div>
         </div>
         <div className="bg-white rounded-xl border border-[#E8DDD0] shadow-sm p-5 text-center">
-          <div className="text-2xl font-bold text-[#9B7040]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          <div className="text-2xl font-bold text-[#9B7040]" style={{ fontFamily: "var(--font-jakarta), sans-serif" }}>
             {categories.reduce((sum, cat) => sum + cat._count.subcategories, 0)}
           </div>
           <div className="text-xs text-[#6B5E52] mt-1 font-medium uppercase tracking-wide">Subcategories</div>
         </div>
         <div className="bg-white rounded-xl border border-[#E8DDD0] shadow-sm p-5 text-center">
-          <div className="text-2xl font-bold text-[#9B7040]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{totalProducts}</div>
+          <div className="text-2xl font-bold text-[#9B7040]" style={{ fontFamily: "var(--font-jakarta), sans-serif" }}>{totalProducts}</div>
           <div className="text-xs text-[#6B5E52] mt-1 font-medium uppercase tracking-wide">Total Products</div>
         </div>
       </div>
@@ -201,7 +201,7 @@ const AllProductsContent = ({ categories }: AllProductsContentProps) => {
 
       {/* Results Summary */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold text-[#1C1917]" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>{filteredCategories.length} Categories Found</h2>
+        <h2 className="text-lg font-semibold text-[#1C1917]" style={{ fontFamily: "var(--font-jakarta), sans-serif" }}>{filteredCategories.length} Categories Found</h2>
         <div className="text-sm text-[#6B5E52]">
           Showing {filteredCategories.length} of {categories.length} categories
         </div>

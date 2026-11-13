@@ -12,7 +12,7 @@ const CategoryContent = ({ slug, isQuartz }: { slug: string; isQuartz: boolean }
       {content?.faqs.length ? <script type="application/ld+json" dangerouslySetInnerHTML={jsonLdScript(faqJsonLd(content.faqs))} /> : null}
       {isQuartz && (
         <section>
-          <h2 className="text-xl md:text-2xl font-bold text-[#1C1917] mb-4 tracking-tight" style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}>
+          <h2 className="text-xl md:text-2xl font-bold text-[#1C1917] mb-4 tracking-tight" style={{ fontFamily: "var(--font-jakarta), sans-serif" }}>
             Shop quartz by look
           </h2>
           <div className="flex flex-wrap gap-2">

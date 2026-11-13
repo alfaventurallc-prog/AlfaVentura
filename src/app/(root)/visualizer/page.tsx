@@ -50,7 +50,7 @@ export default async function VisualizerPage() {
           </span>
           <h1
             className="text-3xl md:text-5xl font-bold text-[#1C1917] leading-tight mb-4"
-            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
           >
             Virtual Kitchen Design Tool
           </h1>

@@ -20,7 +20,7 @@ const AllProductsPage = async () => {
         <div className="text-center">
           <h1
             className="text-2xl font-bold text-[#1C1917] mb-2"
-            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
           >
             Unable to Load Products
           </h1>
@@ -46,7 +46,7 @@ const AllProductsPage = async () => {
           </span>
           <h1
             className="text-4xl md:text-5xl font-bold mb-4 leading-tight"
-            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
           >
             Our Premium Products
           </h1>

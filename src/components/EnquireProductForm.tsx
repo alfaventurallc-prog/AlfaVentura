@@ -24,6 +24,7 @@ import { Product } from "../../types";
 import LoadingSpinner from "./LoadingSpinner";
 import { Textarea } from "./ui/textarea";
 import { createEnquiry } from "@/actions/enquiries";
+import { trackLead } from "@/components/Analytics";
 import { FaArrowLeft, FaLongArrowAltLeft } from "react-icons/fa";
 
 const formSchema = z.object({
@@ -64,6 +65,7 @@ const EnquireProductForm = ({ product, variant = "enquiry", triggerClassName, sh
       const res = await createEnquiry(submitData);
 
       if (res.success) {
+        trackLead(isSample ? "sample" : "product_enquiry");
         toast.success(isSample ? "Sample request sent! We'll be in touch shortly." : "Enquiry submitted successfully!");
         form.reset();
       } else {

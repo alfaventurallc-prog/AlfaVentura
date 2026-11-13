@@ -172,7 +172,7 @@ const ProductDetailPage = async ({ params }: { params: Promise<{ id: string }> }
 
             <h1
               className="text-3xl md:text-4xl lg:text-[2.75rem] font-bold text-[#1C1917] leading-tight tracking-tight mb-5"
-              style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+              style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
             >
               {product.title}
             </h1>
@@ -235,7 +235,7 @@ const ProductDetailPage = async ({ params }: { params: Promise<{ id: string }> }
             <div className="flex items-end justify-between gap-4 mb-6">
               <h2
                 className="text-2xl md:text-3xl font-bold text-[#1C1917] tracking-tight"
-                style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+                style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
               >
                 You may also like
               </h2>

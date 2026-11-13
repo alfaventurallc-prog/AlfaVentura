@@ -63,7 +63,7 @@ const Footer = () => (
         <div className="space-y-4">
           <h4
             className="text-white text-sm font-bold tracking-wide uppercase"
-            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
           >
             Quick Links
           </h4>
@@ -85,7 +85,7 @@ const Footer = () => (
         <div className="space-y-4">
           <h4
             className="text-white text-sm font-bold tracking-wide uppercase"
-            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
           >
             Quartz Looks
           </h4>
@@ -107,7 +107,7 @@ const Footer = () => (
         <div className="space-y-4">
           <h4
             className="text-white text-sm font-bold tracking-wide uppercase"
-            style={{ fontFamily: "'Plus Jakarta Sans', sans-serif" }}
+            style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
           >
             Contact
           </h4>
