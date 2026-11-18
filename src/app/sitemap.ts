@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { SITE_URL, productPath } from "@/lib/seo";
 import { categoryPath } from "@/lib/categorySeo";
 import { COLLECTIONS, GUIDES, collectionPath, guidePath } from "@/data/seoContent";
+import { LOCATIONS, locationPath } from "@/data/locations";
 import { productTraits } from "@/lib/productTraits";
 import { getQuartzProducts } from "@/actions/products";
 
@@ -45,6 +46,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     page("/trade", 0.9),
     page("/guides", 0.5),
     ...indexableCollections.map((slug) => page(collectionPath(slug), 0.8)),
+    ...Object.keys(LOCATIONS).map((slug) => page(locationPath(slug), 0.8)),
     ...Object.entries(GUIDES).map(([slug, g]) => page(guidePath(slug), 0.6, new Date(g.published))),
     page("/privacy-policy", 0.2, new Date("2026-01-01")),
     // empty categories are noindex, so they stay out of the sitemap too

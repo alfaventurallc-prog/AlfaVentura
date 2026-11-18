@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { Instagram, Phone, MapPin, Mail } from "lucide-react";
 import { COLLECTIONS, collectionPath } from "@/data/seoContent";
+import { LOCATIONS, locationPath } from "@/data/locations";
 
 const quickLinks = [
   { href: "/", label: "Home" },
@@ -97,6 +98,21 @@ const Footer = () => (
                   className="text-sm hover:text-[#C9A96E] transition-colors duration-200"
                 >
                   {c.name}
+                </Link>
+              </li>
+            ))}
+          </ul>
+          <h4
+            className="text-white text-sm font-bold tracking-wide uppercase pt-2"
+            style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
+          >
+            Service Areas
+          </h4>
+          <ul className="space-y-2.5">
+            {Object.entries(LOCATIONS).map(([slug, a]) => (
+              <li key={slug}>
+                <Link href={locationPath(slug)} className="text-sm hover:text-[#C9A96E] transition-colors duration-200">
+                  Quartz Countertops {a.city}, {a.state}
                 </Link>
               </li>
             ))}
