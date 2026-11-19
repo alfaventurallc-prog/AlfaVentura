@@ -112,7 +112,7 @@ const ProductGallery = ({ media, title, altLabels }: { media: GalleryMedia[]; ti
                   <PlayCircle className="w-6 h-6" />
                 </span>
               ) : (
-                <Image src={m.url} alt="" fill sizes="96px" className="object-cover" />
+                <Image src={m.url} alt={`${title} - ${altLabels?.[i] ?? `photo ${i + 1}`}`} fill sizes="96px" className="object-cover" />
               )}
             </button>
           ))}
