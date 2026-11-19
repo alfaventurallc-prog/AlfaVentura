@@ -48,10 +48,10 @@ const AllProductsPage = async () => {
             className="text-4xl md:text-5xl font-bold mb-4 leading-tight"
             style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
           >
-            Our Premium Products
+            Quartz Slabs, Cabinets & SPC Flooring
           </h1>
           <p className="text-lg text-white/70 mb-8 max-w-xl">
-            Discover our comprehensive range of high-quality engineered quartz for your projects.
+            Browse our full range of engineered quartz slabs, quartz countertops and vanity tops, kitchen cabinets and SPC flooring for US projects.
           </p>
           <div className="flex flex-wrap items-center gap-6 text-sm text-white/80">
             <div className="flex items-center gap-2">

@@ -11,7 +11,7 @@ export interface GalleryMedia {
 }
 
 /** Main view with crossfade + swipe, and a thumbnail strip under it. */
-const ProductGallery = ({ media, title }: { media: GalleryMedia[]; title: string }) => {
+const ProductGallery = ({ media, title, altLabels }: { media: GalleryMedia[]; title: string; altLabels?: string[] }) => {
   const [current, setCurrent] = useState(0);
   const count = media.length;
   if (!count) return null;
@@ -57,7 +57,7 @@ const ProductGallery = ({ media, title }: { media: GalleryMedia[]; title: string
               ) : (
                 <Image
                   src={active.url}
-                  alt={`${title} - image ${current + 1}`}
+                  alt={`${title} - ${altLabels?.[current] ?? `photo ${current + 1}`}`}
                   fill
                   priority={current === 0}
                   draggable={false}

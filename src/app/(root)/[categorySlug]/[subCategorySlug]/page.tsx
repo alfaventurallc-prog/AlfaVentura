@@ -3,7 +3,7 @@ import { ChevronRight, Home, Package } from "lucide-react";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
-import { categoryMetadata, categoryPath } from "@/lib/categorySeo";
+import { categoryH1, categoryMetadata, categoryPath } from "@/lib/categorySeo";
 import { breadcrumbJsonLd, jsonLdScript } from "@/lib/seo";
 import ProductCatalog from "@/components/ProductCatalog";
 import CategoryContent from "@/components/seo/CategoryContent";
@@ -113,7 +113,7 @@ const ProductsPage = async ({ params }: { params: Promise<{ categorySlug: string
                 className="text-3xl font-bold text-[#1C1917]"
                 style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
               >
-                {category.name}
+                {categoryH1(category)}
               </h1>
               {category.parentId && (
                 <span className="text-xs bg-[#F5EFE6] text-[#9B7040] px-3 py-1 rounded-full font-medium border border-[#E8DDD0]">

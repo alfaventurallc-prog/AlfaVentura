@@ -50,6 +50,9 @@ const loadProduct = cache(async (key: string) => {
   return res.success && res.data ? (res.data as ProductDetail) : null;
 });
 
+/** What each of a slab's three photos shows (texture, slab on stands, kitchen). */
+const SLAB_PHOTO_LABELS = ["full slab texture", "slab on display stands", "kitchen countertop and waterfall island"];
+
 /** "Calacatta Gold" -> "Calacatta Gold Quartz Slab"; cabinet and flooring
  * titles already say what they are. */
 const searchTitle = (product: ProductDetail) => {
@@ -155,7 +158,7 @@ const ProductDetailPage = async ({ params }: { params: Promise<{ id: string }> }
         </nav>
 
         <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1.15fr)_minmax(0,1fr)] gap-8 lg:gap-14">
-          <ProductGallery media={media} title={product.title} />
+          <ProductGallery media={media} title={searchTitle(product)} altLabels={/slab/i.test(product.category.name) ? SLAB_PHOTO_LABELS : undefined} />
 
           <div className="md:pt-2">
             <div className="flex flex-wrap items-center gap-2 mb-4">
@@ -174,7 +177,7 @@ const ProductDetailPage = async ({ params }: { params: Promise<{ id: string }> }
               className="text-3xl md:text-4xl lg:text-[2.75rem] font-bold text-[#1C1917] leading-tight tracking-tight mb-5"
               style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
             >
-              {product.title}
+              {searchTitle(product)}
             </h1>
 
             <p className="text-[#6B5E52] whitespace-pre-line leading-relaxed">{product.description}</p>

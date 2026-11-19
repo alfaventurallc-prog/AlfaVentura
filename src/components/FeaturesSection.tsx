@@ -311,7 +311,7 @@ const FeaturesSection = ({ categories }: FeaturesSectionProps) => {
                     <span className="hidden lg:block relative w-[72px] h-[72px] shrink-0 rounded-xl overflow-hidden">
                       <Image
                         src={showcaseImage(category)}
-                        alt=""
+                        alt={category.name}
                         fill
                         sizes="72px"
                         className={`object-cover transition-transform duration-500 ${isActive ? "scale-110" : "scale-100"}`}

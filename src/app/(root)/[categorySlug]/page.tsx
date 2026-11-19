@@ -4,7 +4,7 @@ import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { notFound, permanentRedirect } from "next/navigation";
-import { categoryMetadata, categoryPath } from "@/lib/categorySeo";
+import { categoryH1, categoryMetadata, categoryPath } from "@/lib/categorySeo";
 import { breadcrumbJsonLd, jsonLdScript } from "@/lib/seo";
 import ProductCatalog from "@/components/ProductCatalog";
 import CategoryContent from "@/components/seo/CategoryContent";
@@ -123,7 +123,7 @@ const ProductsPage = async ({ params }: { params: Promise<{ categorySlug: string
                   className="text-3xl font-bold text-[#1C1917]"
                   style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
                 >
-                  {category.parentId ? category.parent?.name + " > " + category.name : category.name}
+                  {categoryH1(category)}
                 </h1>
               </div>
 

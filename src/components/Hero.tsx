@@ -7,16 +7,16 @@ const slides: Slide[] = [
     // NOTE: Replace /ban2.webp with your preferred "export powerhouse" hero image
     // (e.g., a professional warehouse, cargo ship, or global trade visual)
    src: "/01.png",
-title: "Premium Quartz Surfaces for Exceptional Spaces",
+title: "Engineered Quartz Slabs & Countertops Across the USA",
 description:
-  "From luxury residential interiors to large-scale commercial projects, Alfa Ventura delivers engineered quartz slabs, custom countertops, and innovative surface solutions crafted to meet the highest standards of design, durability, and performance.",
+  "From luxury homes to large commercial projects, Alfa Ventura supplies 150+ engineered quartz slab designs, custom quartz countertops and vanity tops, kitchen cabinets and SPC flooring, built for lasting design, durability and performance.",
 buttonText: "Request a Quote",
 buttonHref: "/contact",
   },
   {
     id: 2,
     src: "/02.png",
-    title: "Bespoke Countertops. Unmatched Craftsmanship.",
+    title: "Custom Quartz Countertops & Vanity Tops",
     description:
       "Expertly fabricated quartz countertops tailored to your exact requirements, combining sophisticated design, precision engineering, and superior performance for modern living spaces.",
     buttonText: "Explore Products",
@@ -25,7 +25,7 @@ buttonHref: "/contact",
   {
     id: 3,
 src: "/03.png",
-title: "Elevating Interiors with Premium Quartz",
+title: "Premium Quartz for Kitchens, Baths & Commercial Spaces",
 description:
   "Expertly engineered quartz slabs featuring exceptional durability, refined aesthetics, and timeless appeal for architects, designers, builders, and homeowners.",
 buttonText: "Contact Us",

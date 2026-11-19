@@ -52,11 +52,11 @@ export default async function VisualizerPage() {
             className="text-3xl md:text-5xl font-bold text-[#1C1917] leading-tight mb-4"
             style={{ fontFamily: "var(--font-jakarta), sans-serif" }}
           >
-            Virtual Kitchen Design Tool
+            3D Quartz Countertop Visualizer
           </h1>
           <p className="text-[#57534E] text-base md:text-lg max-w-2xl leading-relaxed">
-            Explore our quartz designs in a real kitchen setting — switch the layout, swap cabinets, floors and
-            quartz finishes, and watch it update instantly.
+            Try our quartz countertops in a 3D kitchen, bathroom, living room or commercial space: switch the layout, swap
+            cabinets, floors and quartz finishes, and watch it update instantly.
           </p>
         </div>
 
